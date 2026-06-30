@@ -10,7 +10,7 @@
     <style>
         :root { 
             --bg: #0b0e14; --panel: #151921; --border: rgba(255, 255, 255, 0.1); --accent: #0ea5e9; 
-            --c-srv: #10b981; --c-usrv: #f59e0b; --c-dmg: #ef4444;
+            --c-srv: #10b981; --c-usrv: #ef4444; --c-ins: #3b82f6;
         }
         body { background: transparent; color: #94a3b8; font-family: 'Inter', sans-serif; overflow-x: hidden; }
         
@@ -21,6 +21,10 @@
         .input-field:focus { border-color: var(--accent); }
         
         .label-style { text-transform: uppercase; font-size: 10px; font-weight: 700; opacity: 0.4; margin-bottom: 0.25rem; display: block; letter-spacing: 0.1em; }
+
+        .stat-box { flex: 1; min-width: 90px; padding: 12px 8px; border-radius: 1.25rem; border: 1px solid var(--border); text-align: center; background: rgba(0,0,0,0.2); }
+        .stat-val { display: block; font-size: 1.25rem; font-weight: 900; line-height: 1; margin-bottom: 4px; }
+        .stat-lab { font-size: 8px; font-weight: 800; text-transform: uppercase; opacity: 0.5; }
 
         .st-select { background: #0b0e14; border: 1px solid var(--border); border-radius: 6px; font-size: 10px; font-weight: 700; color: white; padding: 4px 8px; outline: none; }
         
@@ -40,19 +44,19 @@
     <div id="local-loader">
         <div class="flex flex-col items-center gap-3">
             <div class="w-12 h-12 border-4 border-sky-500/10 border-t-sky-500 rounded-full animate-spin"></div>
-            <span class="text-[10px] font-mono uppercase tracking-[0.4em] text-sky-500 animate-pulse font-bold">Scanning_Equipment...</span>
+            <span class="text-[10px] font-mono uppercase tracking-[0.4em] text-sky-500 animate-pulse font-bold">Scanning_Inventory...</span>
         </div>
     </div>
 
     <!-- HEADER -->
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-10">
         <div>
-            <h1 class="text-2xl font-bold text-white tracking-tighter uppercase">Equipment Inventory</h1>
-            <p class="text-xs opacity-50 font-mono mt-1 uppercase tracking-tighter">Tools & Resource Status Monitor</p>
+            <h1 class="text-2xl font-bold text-white tracking-tighter uppercase">Equipment Tracker</h1>
+            <p class="text-xs opacity-50 font-mono mt-1 uppercase tracking-tighter">Inventory Health & Resource Management</p>
         </div>
         <div class="flex gap-3">
             <button onclick="openModal('bulk')" class="bg-white/5 border border-white/10 hover:bg-white/10 text-white px-5 py-3 rounded-2xl font-bold text-xs flex items-center gap-2 transition-all">
-                <i data-lucide="package-plus" size="16"></i> BULK LOAD
+                <i data-lucide="package-search" size="16"></i> BULK GRID LOAD
             </button>
             <button onclick="openModal('single')" class="bg-sky-600 hover:bg-sky-500 text-white px-6 py-3 rounded-2xl font-bold text-xs flex items-center gap-2 shadow-lg shadow-sky-600/20 transition-all">
                 <i data-lucide="plus" size="16"></i> ADD ITEM
@@ -66,14 +70,14 @@
     <div id="eq-modal" class="fixed inset-0 bg-black/95 backdrop-blur-md hidden flex items-center justify-center z-[110] p-4">
         <div class="bg-[#151921] border border-white/10 rounded-[3rem] w-full max-w-5xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
             <div class="p-6 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
-                <h3 id="modal-title" class="text-xl font-bold text-white uppercase tracking-widest">Inventory Management</h3>
+                <h3 id="modal-title" class="text-xl font-bold text-white uppercase tracking-widest">Inventory Control</h3>
                 <button onclick="closeModal()" class="p-2 hover:bg-white/5 rounded-full transition text-white/50 hover:text-white"><i data-lucide="x"></i></button>
             </div>
             
             <div class="p-8 overflow-y-auto flex-1">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                     <div>
-                        <label class="label-style">Target Node (Unit)</label>
+                        <label class="label-style">Deployment Node</label>
                         <select id="UnitCode" class="input-field"></select>
                     </div>
                 </div>
@@ -82,13 +86,13 @@
                 <div id="bulk-container" class="hidden">
                     <textarea id="paste-buffer" class="absolute opacity-0 pointer-events-none"></textarea>
                     <div onclick="focusBuffer()" class="border-2 border-dashed border-white/10 rounded-2xl p-10 mb-6 text-center cursor-pointer hover:border-sky-500/50 transition-all bg-white/[0.02]">
-                        <i data-lucide="hard-hat" class="mx-auto mb-3 opacity-20 w-10 h-10"></i>
-                        <p class="text-sm text-sky-400 font-bold">Paste Equipment Table (CTRL+V)</p>
-                        <p class="text-[10px] opacity-30 mt-1 uppercase font-mono">Format: PART NO | DESCRIPTION | NOTE</p>
+                        <i data-lucide="scan-barcode" class="mx-auto mb-3 opacity-20 w-10 h-10"></i>
+                        <p class="text-sm text-sky-400 font-bold">Paste from Excel (CTRL+V)</p>
+                        <p class="text-[10px] opacity-30 mt-1 uppercase font-mono">Format: PN | DESC | NOTE</p>
                     </div>
                     <div class="bulk-table-container">
                         <table class="bulk-table">
-                            <thead><tr><th>Eqp. Part Number</th><th>Eqp Description</th><th>Note</th><th class="w-10"></th></tr></thead>
+                            <thead><tr><th>Part Number</th><th>Description</th><th>Note</th><th class="w-10"></th></tr></thead>
                             <tbody id="bulk-table-body"></tbody>
                         </table>
                     </div>
@@ -96,20 +100,22 @@
 
                 <!-- Single View -->
                 <div id="single-container" class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div><label class="label-style">Part Number</label><input id="s-pno" class="input-field" placeholder="PN-12345"></div>
-                    <div><label class="label-style">Equipment Name</label><input id="s-desc" class="input-field" placeholder="Toolkit, Jacks, etc..."></div>
-                    <div class="md:col-span-2"><label class="label-style">Additional Note</label><input id="s-note" class="input-field" placeholder="Storage location or condition..."></div>
+                    <div><label class="label-style">Part Number</label><input id="s-pno" class="input-field" placeholder="PN-999-X"></div>
+                    <div><label class="label-style">Eqp Description</label><input id="s-desc" class="input-field" placeholder="Pressure Gauge, Torque Wrench..."></div>
+                    <div class="md:col-span-2"><label class="label-style">Note</label><input id="s-note" class="input-field" placeholder="Storage rack or condition details..."></div>
                     <div>
                         <label class="label-style">Initial Status</label>
                         <select id="s-status" class="input-field">
-                            <option>Serviceable</option><option>Unserviceable</option><option>Damaged</option><option>In Repair</option>
+                            <option>Servicable (good condition)</option>
+                            <option>Unserviceable (Damaged)</option>
+                            <option>In Service (Calibrated)</option>
                         </select>
                     </div>
                 </div>
             </div>
 
-            <div class="p-8 border-t border-white/5 bg-white/[0.01]">
-                <button onclick="submitData()" class="w-full bg-sky-600 py-4 rounded-2xl font-black text-white hover:bg-sky-500 transition-all uppercase tracking-widest text-xs">Commit Inventory to Node</button>
+            <div class="p-8 border-t border-white/5">
+                <button onclick="submitData()" class="w-full bg-sky-600 py-4 rounded-2xl font-black text-white hover:bg-sky-500 transition-all uppercase tracking-widest text-xs">Execute Inventory Commit</button>
             </div>
         </div>
     </div>
@@ -119,6 +125,8 @@
         const loader = document.getElementById('local-loader');
         const TAB_NAME = 'EQUIPMENT';
         let bulkData = [], currentMode = 'single';
+
+        const ST_ORDER = { 'Unserviceable (Damaged)': 0, 'In Service (Calibrated)': 1, 'Servicable (good condition)': 2 };
 
         async function init() {
             loader.style.display = 'flex';
@@ -139,67 +147,66 @@
             }, {});
 
             if(Object.keys(grouped).length === 0) {
-                container.innerHTML = `<div class="py-32 text-center opacity-20 font-mono tracking-[0.5em]">NO_EQUIPMENT_LOGGED</div>`;
+                container.innerHTML = `<div class="py-32 text-center opacity-20 font-mono tracking-[0.5em]">SYSTEM_INVENTORY_EMPTY</div>`;
                 return;
             }
 
             container.innerHTML = Object.keys(grouped).map(uCode => {
-                const items = grouped[uCode].reverse();
+                // Sort by Condition Priority
+                const items = grouped[uCode].sort((a, b) => ST_ORDER[a.Status] - ST_ORDER[b.Status]);
+                
                 const stats = {
                     total: items.length,
-                    srv: items.filter(i => i.Status === 'Serviceable').length,
-                    unsrv: items.filter(i => i.Status === 'Unserviceable').length,
-                    dmg: items.filter(i => i.Status === 'Damaged').length
+                    srv: items.filter(i => i.Status === 'Servicable (good condition)').length,
+                    unsrv: items.filter(i => i.Status === 'Unserviceable (Damaged)').length,
+                    insrv: items.filter(i => i.Status === 'In Service (Calibrated)').length
                 };
 
                 return `
                 <div class="eq-card">
-                    <div class="flex flex-col lg:flex-row justify-between items-center gap-6 mb-8">
-                        <div>
-                            <span class="label-style">Resource Node</span>
-                            <h2 class="text-3xl font-black text-white tracking-tighter">${uCode}</h2>
+                    <div class="flex flex-col xl:flex-row justify-between items-center gap-6 mb-8">
+                        <div class="w-full xl:w-auto">
+                            <span class="label-style">Storage Node</span>
+                            <h2 class="text-3xl font-black text-white tracking-tighter uppercase">${uCode}</h2>
                         </div>
-                        <div class="flex gap-3">
-                            <div class="bg-white/5 border border-white/5 p-4 rounded-3xl text-center min-w-[90px]">
-                                <span class="text-white font-black text-xl leading-none">${stats.total}</span>
-                                <span class="block text-[8px] opacity-30 uppercase font-bold mt-1">Items</span>
-                            </div>
-                            <div class="bg-emerald-500/10 border border-emerald-500/10 p-4 rounded-3xl text-center min-w-[90px]">
-                                <span class="text-emerald-500 font-black text-xl leading-none">${stats.srv}</span>
-                                <span class="block text-[8px] opacity-30 uppercase font-bold mt-1 text-emerald-500">Serviceable</span>
-                            </div>
-                            <div class="bg-red-500/10 border border-red-500/10 p-4 rounded-3xl text-center min-w-[90px] ${stats.dmg > 0 ? 'animate-pulse' : ''}">
-                                <span class="text-red-500 font-black text-xl leading-none">${stats.dmg}</span>
-                                <span class="block text-[8px] opacity-30 uppercase font-bold mt-1 text-red-500">Damaged</span>
-                            </div>
+                        <div class="flex flex-wrap gap-2 w-full xl:w-auto">
+                            <div class="stat-box border-sky-500/20"><span class="stat-val text-white">${stats.total}</span><span class="stat-lab">Total</span></div>
+                            <div class="stat-box border-emerald-500/20"><span class="stat-val text-emerald-400">${stats.srv}</span><span class="stat-lab">Good</span></div>
+                            <div class="stat-box border-blue-500/20"><span class="stat-val text-blue-400">${stats.insrv}</span><span class="stat-lab">Calib</span></div>
+                            <div class="stat-box border-red-500/30 ${stats.unsrv > 0 ? 'animate-pulse' : ''}"><span class="stat-val text-red-500">${stats.unsrv}</span><span class="stat-lab">Damaged</span></div>
                         </div>
                     </div>
 
                     <details class="group">
                         <summary class="list-none flex items-center justify-between p-4 bg-white/5 border border-white/5 rounded-2xl cursor-pointer hover:bg-white/10 transition">
-                            <span class="text-[10px] font-bold tracking-widest uppercase text-sky-400">Inventory Content [Part No Control]</span>
+                            <span class="text-[10px] font-bold tracking-widest uppercase text-sky-400">Inventory Registry Details</span>
                             <i data-lucide="chevron-down" class="group-open:rotate-180 transition"></i>
                         </summary>
                         <div class="mt-6 overflow-x-auto">
                             <table class="w-full text-left text-xs">
                                 <thead class="opacity-20 uppercase font-bold border-b border-white/5">
-                                    <tr><th class="p-3">Eqp. Part Number</th><th class="p-3">Eqp Description</th><th class="p-3">Note</th><th class="p-3">Status</th><th class="p-3 text-right">Action</th></tr>
+                                    <tr><th class="p-3">Part Number</th><th class="p-3">Description</th><th class="p-3">Note</th><th class="p-3">Status</th><th class="p-3 text-right">Delete</th></tr>
                                 </thead>
                                 <tbody>
-                                    ${items.map(item => `
-                                        <tr class="border-b border-white/[0.02] hover:bg-white/[0.02]">
+                                    ${items.map(item => {
+                                        let rowStyle = "";
+                                        if(item.Status === 'Unserviceable (Damaged)') rowStyle = "bg-red-500/5 border-l-2 border-l-red-500";
+                                        
+                                        return `
+                                        <tr class="border-b border-white/[0.02] hover:bg-white/[0.02] ${rowStyle}">
                                             <td class="p-3 font-mono text-sky-400">${item.EqpPartNumber || '-'}</td>
                                             <td class="p-3 font-black text-white uppercase">${item.EqpDescription || '-'}</td>
-                                            <td class="p-3 opacity-60 text-[11px] leading-tight">${item.Note || '-'}</td>
+                                            <td class="p-3 opacity-60 text-[11px]">${item.Note || '-'}</td>
                                             <td class="p-3">
                                                 <select onchange="updateStatus('${uCode}', '${item.EqpPartNumber}', this.value)" class="st-select">
-                                                    ${['Serviceable', 'Unserviceable', 'Damaged', 'In Repair'].map(s => `<option ${item.Status === s ? 'selected' : ''}>${s}</option>`).join('')}
+                                                    ${['Servicable (good condition)', 'Unserviceable (Damaged)', 'In Service (Calibrated)'].map(s => `<option ${item.Status === s ? 'selected' : ''}>${s}</option>`).join('')}
                                                 </select>
                                             </td>
                                             <td class="p-3 text-right">
                                                 <button onclick="deleteItem('${item.EqpPartNumber}')" class="text-white/10 hover:text-red-500 transition"><i data-lucide="trash-2" size="14"></i></button>
                                             </td>
-                                        </tr>`).join('')}
+                                        </tr>`;
+                                    }).join('')}
                                 </tbody>
                             </table>
                         </div>
@@ -209,11 +216,11 @@
             lucide.createIcons();
         }
 
-        // --- PASTE LOGIC ---
+        // --- CORE ENGINE ---
         function openModal(mode) {
             currentMode = mode;
             document.getElementById('eq-modal').classList.remove('hidden');
-            document.getElementById('modal-title').innerText = mode === 'bulk' ? 'Bulk Inventory Load' : 'Precision Item Entry';
+            document.getElementById('modal-title').innerText = mode === 'bulk' ? 'Bulk Registry Engine' : 'Manual Item Entry';
             document.getElementById('single-container').classList.toggle('hidden', mode === 'bulk');
             document.getElementById('bulk-container').classList.toggle('hidden', mode === 'single');
             if(mode === 'bulk') focusBuffer();
@@ -242,7 +249,7 @@
                     <td><input value="${d.note}" oninput="bulkData[${i}].note=this.value" class="bg-transparent outline-none w-full border-b border-white/5 opacity-60"></td>
                     <td><button onclick="bulkData.splice(${i},1);renderBulkTable()" class="text-red-500/20 hover:text-red-500"><i data-lucide="x" size="14"></i></button></td>
                 </tr>
-            `).join('') : '<tr><td colspan="4" class="text-center py-10 opacity-20 italic">Awaiting equipment data stream...</td></tr>';
+            `).join('') : '<tr><td colspan="4" class="text-center py-10 opacity-20 italic">No stream detected...</td></tr>';
             lucide.createIcons();
         }
 
@@ -254,10 +261,10 @@
                     await API.post({ tab: TAB_NAME, action: 'add', UnitCode: unit, EqpPartNumber: document.getElementById('s-pno').value, EqpDescription: document.getElementById('s-desc').value, Status: document.getElementById('s-status').value, Note: document.getElementById('s-note').value, primaryId: document.getElementById('s-pno').value });
                 } else {
                     for(let d of bulkData) {
-                        await API.post({ tab: TAB_NAME, action: 'add', UnitCode: unit, EqpPartNumber: d.pno, EqpDescription: d.desc, Status: 'Serviceable', Note: d.note, primaryId: d.pno });
+                        await API.post({ tab: TAB_NAME, action: 'add', UnitCode: unit, EqpPartNumber: d.pno, EqpDescription: d.desc, Status: 'Servicable (good condition)', Note: d.note, primaryId: d.pno });
                     }
                 }
-                Swal.fire({ icon: 'success', title: 'Inventory Updated', background: '#151921', color: '#fff', timer: 1500, showConfirmButton: false });
+                Swal.fire({ icon: 'success', title: 'Committed', background: '#151921', color: '#fff', timer: 1500, showConfirmButton: false });
                 closeModal(); init();
             } catch(e) { Swal.fire('Error', 'Transaction Failed', 'error'); } finally { loader.style.display = 'none'; }
         }
@@ -269,7 +276,7 @@
         }
 
         async function deleteItem(pNo) {
-            const res = await Swal.fire({ title: 'Remove Item?', text: "This will remove the item from the node inventory.", icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', background: '#151921', color: '#fff' });
+            const res = await Swal.fire({ title: 'Purge Item?', text: "Permanent removal from inventory.", icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', background: '#151921', color: '#fff' });
             if(res.isConfirmed) {
                 loader.style.display = 'flex';
                 await API.post({ tab: TAB_NAME, action: 'delete', primaryId: pNo });
