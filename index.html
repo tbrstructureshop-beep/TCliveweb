@@ -3,58 +3,70 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Industrial Hub</title>
+    <title>Industrial Hub v3</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        :root { --accent: #06b6d4; }
-        .dark { --bg: #09090b; --card: #18181b; --text: #f4f4f5; }
-        .light { --bg: #f8fafc; --card: #ffffff; --text: #0f172a; }
-        body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; transition: all 0.3s; }
-        .glass { background: rgba(24, 24, 27, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
+        .glass-panel { @apply bg-white/5 backdrop-blur-lg border border-white/10; }
+        .nav-link { @apply flex items-center gap-3 p-3 rounded-xl transition-all hover:bg-sky-500/20 hover:text-sky-400 text-slate-400; }
+        .nav-link.active { @apply bg-sky-500 text-white shadow-lg shadow-sky-500/20; }
+        body { background: #0b0f1a; transition: background 0.3s; }
+        .light body { background: #f8fafc; color: #1e293b; }
     </style>
 </head>
-<body class="min-h-screen">
-    <!-- Sidebar Navigation -->
-    <nav class="fixed left-0 top-0 h-full w-20 glass flex flex-col items-center py-8 space-y-8 z-50">
-        <div class="text-cyan-500"><i data-lucide="factory" class="w-8 h-8"></i></div>
-        <button onclick="loadTab('Unit')" class="nav-btn"><i data-lucide="layers"></i></button>
-        <button onclick="loadTab('Safety')" class="nav-btn"><i data-lucide="shield-check"></i></button>
-        <button onclick="loadTab('Shifts')" class="nav-btn"><i data-lucide="clock"></i></button>
-        <div class="mt-auto pb-4">
-            <button onclick="toggleTheme()" class="p-2 rounded-full hover:bg-white/10"><i data-lucide="sun"></i></button>
-        </div>
-    </nav>
+<body class="flex h-screen overflow-hidden font-sans text-slate-200">
 
-    <!-- Main Content Area -->
-    <main id="view-container" class="ml-24 p-8">
-        <!-- Content will be injected here via loadTab() -->
+    <!-- Sidebar -->
+    <aside class="w-72 glass-panel m-4 rounded-3xl flex flex-col p-6 hidden lg:flex">
+        <div class="flex items-center gap-4 mb-10 px-2">
+            <div class="bg-sky-500 p-2 rounded-lg"><i data-lucide="cpu" class="text-white"></i></div>
+            <h1 class="text-xl font-bold tracking-tighter">TC_WEB<span class="text-sky-500">LIVE</span></h1>
+        </div>
+
+        <nav class="space-y-1 flex-1 overflow-y-auto pr-2">
+            <a href="#" onclick="loadTab('Unit', this)" class="nav-link active"><i data-lucide="box"></i> Unit Management</a>
+            <a href="#" onclick="loadTab('Shifts', this)" class="nav-link"><i data-lucide="clock"></i> Shift Schedule</a>
+            <a href="#" onclick="loadTab('Safety', this)" class="nav-link"><i data-lucide="shield-alert"></i> Safety Audit</a>
+            <a href="#" onclick="loadTab('Attendance', this)" class="nav-link"><i data-lucide="users"></i> Attendance</a>
+            <div class="my-4 border-t border-white/5"></div>
+            <a href="#" onclick="loadTab('OperationalDetail', this)" class="nav-link"><i data-lucide="settings"></i> Operations</a>
+            <a href="#" onclick="loadTab('Equipment', this)" class="nav-link"><i data-lucide="wrench"></i> Equipment</a>
+            <a href="#" onclick="loadTab('Issue', this)" class="nav-link"><i data-lucide="alert-circle"></i> Issue Log</a>
+            <a href="#" onclick="loadTab('NextPlan', this)" class="nav-link"><i data-lucide="calendar-check"></i> Next Plan</a>
+        </nav>
+
+        <div class="mt-auto flex gap-4 pt-4 border-t border-white/5">
+            <button onclick="toggleMode()" class="p-2 rounded-lg bg-white/5 hover:bg-white/10"><i data-lucide="moon"></i></button>
+            <div class="text-xs text-slate-500 self-center">INDUSTRIAL API v3.2</div>
+        </div>
+    </aside>
+
+    <!-- Content -->
+    <main class="flex-1 flex flex-col p-4 overflow-hidden">
+        <header class="flex justify-between items-center mb-6 px-4">
+            <h2 id="current-tab-title" class="text-2xl font-semibold tracking-tight">Unit Management</h2>
+            <div class="flex gap-3">
+                <button class="bg-slate-800 p-2 rounded-lg"><i data-lucide="search" size="18"></i></button>
+                <button class="bg-sky-500 hover:bg-sky-600 text-white px-4 py-2 rounded-xl flex items-center gap-2 text-sm font-bold shadow-lg shadow-sky-500/20">
+                    <i data-lucide="plus" size="18"></i> New Entry
+                </button>
+            </div>
+        </header>
+
+        <section id="content-area" class="flex-1 rounded-3xl glass-panel overflow-hidden relative">
+            <iframe id="tab-frame" src="Tabs/Unit/index.html" class="w-full h-full border-none"></iframe>
+        </section>
     </main>
 
-    <script type="module">
-        import API from './api.js';
-        
-        window.loadTab = async (folder) => {
-            const container = document.getElementById('view-container');
-            container.innerHTML = '<div class="animate-pulse">Loading Industrial Data...</div>';
-            try {
-                const response = await fetch(`./Tabs/${folder}/index.html`);
-                const html = await response.text();
-                container.innerHTML = html;
-                lucide.createIcons();
-                // Initialize specific tab logic if needed
-            } catch (e) {
-                container.innerHTML = "Error loading component.";
-            }
-        };
-
-        window.toggleTheme = () => {
-            document.documentElement.classList.toggle('dark');
-        };
-
-        // Init Lucide
+    <script>
         lucide.createIcons();
-        loadTab('Unit'); // Default tab
+        function loadTab(tab, el) {
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+            el.classList.add('active');
+            document.getElementById('current-tab-title').innerText = el.innerText;
+            document.getElementById('tab-frame').src = `Tabs/${tab}/index.html`;
+        }
+        function toggleMode() { document.documentElement.classList.toggle('light'); }
     </script>
 </body>
 </html>
