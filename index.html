@@ -1,72 +1,76 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Industrial Hub v3</title>
+    <title>TC WEB LIVE | Industrial OS</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        .glass-panel { @apply bg-white/5 backdrop-blur-lg border border-white/10; }
-        .nav-link { @apply flex items-center gap-3 p-3 rounded-xl transition-all hover:bg-sky-500/20 hover:text-sky-400 text-slate-400; }
-        .nav-link.active { @apply bg-sky-500 text-white shadow-lg shadow-sky-500/20; }
-        body { background: #0b0f1a; transition: background 0.3s; }
-        .light body { background: #f8fafc; color: #1e293b; }
+        :root {
+            --bg: #0a0c10; --panel: #161b22; --accent: #2f81f7; --text: #c9d1d9;
+        }
+        .light {
+            --bg: #f6f8fa; --panel: #ffffff; --accent: #0969da; --text: #24292f;
+        }
+        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; transition: 0.3s; }
+        .sidebar { background: var(--panel); border-right: 1px solid rgba(255,255,255,0.1); }
+        .nav-btn { @apply flex items-center gap-3 p-3 rounded-lg transition-all cursor-pointer hover:bg-sky-500/10 opacity-70; }
+        .nav-btn.active { @apply opacity-100 bg-sky-500/20 text-sky-400 border-l-4 border-sky-500; }
+        iframe { border: none; width: 100%; height: 100%; }
     </style>
 </head>
-<body class="flex h-screen overflow-hidden font-sans text-slate-200">
+<body class="flex h-screen overflow-hidden">
 
-    <!-- Sidebar -->
-    <aside class="w-72 glass-panel m-4 rounded-3xl flex flex-col p-6 hidden lg:flex">
-        <div class="flex items-center gap-4 mb-10 px-2">
-            <div class="bg-sky-500 p-2 rounded-lg"><i data-lucide="cpu" class="text-white"></i></div>
-            <h1 class="text-xl font-bold tracking-tighter">TC_WEB<span class="text-sky-500">LIVE</span></h1>
+    <!-- SIDEBAR -->
+    <aside class="w-64 sidebar flex flex-col p-4 hidden md:flex">
+        <div class="flex items-center gap-3 mb-8 px-2">
+            <i data-lucide="factory" class="text-sky-500"></i>
+            <span class="font-bold tracking-widest uppercase text-sm">TC Web Live</span>
         </div>
 
-        <nav class="space-y-1 flex-1 overflow-y-auto pr-2">
-            <a href="#" onclick="loadTab('Unit', this)" class="nav-link active"><i data-lucide="box"></i> Unit Management</a>
-            <a href="#" onclick="loadTab('Shifts', this)" class="nav-link"><i data-lucide="clock"></i> Shift Schedule</a>
-            <a href="#" onclick="loadTab('Safety', this)" class="nav-link"><i data-lucide="shield-alert"></i> Safety Audit</a>
-            <a href="#" onclick="loadTab('Attendance', this)" class="nav-link"><i data-lucide="users"></i> Attendance</a>
-            <div class="my-4 border-t border-white/5"></div>
-            <a href="#" onclick="loadTab('OperationalDetail', this)" class="nav-link"><i data-lucide="settings"></i> Operations</a>
-            <a href="#" onclick="loadTab('Equipment', this)" class="nav-link"><i data-lucide="wrench"></i> Equipment</a>
-            <a href="#" onclick="loadTab('Issue', this)" class="nav-link"><i data-lucide="alert-circle"></i> Issue Log</a>
-            <a href="#" onclick="loadTab('NextPlan', this)" class="nav-link"><i data-lucide="calendar-check"></i> Next Plan</a>
+        <nav class="space-y-1 flex-1">
+            <div onclick="route('Unit', this)" class="nav-btn active"><i data-lucide="layout-grid"></i> UNIT</div>
+            <div onclick="route('Shifts', this)" class="nav-btn"><i data-lucide="clock"></i> SHIFTS</div>
+            <div onclick="route('Safety', this)" class="nav-btn"><i data-lucide="shield-check"></i> SAFETY</div>
+            <div onclick="route('Attendance', this)" class="nav-btn"><i data-lucide="users"></i> ATTENDANCE</div>
+            <div onclick="route('OperationalDetail', this)" class="nav-btn"><i data-lucide="activity"></i> OPERATIONAL</div>
+            <div onclick="route('Equipment', this)" class="nav-btn"><i data-lucide="wrench"></i> EQUIPMENT</div>
+            <div onclick="route('Issue', this)" class="nav-btn"><i data-lucide="alert-circle"></i> ISSUE</div>
+            <div onclick="route('NextPlan', this)" class="nav-btn"><i data-lucide="calendar-plus"></i> NEXT PLAN</div>
         </nav>
 
-        <div class="mt-auto flex gap-4 pt-4 border-t border-white/5">
-            <button onclick="toggleMode()" class="p-2 rounded-lg bg-white/5 hover:bg-white/10"><i data-lucide="moon"></i></button>
-            <div class="text-xs text-slate-500 self-center">INDUSTRIAL API v3.2</div>
+        <div class="pt-4 border-t border-white/5 flex justify-between">
+            <button onclick="document.body.classList.toggle('light')" class="p-2 hover:bg-white/5 rounded"><i data-lucide="sun"></i></button>
+            <span class="text-[10px] opacity-30 self-center">v2.0.4-STABLE</span>
         </div>
     </aside>
 
-    <!-- Content -->
-    <main class="flex-1 flex flex-col p-4 overflow-hidden">
-        <header class="flex justify-between items-center mb-6 px-4">
-            <h2 id="current-tab-title" class="text-2xl font-semibold tracking-tight">Unit Management</h2>
-            <div class="flex gap-3">
-                <button class="bg-slate-800 p-2 rounded-lg"><i data-lucide="search" size="18"></i></button>
-                <button class="bg-sky-500 hover:bg-sky-600 text-white px-4 py-2 rounded-xl flex items-center gap-2 text-sm font-bold shadow-lg shadow-sky-500/20">
-                    <i data-lucide="plus" size="18"></i> New Entry
-                </button>
+    <!-- CONTENT -->
+    <main class="flex-1 flex flex-col">
+        <header class="p-4 flex justify-between items-center bg-black/20 backdrop-blur-md">
+            <h1 id="page-title" class="text-lg font-medium">Unit Management</h1>
+            <div class="flex gap-2">
+                <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse mt-2"></div>
+                <span class="text-xs opacity-50 uppercase tracking-widest">System Online</span>
             </div>
         </header>
-
-        <section id="content-area" class="flex-1 rounded-3xl glass-panel overflow-hidden relative">
-            <iframe id="tab-frame" src="Tabs/Unit/index.html" class="w-full h-full border-none"></iframe>
-        </section>
+        
+        <div class="flex-1 p-4 overflow-hidden">
+            <div class="w-full h-full rounded-xl overflow-hidden bg-white/5 border border-white/5">
+                <iframe id="main-frame" src="Tabs/Unit/index.html"></iframe>
+            </div>
+        </div>
     </main>
 
     <script>
         lucide.createIcons();
-        function loadTab(tab, el) {
-            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+        function route(path, el) {
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
             el.classList.add('active');
-            document.getElementById('current-tab-title').innerText = el.innerText;
-            document.getElementById('tab-frame').src = `Tabs/${tab}/index.html`;
+            document.getElementById('page-title').innerText = el.innerText;
+            document.getElementById('main-frame').src = `Tabs/${path}/index.html`;
         }
-        function toggleMode() { document.documentElement.classList.toggle('light'); }
     </script>
 </body>
 </html>
