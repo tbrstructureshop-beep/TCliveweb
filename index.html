@@ -1,1 +1,60 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Industrial Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root { --accent: #06b6d4; }
+        .dark { --bg: #09090b; --card: #18181b; --text: #f4f4f5; }
+        .light { --bg: #f8fafc; --card: #ffffff; --text: #0f172a; }
+        body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; transition: all 0.3s; }
+        .glass { background: rgba(24, 24, 27, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
+    </style>
+</head>
+<body class="min-h-screen">
+    <!-- Sidebar Navigation -->
+    <nav class="fixed left-0 top-0 h-full w-20 glass flex flex-col items-center py-8 space-y-8 z-50">
+        <div class="text-cyan-500"><i data-lucide="factory" class="w-8 h-8"></i></div>
+        <button onclick="loadTab('Unit')" class="nav-btn"><i data-lucide="layers"></i></button>
+        <button onclick="loadTab('Safety')" class="nav-btn"><i data-lucide="shield-check"></i></button>
+        <button onclick="loadTab('Shifts')" class="nav-btn"><i data-lucide="clock"></i></button>
+        <div class="mt-auto pb-4">
+            <button onclick="toggleTheme()" class="p-2 rounded-full hover:bg-white/10"><i data-lucide="sun"></i></button>
+        </div>
+    </nav>
 
+    <!-- Main Content Area -->
+    <main id="view-container" class="ml-24 p-8">
+        <!-- Content will be injected here via loadTab() -->
+    </main>
+
+    <script type="module">
+        import API from './api.js';
+        
+        window.loadTab = async (folder) => {
+            const container = document.getElementById('view-container');
+            container.innerHTML = '<div class="animate-pulse">Loading Industrial Data...</div>';
+            try {
+                const response = await fetch(`./Tabs/${folder}/index.html`);
+                const html = await response.text();
+                container.innerHTML = html;
+                lucide.createIcons();
+                // Initialize specific tab logic if needed
+            } catch (e) {
+                container.innerHTML = "Error loading component.";
+            }
+        };
+
+        window.toggleTheme = () => {
+            document.documentElement.classList.toggle('dark');
+        };
+
+        // Init Lucide
+        lucide.createIcons();
+        loadTab('Unit'); // Default tab
+    </script>
+</body>
+</html>
