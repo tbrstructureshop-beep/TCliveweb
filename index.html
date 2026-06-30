@@ -27,7 +27,23 @@
             transition: all 0.3s ease;
         }
         .font-mono { font-family: 'JetBrains Mono', monospace; }
-        .sidebar { background-color: var(--panel); border-right: 1px solid var(--border); }
+        
+        .sidebar { 
+            background-color: var(--panel); 
+            border-right: 1px solid var(--border);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: fixed;
+            top: 0; left: 0; bottom: 0;
+            z-index: 100;
+            transform: translateX(-100%);
+        }
+        /* Always show on Desktop */
+        @media (min-width: 1024px) {
+            .sidebar { transform: translateX(0); position: relative; }
+            #sidebar-overlay { display: none !important; }
+        }
+        .sidebar.open { transform: translateX(0); }
+
         .nav-active { 
             background: linear-gradient(90deg, rgba(14, 165, 233, 0.15) 0%, transparent 100%);
             color: var(--accent);
@@ -38,22 +54,43 @@
             backdrop-filter: blur(12px);
             border-bottom: 1px solid var(--border);
         }
-        /* Hide scrollbar */
-        ::-webkit-scrollbar { width: 0px; background: transparent; }
+
+        #sidebar-overlay {
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(4px);
+            display: none;
+            position: fixed; inset: 0; z-index: 90;
+        }
+        #sidebar-overlay.open { display: block; }
+
+        #loader { transition: opacity 0.3s ease; }
+        iframe { transition: opacity 0.4s ease; opacity: 0; }
+        iframe.loaded { opacity: 1; }
+        
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
     </style>
 </head>
 <body class="flex h-screen overflow-hidden">
 
-    <!-- SIDEBAR (Desktop & Tablet) -->
-    <aside class="sidebar w-64 flex flex-col hidden md:flex z-50">
-        <div class="p-6 flex items-center gap-3">
-            <div class="bg-sky-500/20 p-2 rounded-lg">
-                <i data-lucide="factory" class="text-sky-500 w-6 h-6"></i>
+    <!-- SIDEBAR OVERLAY -->
+    <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+    <!-- SIDEBAR DRAWER -->
+    <aside id="main-sidebar" class="sidebar w-64 flex flex-col shrink-0">
+        <div class="p-6 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="bg-sky-500/20 p-2 rounded-lg text-sky-500">
+                    <i data-lucide="factory"></i>
+                </div>
+                <span class="font-bold tracking-tighter text-white text-xl uppercase">TC_WEB<span class="text-sky-500">Live</span></span>
             </div>
-            <span class="font-bold tracking-tighter text-white text-xl">TC_WEB<span class="text-sky-500">LIVE</span></span>
+            <button onclick="toggleSidebar()" class="lg:hidden opacity-50 hover:opacity-100 text-white">
+                <i data-lucide="chevrons-left"></i>
+            </button>
         </div>
 
-        <nav class="flex-1 px-3 space-y-1 mt-4">
+        <nav class="flex-1 px-3 space-y-1 mt-2 overflow-y-auto">
             <div onclick="loadTab('Unit', this)" class="nav-item flex items-center gap-3 p-3 rounded-xl cursor-pointer hover:bg-white/5 transition-all nav-active">
                 <i data-lucide="layers" class="w-5 h-5"></i>
                 <span class="text-sm font-semibold uppercase tracking-wider">Unit</span>
@@ -89,9 +126,9 @@
         </nav>
 
         <div class="p-4 border-t border-white/5">
-            <button onclick="toggleTheme()" class="w-full flex items-center justify-center gap-2 p-3 bg-white/5 hover:bg-white/10 rounded-2xl transition">
-                <i data-lucide="sun-moon" class="w-5 h-5"></i>
-                <span class="text-xs font-bold uppercase tracking-widest">Toggle UI</span>
+            <button onclick="toggleTheme()" class="w-full flex items-center justify-center gap-2 p-3 bg-white/5 hover:bg-white/10 rounded-2xl transition border border-white/5">
+                <i data-lucide="sun-moon" class="w-5 h-5 text-sky-400"></i>
+                <span class="text-[10px] font-bold uppercase tracking-widest text-white">Interface Mode</span>
             </button>
         </div>
     </aside>
@@ -99,60 +136,65 @@
     <!-- MAIN CONTENT AREA -->
     <div class="flex-1 flex flex-col min-w-0 relative">
         
-        <!-- Mobile Header -->
-        <header class="md:hidden glass-header p-4 flex justify-between items-center">
-             <span class="font-bold tracking-tighter text-white">TC_WEB<span class="text-sky-500">LIVE</span></span>
-             <i data-lucide="bell" class="w-5 h-5"></i>
+        <!-- HEADER -->
+        <header class="glass-header px-4 md:px-8 py-4 flex justify-between items-center z-10">
+            <div class="flex items-center gap-4">
+                <button onclick="toggleSidebar()" class="lg:hidden p-2 -ml-2 rounded-lg bg-white/5 text-white">
+                    <i data-lucide="menu" class="w-6 h-6"></i>
+                </button>
+                <div>
+                    <h2 id="current-tab-title" class="text-white font-bold text-lg md:text-xl uppercase tracking-widest leading-none">Unit Management</h2>
+                    <p class="text-[9px] md:text-[10px] text-sky-500 font-mono hidden sm:block uppercase mt-1 tracking-tighter">Live Status: Authenticated // Node_01</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <div class="text-right hidden sm:block">
+                    <p id="clock" class="text-xs font-mono text-white leading-none mb-1">2024-06-30 16:50</p>
+                    <p class="text-[9px] uppercase font-bold opacity-30 tracking-widest">Global Server Time</p>
+                </div>
+                <div class="h-10 w-10 rounded-xl bg-sky-500/10 flex items-center justify-center border border-sky-500/20 shadow-lg shadow-sky-500/5">
+                    <i data-lucide="user" class="w-4 h-4 text-sky-400"></i>
+                </div>
+            </div>
         </header>
 
-        <!-- Dynamic Title Bar -->
-        <div class="glass-header hidden md:flex items-center justify-between px-8 py-4">
-            <div>
-                <h2 id="current-tab-title" class="text-white font-bold text-xl uppercase tracking-widest">Unit Management</h2>
-                <p class="text-[10px] text-sky-500 font-mono">SYSTEM_STATUS: STABLE // NODE_01</p>
+        <!-- Dynamic Frame Container -->
+        <main class="flex-1 overflow-hidden p-0 sm:p-3 lg:p-4 relative">
+            <!-- Internal Loader Spinner -->
+            <div id="loader" class="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
+                <div class="w-10 h-10 border-4 border-sky-500/10 border-t-sky-500 rounded-full animate-spin"></div>
             </div>
-            <div class="flex items-center gap-4">
-                <div class="text-right">
-                    <p class="text-[10px] uppercase font-bold opacity-40">Current Date</p>
-                    <p id="clock" class="text-xs font-mono text-white">2024-06-30 16:50</p>
-                </div>
-                <div class="h-8 w-8 rounded-full bg-white/10 flex items-center justify-center">
-                    <i data-lucide="user" class="w-4 h-4 text-white"></i>
-                </div>
-            </div>
-        </div>
 
-        <!-- Frame Container -->
-        <main class="flex-1 overflow-hidden p-0 md:p-4">
-            <div class="w-full h-full rounded-none md:rounded-3xl overflow-hidden bg-white/[0.02] border border-white/5">
+            <div class="w-full h-full rounded-none sm:rounded-2xl lg:rounded-3xl overflow-hidden bg-white/[0.02] border border-white/5 shadow-2xl relative">
                 <iframe id="content-frame" src="Tabs/Unit/index.html" class="w-full h-full border-none"></iframe>
             </div>
         </main>
-
-        <!-- Mobile Bottom Nav -->
-        <nav class="md:hidden glass-header flex justify-around p-3 pb-6">
-            <div onclick="loadTab('Unit', this)" class="text-sky-500"><i data-lucide="layers" class="w-6 h-6"></i></div>
-            <div onclick="loadTab('Shifts', this)" class="opacity-40"><i data-lucide="clock" class="w-6 h-6"></i></div>
-            <div onclick="loadTab('Safety', this)" class="opacity-40"><i data-lucide="shield-check" class="w-6 h-6"></i></div>
-            <div onclick="loadTab('Attendance', this)" class="opacity-40"><i data-lucide="user-check" class="w-6 h-6"></i></div>
-            <div onclick="loadTab('Issue', this)" class="opacity-40"><i data-lucide="alert-octagon" class="w-6 h-6"></i></div>
-        </nav>
     </div>
 
     <script>
-        // Initialize Icons
         lucide.createIcons();
 
-        // Navigation Engine
+        function toggleSidebar() {
+            const sidebar = document.getElementById('main-sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('open');
+        }
+
+        const iframe = document.getElementById('content-frame');
+        const loader = document.getElementById('loader');
+
         function loadTab(tabName, element) {
-            // Update Iframe Source
-            const frame = document.getElementById('content-frame');
-            frame.src = `Tabs/${tabName}/index.html`;
+            // Show Loader and hide iframe
+            loader.style.opacity = "1";
+            iframe.classList.remove('loaded');
+            
+            // Set URL
+            iframe.src = `Tabs/${tabName}/index.html`;
 
-            // Update Header Title
-            document.getElementById('current-tab-title').innerText = tabName + " Management";
-
-            // Update Desktop Sidebar UI
+            // Update UI
+            document.getElementById('current-tab-title').innerText = tabName;
             document.querySelectorAll('.nav-item').forEach(item => {
                 item.classList.remove('nav-active');
                 item.classList.add('opacity-60');
@@ -160,24 +202,20 @@
             element.classList.add('nav-active');
             element.classList.remove('opacity-60');
 
-            // Update Mobile Nav UI
-            const mobileNavs = document.querySelectorAll('.md\\:hidden.glass-header div');
-            mobileNavs.forEach(nav => {
-                nav.classList.add('opacity-40');
-                nav.classList.remove('text-sky-500');
-            });
-            if (element.tagName === 'DIV') { // Simple check for mobile icons
-                element.classList.add('text-sky-500');
-                element.classList.remove('opacity-40');
-            }
+            // Close on Mobile Selection
+            if(window.innerWidth < 1024) toggleSidebar();
         }
 
-        // Dark/Light Mode Toggle
+        // Iframe Load Event
+        iframe.onload = () => {
+            loader.style.opacity = "0";
+            iframe.classList.add('loaded');
+        };
+
         function toggleTheme() {
             document.documentElement.classList.toggle('light');
         }
 
-        // Live Clock
         setInterval(() => {
             const now = new Date();
             const dateStr = now.toISOString().split('T')[0];
