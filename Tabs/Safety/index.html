@@ -1,1 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="../../api.js"></script>
+    <style>
+        :root { --bg: #0b0e14; --panel: #151921; --border: #262c36; --accent: #0ea5e9; }
+        body { background: transparent; color: #94a3b8; font-family: 'Inter', sans-serif; overflow-x: hidden; }
+        
+        /* Card & UI */
+        .safety-card { @apply bg-white/[0.03] border border-white/5 rounded-[2rem] overflow-hidden hover:border-sky-500/30 transition-all duration-300 flex flex-col h-full; }
+        .status-badge { @apply text-[9px] px-2 py-1 rounded-md font-bold uppercase tracking-tighter; }
+        .input-field { @apply w-full bg-white/5 border border-white/10 rounded-xl p-3 outline-none focus:border-sky-500 text-white text-sm transition-all; }
+        .label-style { @apply text-[10px] uppercase font-bold opacity-40 mb-1 block tracking-widest; }
+        
+        /* Blocking Overlay */
+        #local-loader {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(11, 14, 20, 0.85);
+            backdrop-filter: blur(12px);
+            z-index: 100;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
 
+        .img-preview { @apply w-full h-48 object-cover rounded-2xl border border-white/10 bg-black/40 flex items-center justify-center overflow-hidden; }
+        
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: #262c36; border-radius: 10px; }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <!-- BLOCKING LOADER -->
+    <div id="local-loader">
+        <div class="flex flex-col items-center gap-3">
+            <div class="w-12 h-12 border-4 border-sky-500/10 border-t-sky-500 rounded-full animate-spin"></div>
+            <span class="text-[10px] font-mono uppercase tracking-[0.4em] text-sky-500 animate-pulse font-bold">Safeguarding_Data...</span>
+        </div>
+    </div>
+
+    <!-- HEADER -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-10">
+        <div>
+            <h1 class="text-2xl font-bold text-white tracking-tight uppercase">Safety Intelligence</h1>
+            <p class="text-xs opacity-50 font-mono mt-1 uppercase tracking-tighter">Incident Monitoring & Mitigation Log</p>
+        </div>
+        <button onclick="openModal()" class="bg-red-600 hover:bg-red-500 text-white px-6 py-3 rounded-2xl font-bold text-sm flex items-center gap-2 shadow-lg shadow-red-600/20 transition-all active:scale-95">
+            <i data-lucide="shield-alert" size="18"></i> REPORT INCIDENT
+        </button>
+    </div>
+
+    <!-- GRID -->
+    <div id="safety-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <!-- Cards Injected -->
+    </div>
+
+    <!-- MODAL -->
+    <div id="safety-modal" class="fixed inset-0 bg-black/90 backdrop-blur-md hidden flex items-center justify-center z-[110] p-4">
+        <div class="bg-[#151921] border border-white/10 rounded-[2.5rem] w-full max-w-2xl shadow-2xl overflow-hidden">
+            <div class="p-6 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
+                <h3 class="text-xl font-bold text-white uppercase tracking-widest">Safety Entry Form</h3>
+                <button onclick="closeModal()" class="p-2 hover:bg-white/5 rounded-full transition text-white/50 hover:text-white"><i data-lucide="x"></i></button>
+            </div>
+            
+            <form id="safety-form" class="p-8 grid grid-cols-1 sm:grid-cols-2 gap-5 max-h-[75vh] overflow-y-auto">
+                <div class="sm:col-span-2">
+                    <label class="label-style">Target Operational Unit</label>
+                    <select id="UnitCode" name="UnitCode" required class="input-field appearance-none"></select>
+                </div>
+
+                <div>
+                    <label class="label-style">Category</label>
+                    <select name="Category" required class="input-field">
+                        <option>Unsafe Action</option>
+                        <option>Unsafe Condition</option>
+                        <option>Near Miss</option>
+                        <option>Accident</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="label-style">Current Status</label>
+                    <select name="Status" required class="input-field">
+                        <option>Open</option>
+                        <option>In Progress</option>
+                        <option>Closed</option>
+                    </select>
+                </div>
+
+                <div class="sm:col-span-2">
+                    <label class="label-style">Incident Detail</label>
+                    <textarea name="Detail" required placeholder="Describe the finding..." class="input-field h-20 resize-none"></textarea>
+                </div>
+
+                <div class="sm:col-span-2">
+                    <label class="label-style">Mitigation Plan</label>
+                    <textarea name="Mitigation" required placeholder="Corrective actions taken..." class="input-field h-20 resize-none"></textarea>
+                </div>
+
+                <div class="sm:col-span-2">
+                    <label class="label-style">First Aid / Safety Equipment Used</label>
+                    <input name="FirstAidEquipment" placeholder="e.g. Fire Extinguisher, First Aid Kit" class="input-field">
+                </div>
+
+                <div class="sm:col-span-2">
+                    <label class="label-style">Evidence Upload (Image Only)</label>
+                    <div class="flex flex-col gap-4">
+                        <div id="preview-box" class="img-preview">
+                            <i data-lucide="image" class="opacity-10 w-12 h-12"></i>
+                        </div>
+                        <input type="file" id="file-input" accept="image/*" class="text-xs text-white/40 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-sky-500/10 file:text-sky-400 hover:file:bg-sky-500/20 cursor-pointer">
+                    </div>
+                </div>
+
+                <div class="sm:col-span-2 flex gap-3 pt-6 border-t border-white/5 mt-4">
+                    <button type="submit" class="flex-1 bg-sky-600 py-4 rounded-2xl font-bold text-white hover:bg-sky-500 transition-all shadow-lg shadow-sky-600/10 uppercase tracking-widest text-xs">Authorize Entry</button>
+                    <button type="button" onclick="closeModal()" class="flex-1 bg-white/5 py-4 rounded-2xl font-bold text-white/50 hover:bg-white/10 transition-all uppercase tracking-widest text-xs">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+        const loader = document.getElementById('local-loader');
+        const grid = document.getElementById('safety-grid');
+        const fileInput = document.getElementById('file-input');
+        const previewBox = document.getElementById('preview-box');
+
+        // Initial Load
+        async function init() {
+            loader.style.display = 'flex';
+            try {
+                // Populate Unit Dropdown
+                const unitRes = await API.get('UNIT');
+                document.getElementById('UnitCode').innerHTML = 
+                    '<option value="" disabled selected>Select Unit...</option>' +
+                    unitRes.data.map(u => `<option value="${u.UnitCode}">${u.UnitCode}</option>`).join('');
+
+                // Load Safety Records
+                const safetyRes = await API.get('SAFETY');
+                renderData(safetyRes.data);
+            } catch (e) {
+                Swal.fire('Node Error', 'Communication with server failed.', 'error');
+            } finally {
+                loader.style.display = 'none';
+            }
+        }
+
+        function renderData(data) {
+            if (!data || data.length === 0) {
+                grid.innerHTML = `<div class="col-span-full py-32 text-center opacity-20 uppercase tracking-widest font-mono">No_Incidents_Reported</div>`;
+                return;
+            }
+
+            grid.innerHTML = data.map(item => {
+                let statusColor = 'bg-red-500/20 text-red-400 border border-red-500/20';
+                if(item.Status === 'In Progress') statusColor = 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/20';
+                if(item.Status === 'Closed') statusColor = 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/20';
+
+                return `
+                <div class="safety-card group">
+                    <div class="relative h-44 bg-black overflow-hidden border-b border-white/5">
+                        ${item.UploadedImages ? 
+                            `<img src="${CONFIG.DRIVE_BASE}${item.UploadedImages}" class="w-full h-full object-cover opacity-60 group-hover:scale-110 transition-transform duration-700">` : 
+                            `<div class="w-full h-full flex items-center justify-center opacity-10"><i data-lucide="image-off"></i></div>`
+                        }
+                        <div class="absolute top-4 left-4">
+                            <span class="status-badge ${statusColor}">${item.Status}</span>
+                        </div>
+                    </div>
+
+                    <div class="p-6 flex flex-col flex-1">
+                        <div class="flex justify-between items-start mb-3">
+                            <div>
+                                <h4 class="text-[10px] font-mono text-sky-500 uppercase tracking-widest leading-none mb-1">${item.UnitCode}</h4>
+                                <h3 class="text-white font-bold text-sm uppercase truncate">${item.Category}</h3>
+                            </div>
+                            <button onclick="deleteReport('${item.UnitCode}')" class="text-white/10 hover:text-red-500 transition-colors"><i data-lucide="trash-2" size="14"></i></button>
+                        </div>
+                        
+                        <p class="text-[11px] leading-relaxed line-clamp-2 mb-4 opacity-60">${item.Detail}</p>
+                        
+                        <div class="mt-auto space-y-3">
+                            <div class="p-3 bg-white/5 rounded-xl border border-white/5">
+                                <span class="text-[8px] uppercase font-bold opacity-30 block mb-1">Mitigation Strategy</span>
+                                <p class="text-[10px] italic line-clamp-1">${item.Mitigation}</p>
+                            </div>
+                            
+                            <div class="flex justify-between items-center text-[9px] opacity-40 font-mono">
+                                <span>${item.Timestamp.split(' ')[0]}</span>
+                                <span>EQP: ${item.FirstAidEquipment || 'None'}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `}).join('');
+            lucide.createIcons();
+        }
+
+        // Image Preview Handler
+        fileInput.addEventListener('change', function() {
+            const file = this.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    previewBox.innerHTML = `<img src="${e.target.result}" class="w-full h-full object-cover">`;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // CRUD
+        function openModal() {
+            document.getElementById('safety-modal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('safety-modal').classList.add('hidden');
+            document.getElementById('safety-form').reset();
+            previewBox.innerHTML = `<i data-lucide="image" class="opacity-10 w-12 h-12"></i>`;
+            lucide.createIcons();
+        }
+
+        document.getElementById('safety-form').onsubmit = async (e) => {
+            e.preventDefault();
+            loader.style.display = 'flex';
+
+            const formData = new FormData(e.target);
+            const file = fileInput.files[0];
+            
+            const payload = {
+                tab: 'SAFETY',
+                action: 'add',
+                primaryId: formData.get('UnitCode') // Matches GAS update/delete logic
+            };
+
+            formData.forEach((value, key) => payload[key] = value);
+
+            if (file) {
+                payload.imageBlob = await API.toBase64(file);
+                payload.mimeType = file.type;
+            }
+
+            try {
+                const res = await API.post(payload);
+                if (res.status === 'success') {
+                    Swal.fire({ icon: 'success', title: 'Incident Authenticated', background: '#151921', color: '#fff', showConfirmButton: false, timer: 1500 });
+                    closeModal();
+                    init();
+                }
+            } catch (err) {
+                Swal.fire('Auth Error', 'Failed to commit record.', 'error');
+            } finally {
+                loader.style.display = 'none';
+            }
+        };
+
+        async function deleteReport(id) {
+            const confirm = await Swal.fire({
+                title: 'Terminate Record?',
+                text: "Removing this entry from security logs.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#0ea5e9',
+                cancelButtonColor: '#ef4444',
+                background: '#151921',
+                color: '#fff'
+            });
+
+            if (confirm.isConfirmed) {
+                loader.style.display = 'flex';
+                await API.post({ tab: 'SAFETY', action: 'delete', primaryId: id });
+                init();
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>
