@@ -6,87 +6,82 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="../../api.js"></script>
     <style>
-        body { background: transparent; color: #f1f5f9; }
-        .industrial-card { background: rgba(30, 41, 59, 0.4); border: 1px solid rgba(255,255,255,0.05); }
+        body { background: transparent; color: #c9d1d9; font-family: sans-serif; }
+        .card { @apply bg-white/5 border border-white/10 rounded-2xl p-5 hover:border-sky-500/50 transition-all; }
+        input, select { @apply w-full bg-white/5 border border-white/10 rounded-xl p-3 outline-none focus:border-sky-500 text-sm; }
     </style>
 </head>
 <body class="p-6">
-    
     <div class="flex justify-between items-center mb-8">
-        <div class="flex flex-col">
-            <h1 class="text-2xl font-bold">List Units</h1>
-            <p class="text-xs text-slate-500 font-mono">Master data for all organizational units</p>
+        <div>
+            <h1 class="text-2xl font-bold">Units</h1>
+            <p class="text-xs opacity-50">Manage operational unit metadata</p>
         </div>
-        <button onclick="openModal()" class="bg-sky-500 hover:bg-sky-600 text-white px-5 py-2.5 rounded-xl flex items-center gap-2 font-bold transition shadow-lg shadow-sky-500/20">
-            <i data-lucide="plus-circle" class="w-5 h-5"></i> Add New Unit
+        <button onclick="openModal()" class="bg-sky-500 hover:bg-sky-400 text-white px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 text-sm shadow-lg shadow-sky-500/20">
+            <i data-lucide="plus" size="18"></i> Add Unit
         </button>
     </div>
 
-    <!-- Grid Container -->
-    <div id="data-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        <!-- Skeleton Loading -->
-        <div class="industrial-card p-6 rounded-2xl animate-pulse h-40"></div>
-        <div class="industrial-card p-6 rounded-2xl animate-pulse h-40"></div>
+    <div id="grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Dynamic Cards -->
+    </div>
+
+    <!-- Modal Form -->
+    <div id="modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4">
+        <div class="bg-[#161b22] border border-white/10 w-full max-w-md rounded-3xl p-8 shadow-2xl">
+            <h2 id="m-title" class="text-xl font-bold mb-6">New Unit</h2>
+            <div class="space-y-4">
+                <input id="f-code" placeholder="Unit Code (Primary ID)">
+                <input id="f-desc" placeholder="Unit Description">
+                <input id="f-leader" placeholder="Unit Leader">
+            </div>
+            <div class="flex gap-3 mt-8">
+                <button onclick="save()" id="save-btn" class="flex-1 bg-sky-500 p-3 rounded-xl font-bold">Confirm</button>
+                <button onclick="closeModal()" class="flex-1 bg-white/5 p-3 rounded-xl font-bold">Cancel</button>
+            </div>
+        </div>
     </div>
 
     <script>
-        lucide.createIcons();
-        let allData = [];
-
-        async function refreshData() {
+        let isEdit = false;
+        async function load() {
             const res = await API.get('UNIT');
-            allData = res.data;
-            render();
+            const grid = document.getElementById('grid');
+            if(res.status === 'success') {
+                grid.innerHTML = res.data.map(u => `
+                    <div class="card group">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="bg-sky-500/10 text-sky-400 px-3 py-1 rounded-lg text-[10px] font-mono font-bold uppercase tracking-tighter">${u.UnitCode}</div>
+                            <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                                <button onclick="editItem('${u.UnitCode}','${u.UnitDesc}','${u.UnitLeader}')" class="p-2 hover:bg-white/10 rounded-lg text-yellow-500"><i data-lucide="edit-3" size="14"></i></button>
+                                <button onclick="delItem('${u.UnitCode}')" class="p-2 hover:bg-white/10 rounded-lg text-red-500"><i data-lucide="trash-2" size="14"></i></button>
+                            </div>
+                        </div>
+                        <h3 class="text-lg font-bold">${u.UnitDesc}</h3>
+                        <p class="text-xs opacity-50 mt-1 flex items-center gap-2"><i data-lucide="user" size="12"></i> ${u.UnitLeader}</p>
+                    </div>
+                `).join('');
+                lucide.createIcons();
+            }
         }
 
-        function render() {
-            const grid = document.getElementById('data-grid');
-            grid.innerHTML = allData.map((item, index) => `
-                <div class="industrial-card p-6 rounded-2xl group hover:border-sky-500/50 transition duration-300 relative">
-                    <div class="flex justify-between items-start mb-4">
-                        <div class="bg-sky-500/10 text-sky-400 font-mono text-[10px] px-2 py-1 rounded border border-sky-500/20">
-                            ${item.UnitCode}
-                        </div>
-                        <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition">
-                            <button onclick="editItem(${index})" class="p-1.5 hover:bg-white/5 rounded text-slate-400 hover:text-white"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
-                            <button onclick="deleteItem(${index})" class="p-1.5 hover:bg-white/5 rounded text-red-400/50 hover:text-red-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                        </div>
-                    </div>
-                    <h3 class="text-lg font-bold mb-1 truncate">${item.UnitDesc}</h3>
-                    <div class="flex items-center gap-2 text-slate-500 text-sm">
-                        <i data-lucide="user-check" class="w-4 h-4 text-sky-500/50"></i>
-                        <span>${item.UnitLeader}</span>
-                    </div>
-                </div>
-            `).join('');
-            lucide.createIcons();
+        async function save() {
+            Swal.fire({ title: 'Processing...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            const payload = {
+                tab: 'UNIT',
+                action: isEdit ? 'update' : 'add',
+                primaryId: document.getElementById('f-code').value,
+                UnitCode: document.getElementById('f-code').value,
+                UnitDesc: document.getElementById('f-desc').value,
+                UnitLeader: document.getElementById('f-leader').value
+            };
+            const res = await API.post(payload);
+            Swal.close();
+            if(res.status === 'success') {
+                Swal.fire('Success', 'Data synchronized', 'success');
+                closeModal(); load();
+            }
         }
 
-        async function openModal(isEdit = false, index = null) {
-            const { value: formValues } = await Swal.fire({
-                title: isEdit ? 'Update Unit' : 'New Unit Entry',
-                background: '#0f172a',
-                color: '#f1f5f9',
-                html: `
-                    <input id="swal-input1" class="swal2-input bg-slate-800 border-slate-700 text-white" placeholder="Unit Code" value="${isEdit ? allData[index].UnitCode : ''}">
-                    <input id="swal-input2" class="swal2-input bg-slate-800 border-slate-700 text-white" placeholder="Unit Description" value="${isEdit ? allData[index].UnitDesc : ''}">
-                    <input id="swal-input3" class="swal2-input bg-slate-800 border-slate-700 text-white" placeholder="Unit Leader Name" value="${isEdit ? allData[index].UnitLeader : ''}">
-                `,
-                focusConfirm: false,
-                showCancelButton: true,
-                confirmButtonText: 'Submit Data',
-                confirmButtonColor: '#0ea5e9',
-                preConfirm: () => {
-                    return {
-                        UnitCode: document.getElementById('swal-input1').value,
-                        UnitDesc: document.getElementById('swal-input2').value,
-                        UnitLeader: document.getElementById('swal-input3').value
-                    }
-                }
-            });
-
-            if (formValues) {
-                Swal.fire({ title: 'Processing...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-                const res = await API.post({
-                    tab: 'UNIT',
-                    action: isEdit ? 'edit' : 'add',
+        async function delItem(id) {
+            const confirm = await Swal.fire({ title: 'Delete?', text: "Thi
