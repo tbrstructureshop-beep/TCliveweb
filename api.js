@@ -8,19 +8,22 @@ const CONFIG = {
 
 const API = {
     async get(tab) {
-        const resp = await fetch(`${CONFIG.API_URL}?action=read&tab=${tab}`);
-        return await resp.json();
+        try {
+            const resp = await fetch(`${CONFIG.API_URL}?action=read&tab=${tab}`);
+            return await resp.json();
+        } catch (e) { console.error(e); return {status: 'error'}; }
     },
 
     async post(payload) {
-        const resp = await fetch(CONFIG.API_URL, {
-            method: 'POST',
-            body: JSON.stringify(payload)
-        });
-        return await resp.json();
+        try {
+            const resp = await fetch(CONFIG.API_URL, {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            });
+            return await resp.json();
+        } catch (e) { console.error(e); return {status: 'error'}; }
     },
 
-    // Helper Convert File ke Base64
     toBase64: (file) => new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.readAsDataURL(file);
