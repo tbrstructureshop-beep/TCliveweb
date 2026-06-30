@@ -1,1 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="../../api.js"></script>
+    <style>
+        :root { --bg: #0b0e14; --panel: #151921; --border: rgba(255,255,255,0.1); --accent: #0ea5e9; }
+        body { background: transparent; color: #94a3b8; font-family: 'Inter', sans-serif; overflow-x: hidden; }
+        
+        .unit-section { border-left: 2px solid var(--accent); @apply mb-10 pl-6; }
+        .attendance-card { background: rgba(255,255,255,0.03); border: 1px solid var(--border); @apply rounded-[2rem] p-6 mb-4 hover:border-sky-500/30 transition-all; }
+        
+        .input-field { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--border); @apply rounded-xl p-3 outline-none focus:border-sky-500 text-white text-sm transition-all; }
+        .label-style { text-transform: uppercase; font-size: 10px; font-weight: 700; opacity: 0.4; @apply mb-1 block tracking-widest; }
+        
+        /* Slider Styling */
+        input[type=range] { @apply h-1.5 w-full bg-white/10 rounded-lg appearance-none cursor-pointer accent-sky-500; }
+        
+        #local-loader { display: none; position: fixed; inset: 0; background: rgba(11, 14, 20, 0.9); backdrop-filter: blur(8px); z-index: 100; flex-direction: column; align-items: center; justify-content: center; }
 
+        .list-item { background: rgba(255,255,255,0.02); border: 1px solid var(--border); @apply rounded-xl p-3 mb-2 flex justify-between items-center; }
+        
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: #262c36; border-radius: 10px; }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div id="local-loader">
+        <div class="flex flex-col items-center gap-3">
+            <div class="w-12 h-12 border-4 border-sky-500/10 border-t-sky-500 rounded-full animate-spin"></div>
+            <span class="text-[10px] font-mono uppercase tracking-[0.4em] text-sky-500 animate-pulse font-bold">Syncing_Attendance...</span>
+        </div>
+    </div>
+
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-10">
+        <div>
+            <h1 class="text-2xl font-bold text-white tracking-tight uppercase text-sky-500">Node Attendance</h1>
+            <p class="text-xs opacity-50 font-mono mt-1 uppercase tracking-tighter">Manpower availability & utilization metrics</p>
+        </div>
+        <button onclick="openModal()" class="bg-sky-600 hover:bg-sky-500 text-white px-6 py-3 rounded-2xl font-bold text-sm flex items-center gap-2 shadow-lg shadow-sky-600/20 transition-all active:scale-95">
+            <i data-lucide="plus" size="18"></i> LOG ATTENDANCE
+        </button>
+    </div>
+
+    <div id="main-container">
+        <!-- Grouped by Unit -->
+    </div>
+
+    <!-- MODAL -->
+    <div id="attend-modal" class="fixed inset-0 bg-black/90 backdrop-blur-md hidden flex items-center justify-center z-[110] p-4">
+        <div class="bg-[#151921] border border-white/10 rounded-[2.5rem] w-full max-w-4xl shadow-2xl flex flex-col max-h-[90vh]">
+            <div class="p-6 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
+                <h3 class="text-xl font-bold text-white uppercase tracking-widest">Attendance Logger</h3>
+                <button onclick="closeModal()" class="p-2 hover:bg-white/5 rounded-full transition text-white/50 hover:text-white"><i data-lucide="x"></i></button>
+            </div>
+            
+            <form id="attend-form" class="p-8 overflow-y-auto grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Section 1: Core Data -->
+                <div class="space-y-4">
+                    <h4 class="text-sky-500 text-xs font-bold uppercase tracking-widest border-b border-white/5 pb-2">Unit & Capacity</h4>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="label-style">Select Unit</label>
+                            <select id="UnitCode" name="UnitCode" required class="input-field" onchange="syncManpower()"></select>
+                        </div>
+                        <div>
+                            <label class="label-style">Select Shift</label>
+                            <select id="ShiftCategory" name="ShiftCategory" required class="input-field" onchange="syncManpower()">
+                                <option value="" disabled selected>Select...</option>
+                                <option>Day</option><option>Night</option><option>Swing</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="bg-white/5 p-4 rounded-2xl border border-white/5 flex justify-between">
+                        <div><span class="label-style">Total Member</span><span id="display-total" class="text-xl font-bold text-white font-mono">0</span></div>
+                        <div class="text-right text-emerald-400">
+                            <span class="label-style">Availability</span>
+                            <span id="display-avail" class="text-xl font-bold font-mono">0%</span>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="label-style">Present (Hadir)</label>
+                            <input type="number" id="Hadir" name="Hadir" required value="0" class="input-field text-center font-bold text-xl" oninput="calculateAttendance()">
+                        </div>
+                        <div>
+                            <label class="label-style">Absent (Absen)</label>
+                            <input type="number" id="Absen" name="Absen" readonly class="input-field text-center font-bold text-xl opacity-50">
+                        </div>
+                    </div>
+                    <div class="pt-4">
+                        <label class="label-style">Utilization: <span id="val-util" class="text-sky-400 font-mono">50</span>%</label>
+                        <input type="range" id="Utilization" name="Utilization" min="0" max="100" value="50" oninput="document.getElementById('val-util').innerText=this.value">
+                    </div>
+                </div>
+
+                <!-- Section 2: Absen Details & Lists -->
+                <div class="space-y-6">
+                    <div>
+                        <h4 class="text-sky-500 text-xs font-bold uppercase tracking-widest mb-3">Absence Details</h4>
+                        <div class="flex gap-2 mb-3">
+                            <input id="abs-name" placeholder="Name" class="input-field">
+                            <select id="abs-status" class="input-field w-32">
+                                <option>Sick</option><option>Leave</option><option>Other</option><option>End Contract</option>
+                            </select>
+                            <button type="button" onclick="addAbsenItem()" class="bg-sky-500 px-4 rounded-xl text-white"><i data-lucide="plus"></i></button>
+                        </div>
+                        <div id="list-absen" class="max-h-24 overflow-y-auto"></div>
+                    </div>
+
+                    <div>
+                        <h4 class="text-sky-500 text-xs font-bold uppercase tracking-widest mb-3">Inspectors (<span id="count-insp">0</span>)</h4>
+                        <div class="flex gap-2 mb-3">
+                            <input id="insp-name" placeholder="Inspector Name" class="input-field">
+                            <input id="insp-job" placeholder="Task" class="input-field">
+                            <button type="button" onclick="addInspItem()" class="bg-sky-500 px-4 rounded-xl text-white"><i data-lucide="plus"></i></button>
+                        </div>
+                        <div id="list-insp" class="max-h-24 overflow-y-auto"></div>
+                    </div>
+
+                    <div>
+                        <h4 class="text-sky-500 text-xs font-bold uppercase tracking-widest mb-3">Overtime Request</h4>
+                        <div class="flex gap-2 mb-3">
+                            <input id="ot-name" placeholder="Name" class="input-field">
+                            <input id="ot-job" placeholder="Job" class="input-field w-24">
+                            <input id="ot-hour" type="number" placeholder="Hr" class="input-field w-16">
+                            <button type="button" onclick="addOTItem()" class="bg-sky-500 px-4 rounded-xl text-white"><i data-lucide="plus"></i></button>
+                        </div>
+                        <div id="list-ot" class="max-h-24 overflow-y-auto"></div>
+                    </div>
+                </div>
+
+                <div class="md:col-span-2 space-y-2">
+                    <label class="label-style">Highlight Note</label>
+                    <textarea name="HighlightManpower" class="input-field h-16 resize-none" placeholder="Important notes..."></textarea>
+                </div>
+
+                <div class="md:col-span-2 flex gap-3 pt-4 border-t border-white/5">
+                    <button type="submit" class="flex-1 bg-sky-600 py-4 rounded-2xl font-bold text-white hover:bg-sky-500 transition-all uppercase tracking-widest text-xs">Commit Record</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+        const loader = document.getElementById('local-loader');
+        let shiftData = [];
+        let absentees = [];
+        let inspectors = [];
+        let overtimes = [];
+
+        async function init() {
+            loader.style.display = 'flex';
+            try {
+                // Fetch Units
+                const unitRes = await API.get('UNIT');
+                document.getElementById('UnitCode').innerHTML = '<option value="" disabled selected>Unit...</option>' + 
+                    unitRes.data.map(u => `<option value="${u.UnitCode}">${u.UnitCode}</option>`).join('');
+
+                // Fetch Shifts for Manpower Reference
+                const shiftRes = await API.get('SHIFTS');
+                shiftData = shiftRes.data;
+
+                // Load Attendance Records
+                const attendRes = await API.get('ATTENDANCE');
+                renderAttendance(attendRes.data);
+            } catch (e) {
+                Swal.fire('Node Error', 'Communication Failed', 'error');
+            } finally {
+                loader.style.display = 'none';
+            }
+        }
+
+        function syncManpower() {
+            const u = document.getElementById('UnitCode').value;
+            const s = document.getElementById('ShiftCategory').value;
+            const match = shiftData.find(sd => sd.UnitCode === u && sd.ShiftCategory === s);
+            const total = match ? parseInt(match.TotalManpower) : 0;
+            document.getElementById('display-total').innerText = total;
+            calculateAttendance();
+        }
+
+        function calculateAttendance() {
+            const total = parseInt(document.getElementById('display-total').innerText) || 0;
+            const hadir = parseInt(document.getElementById('Hadir').value) || 0;
+            const absen = Math.max(0, total - hadir);
+            const avail = total > 0 ? ((hadir / total) * 100).toFixed(1) : 0;
+            
+            document.getElementById('Absen').value = absen;
+            document.getElementById('display-avail').innerText = avail + '%';
+        }
+
+        // List Handlers
+        function addAbsenItem() {
+            const n = document.getElementById('abs-name').value;
+            const s = document.getElementById('abs-status').value;
+            if(!n) return;
+            absentees.push({ name: n, status: s });
+            renderList('list-absen', absentees);
+            document.getElementById('abs-name').value = '';
+        }
+
+        function addInspItem() {
+            const n = document.getElementById('insp-name').value;
+            const j = document.getElementById('insp-job').value;
+            if(!n) return;
+            inspectors.push({ name: n, job: j });
+            renderList('list-insp', inspectors);
+            document.getElementById('count-insp').innerText = inspectors.length;
+            document.getElementById('insp-name').value = '';
+        }
+
+        function addOTItem() {
+            const n = document.getElementById('ot-name').value;
+            const j = document.getElementById('ot-job').value;
+            const h = document.getElementById('ot-hour').value;
+            if(!n) return;
+            overtimes.push({ name: n, job: j, hour: h, status: 'Open Review' });
+            renderList('list-ot', overtimes);
+            document.getElementById('ot-name').value = '';
+        }
+
+        function renderList(id, arr) {
+            const container = document.getElementById(id);
+            container.innerHTML = arr.map((item, i) => `
+                <div class="list-item">
+                    <span class="text-xs text-white/80">${item.name} <span class="opacity-30">(${item.status || item.job})</span></span>
+                    <button type="button" onclick="removeItem('${id}', ${i})" class="text-red-500/50 hover:text-red-500"><i data-lucide="trash-2" size="14"></i></button>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function removeItem(id, index) {
+            if(id === 'list-absen') absentees.splice(index, 1);
+            if(id === 'list-insp') { inspectors.splice(index, 1); document.getElementById('count-insp').innerText = inspectors.length; }
+            if(id === 'list-ot') overtimes.splice(index, 1);
+            renderList(id, id === 'list-absen' ? absentees : id === 'list-insp' ? inspectors : overtimes);
+        }
+
+        // Logic for Rendering Cards
+        function renderAttendance(data) {
+            const container = document.getElementById('main-container');
+            const grouped = data.reduce((acc, item) => {
+                if(!acc[item.UnitCode]) acc[item.UnitCode] = [];
+                acc[item.UnitCode].push(item);
+                return acc;
+            }, {});
+
+            container.innerHTML = Object.keys(grouped).map(uCode => `
+                <div class="unit-section">
+                    <div class="flex items-center gap-2 mb-6">
+                        <i data-lucide="factory" class="text-sky-500" size="16"></i>
+                        <h2 class="text-white font-bold tracking-widest uppercase">${uCode}</h2>
+                    </div>
+                    <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                        ${grouped[uCode].reverse().map(item => {
+                            const detailAbsen = JSON.parse(item.DetailAbsen || '[]');
+                            const detailInsp = JSON.parse(item.DetailInspectorName || '[]');
+                            return `
+                                <div class="attendance-card">
+                                    <div class="flex justify-between items-start mb-4">
+                                        <div class="bg-sky-500/10 px-3 py-1 rounded-lg text-[10px] font-mono text-sky-400">${item.Timestamp}</div>
+                                        <div class="text-right">
+                                            <span class="text-[10px] uppercase font-bold opacity-30 block">Availability</span>
+                                            <span class="text-emerald-400 font-bold">${item.Availability}%</span>
+                                        </div>
+                                    </div>
+                                    <div class="grid grid-cols-4 gap-4 border-b border-white/5 pb-4 mb-4">
+                                        <div class="text-center"><span class="label-style">Hadir</span><span class="text-white font-bold">${item.Hadir}</span></div>
+                                        <div class="text-center"><span class="label-style">Absen</span><span class="text-red-500 font-bold">${item.Absen}</span></div>
+                                        <div class="text-center"><span class="label-style">Utilize</span><span class="text-sky-400 font-bold">${item.Utilization}%</span></div>
+                                        <div class="text-center"><span class="label-style">Insp</span><span class="text-yellow-500 font-bold">${item.InspectorNo}</span></div>
+                                    </div>
+                                    <div class="space-y-1">
+                                        <span class="label-style">Absent Detail</span>
+                                        <p class="text-[10px] text-white/50 italic">${detailAbsen.map(a => `${a.name}(${a.status})`).join(', ') || 'No Absences'}</p>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function openModal() { document.getElementById('attend-modal').classList.remove('hidden'); }
+        function closeModal() { 
+            document.getElementById('attend-modal').classList.add('hidden'); 
+            document.getElementById('attend-form').reset();
+            absentees = []; inspectors = []; overtimes = [];
+            renderList('list-absen', []); renderList('list-insp', []); renderList('list-ot', []);
+        }
+
+        document.getElementById('attend-form').onsubmit = async (e) => {
+            e.preventDefault();
+            loader.style.display = 'flex';
+            
+            const formData = new FormData(e.target);
+            const payload = {
+                tab: 'ATTENDANCE', action: 'add',
+                DetailAbsen: JSON.stringify(absentees),
+                DetailInspectorName: JSON.stringify(inspectors),
+                PermintaanOvertime: JSON.stringify(overtimes),
+                Availability: document.getElementById('display-avail').innerText.replace('%',''),
+                InspectorNo: inspectors.length
+            };
+            formData.forEach((v, k) => payload[k] = v);
+
+            const res = await API.post(payload);
+            if(res.status === 'success') {
+                Swal.fire({ icon: 'success', title: 'Logged', toast: true, position: 'top-right', showConfirmButton: false, timer: 1500 });
+                closeModal(); init();
+            } else {
+                loader.style.display = 'none';
+                Swal.fire('Error', res.message, 'error');
+            }
+        };
+
+        init();
+    </script>
+</body>
+</html>
