@@ -1,23 +1,30 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbw40HJB0edUo3T_uEXLF4fG-cW1Bl4vHuhng1VBlC2p6uby1BDOjvyBn3bZ-vGLHqk3gg/exec";
+/**
+ * TC WEB LIVE - CENTRALIZED API ENGINE
+ */
+const CONFIG = {
+    API_URL: "https://script.google.com/macros/s/AKfycbw40HJB0edUo3T_uEXLF4fG-cW1Bl4vHuhng1VBlC2p6uby1BDOjvyBn3bZ-vGLHqk3gg/exec",
+    DRIVE_BASE: "https://lh3.googleusercontent.com/d/"
+};
 
-const IndustrialAPI = {
-    // Standardized GET
-    async fetch(action) {
-        const response = await fetch(`${API_URL}?action=${action}`);
-        return await response.json();
+const API = {
+    async get(tab) {
+        const resp = await fetch(`${CONFIG.API_URL}?action=read&tab=${tab}`);
+        return await resp.json();
     },
 
-    // Standardized POST
-    async submit(action, data) {
-        const response = await fetch(`${API_URL}?action=${action}`, {
+    async post(payload) {
+        const resp = await fetch(CONFIG.API_URL, {
             method: 'POST',
-            body: JSON.stringify(data)
+            body: JSON.stringify(payload)
         });
-        return await response.json();
+        return await resp.json();
     },
 
-    // Drive Thumbnail Helper
-    getImg(id) {
-        return id ? `https://lh3.googleusercontent.com/d/${id}` : 'https://via.placeholder.com/150?text=No+Image';
-    }
+    // Helper Convert File ke Base64
+    toBase64: (file) => new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+    })
 };
