@@ -3,301 +3,178 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shifts Management</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="../../api.js"></script>
     <style>
-        :root { --bg: #0b0e14; --panel: #151921; --border: #262c36; --accent: #0ea5e9; }
-        body { background: transparent; color: #94a3b8; font-family: 'Inter', sans-serif; overflow-x: hidden; }
-        .industrial-card { @apply bg-white/[0.03] border border-white/5 rounded-3xl p-6 hover:border-sky-500/30 transition-all duration-300; }
-        .input-field { @apply w-full bg-white/5 border border-white/10 rounded-xl p-3 outline-none focus:border-sky-500 text-white text-sm transition-all; }
-        .label-style { @apply text-[10px] uppercase font-bold opacity-40 mb-1 block tracking-widest; }
-        
-        /* Custom Loading Overlay */
-        #local-loader {
-            display: none;
-            background: rgba(11, 14, 20, 0.7);
-            backdrop-filter: blur(4px);
-            z-index: 100;
+        :root {
+            --bg: #0b0e14; --panel: #151921; --border: #262c36; --accent: #0ea5e9;
         }
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-thumb { background: #262c36; border-radius: 10px; }
+        body { background: transparent; color: #94a3b8; font-family: 'Inter', sans-serif; }
+        .industrial-card { 
+            background: rgba(21, 25, 33, 0.6);
+            border: 1px solid var(--border);
+            backdrop-filter: blur(10px);
+        }
+        .shift-row { border-bottom: 1px solid rgba(255,255,255,0.03); }
+        .shift-row:last-child { border-bottom: none; }
+        
+        input, select { 
+            @apply w-full bg-white/5 border border-white/10 rounded-xl p-3 outline-none focus:border-sky-500 transition-all text-white text-sm;
+        }
+        label { @apply text-[10px] uppercase font-bold opacity-40 tracking-widest mb-1 block; }
+
+        /* Local Loader */
+        #local-loader {
+            display: none; background: rgba(11, 14, 20, 0.8);
+            backdrop-filter: blur(4px); z-index: 100;
+        }
     </style>
 </head>
 <body class="p-4 md:p-8">
 
-    <!-- LOCAL LOADER -->
+    <!-- LOCAL BLOCKING LOADER -->
     <div id="local-loader" class="fixed inset-0 flex items-center justify-center">
         <div class="flex flex-col items-center gap-3">
             <div class="w-10 h-10 border-4 border-sky-500/20 border-t-sky-500 rounded-full animate-spin"></div>
-            <span class="text-[10px] font-mono uppercase tracking-widest text-sky-500">Syncing_Data...</span>
+            <span class="text-[10px] font-mono uppercase tracking-[0.3em] text-sky-500">Syncing_Data</span>
         </div>
     </div>
 
     <!-- HEADER -->
-    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-10">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>
-            <h1 class="text-2xl font-bold text-white tracking-tight uppercase">Shift Configuration</h1>
-            <p class="text-xs opacity-50 font-mono mt-1 uppercase tracking-tighter">Manage Unit Work-Cycles & Personnel</p>
+            <h1 class="text-2xl font-bold text-white uppercase tracking-tighter">Shift Schedules</h1>
+            <p class="text-xs opacity-50 font-mono">NODE_02 // MANPOWER_LOGISTICS</p>
         </div>
-        <button onclick="openModal('add')" class="bg-sky-600 hover:bg-sky-500 text-white px-6 py-3 rounded-2xl font-bold text-sm flex items-center gap-2 shadow-lg shadow-sky-600/20 transition-all active:scale-95">
-            <i data-lucide="plus-circle" size="18"></i> CONFIGURE SHIFT
+        <button onclick="openModal('add')" class="bg-sky-500 hover:bg-sky-400 text-white px-6 py-3 rounded-2xl font-bold text-xs flex items-center gap-2 shadow-lg shadow-sky-500/20 transition-all active:scale-95">
+            <i data-lucide="plus" size="16"></i> CREATE NEW SHIFT
         </button>
     </div>
 
-    <!-- GRID CONTAINER -->
-    <div id="shift-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        <!-- Cards injected here -->
+    <!-- DATA GRID (Merged by Unit) -->
+    <div id="shift-grid" class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+        <!-- Rendered via JS -->
     </div>
 
     <!-- MODAL FORM -->
-    <div id="shift-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center z-[110] p-4">
-        <div class="bg-[#151921] border border-white/10 rounded-[2rem] w-full max-w-xl shadow-2xl overflow-hidden">
-            <div class="p-6 border-b border-white/5 flex justify-between items-center">
-                <div>
-                    <h3 id="modal-title" class="text-xl font-bold text-white uppercase tracking-widest">New Shift Entry</h3>
-                    <p class="text-[10px] opacity-40 uppercase tracking-tighter">Specify operational timing parameters</p>
-                </div>
-                <button onclick="closeModal()" class="p-2 hover:bg-white/5 rounded-full transition text-white/50 hover:text-white"><i data-lucide="x"></i></button>
+    <div id="shift-modal" class="fixed inset-0 bg-black/90 backdrop-blur-sm hidden items-center justify-center z-[110] p-4">
+        <div class="industrial-card w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl border-sky-500/20">
+            <div class="p-6 border-b border-white/5 flex justify-between items-center bg-white/5">
+                <h3 id="modal-title" class="text-lg font-bold text-white uppercase tracking-widest">New Shift Entry</h3>
+                <button onclick="closeModal()" class="text-white/30 hover:text-white transition"><i data-lucide="x"></i></button>
             </div>
             
-            <form id="shift-form" class="p-8 grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <form id="shift-form" class="p-8 space-y-4">
                 <input type="hidden" id="primaryId">
                 
-                <div class="sm:col-span-2">
-                    <label class="label-style">Target Operational Unit</label>
-                    <select id="UnitCode" name="UnitCode" required class="input-field appearance-none">
-                        <option value="" disabled selected>Select Active Unit...</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label class="label-style">Shift Category Name</label>
-                    <input id="ShiftCategory" name="ShiftCategory" required placeholder="e.g. Morning Alpha" class="input-field">
-                </div>
-
-                <div>
-                    <label class="label-style">Total Manpower</label>
-                    <input type="number" id="TotalManpower" name="TotalManpower" required placeholder="0" class="input-field">
-                </div>
-
-                <div>
-                    <label class="label-style">Shift Start (24H)</label>
-                    <input type="time" id="TimeStart" name="TimeStart" required class="input-field">
-                </div>
-
-                <div>
-                    <label class="label-style">Shift End (24H)</label>
-                    <input type="time" id="TimeEnd" name="TimeEnd" required class="input-field">
-                </div>
-
-                <div>
-                    <label class="label-style">Effective From</label>
-                    <input type="date" id="EffectiveFrom" name="EffectiveFrom" required class="input-field">
-                </div>
-
-                <div>
-                    <label class="label-style">Effective Until</label>
-                    <input type="date" id="EffectiveUntil" name="EffectiveUntil" required class="input-field">
-                </div>
-
-                <div class="sm:col-span-2">
-                    <label class="label-style">Shift Leader Name</label>
-                    <div class="relative">
-                        <i data-lucide="user" size="16" class="absolute left-3 top-3.5 opacity-30"></i>
-                        <input id="LeaderName" name="LeaderName" required placeholder="Full Name" class="input-field pl-10">
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="col-span-2">
+                        <label>Target Unit</label>
+                        <select id="UnitCode" name="UnitCode" required></select>
+                    </div>
+                    <div>
+                        <label>Shift Name (e.g. Night)</label>
+                        <input type="text" id="ShiftCategory" name="ShiftCategory" placeholder="SHIFT NAME" required>
+                    </div>
+                    <div>
+                        <label>Total Manpower</label>
+                        <input type="number" id="TotalManpower" name="TotalManpower" placeholder="0" required>
+                    </div>
+                    <div>
+                        <label>Time Start</label>
+                        <input type="time" id="TimeStart" name="TimeStart" required>
+                    </div>
+                    <div>
+                        <label>Time End</label>
+                        <input type="time" id="TimeEnd" name="TimeEnd" required>
+                    </div>
+                    <div>
+                        <label>Effective From</label>
+                        <input type="date" id="EffectiveFrom" name="EffectiveFrom" required>
+                    </div>
+                    <div>
+                        <label>Effective Until</label>
+                        <input type="date" id="EffectiveUntil" name="EffectiveUntil" required>
+                    </div>
+                    <div class="col-span-2">
+                        <label>Shift Leader Name</label>
+                        <input type="text" id="LeaderName" name="LeaderName" placeholder="ENTER FULL NAME" required>
                     </div>
                 </div>
 
-                <div class="sm:col-span-2 flex gap-3 pt-4 border-t border-white/5 mt-2">
-                    <button type="submit" class="flex-1 bg-sky-600 py-4 rounded-2xl font-bold text-white hover:bg-sky-500 transition-all shadow-lg shadow-sky-600/10">COMMIT SHIFT</button>
-                    <button type="button" onclick="closeModal()" class="flex-1 bg-white/5 py-4 rounded-2xl font-bold text-white/50 hover:bg-white/10 transition-all">CANCEL</button>
+                <div class="flex gap-3 pt-6">
+                    <button type="submit" class="flex-1 bg-sky-500 hover:bg-sky-400 py-4 rounded-2xl font-bold text-white text-xs shadow-lg shadow-sky-500/20 transition-all">
+                        CONFIRM DATA
+                    </button>
+                    <button type="button" onclick="closeModal()" class="flex-1 bg-white/5 py-4 rounded-2xl font-bold text-xs hover:bg-white/10 transition-all">
+                        CANCEL
+                    </button>
                 </div>
             </form>
         </div>
     </div>
 
     <script>
-        lucide.createIcons();
-        const loader = document.getElementById('local-loader');
-        let currentUnits = [];
+        let currentAction = 'add';
+        let units = [];
 
-        // Formatting Helpers
-        const formatDate = (dateStr) => {
-            if (!dateStr) return "-";
-            const options = { day: '2-digit', month: 'short', year: 'numeric' };
-            return new Date(dateStr).toLocaleDateString('en-GB', options);
+        const showLoader = (show) => document.getElementById('local-loader').style.display = show ? 'flex' : 'none';
+
+        // Helper: Format Date
+        const fmtDate = (d) => {
+            if(!d) return '-';
+            const date = new Date(d);
+            return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
         };
 
         async function init() {
-            loader.style.display = 'flex';
+            showLoader(true);
             try {
-                // 1. Load Units first to populate selection
+                // Load Units for Dropdown
                 const unitRes = await API.get('UNIT');
-                currentUnits = unitRes.data;
+                units = unitRes.data;
                 const unitSelect = document.getElementById('UnitCode');
-                unitSelect.innerHTML = '<option value="" disabled selected>Select Active Unit...</option>' + 
-                    currentUnits.map(u => `<option value="${u.UnitCode}">${u.UnitCode} - ${u.UnitDesc}</option>`).join('');
+                unitSelect.innerHTML = units.map(u => `<option value="${u.UnitCode}">${u.UnitCode} - ${u.UnitDesc}</option>`).join('');
 
-                // 2. Load Shifts and Merged by UnitCode
-                const shiftRes = await API.get('SHIFTS');
-                renderGroupedShifts(shiftRes.data);
+                await loadShifts();
             } catch (e) {
-                Swal.fire('Error', 'Failed to synchronize with server.', 'error');
+                Swal.fire('Error', 'Failed to initialize session', 'error');
             } finally {
-                loader.style.display = 'none';
+                showLoader(false);
+                lucide.createIcons();
             }
         }
 
-        function renderGroupedShifts(shifts) {
+        async function loadShifts() {
+            const res = await API.get('SHIFTS');
             const grid = document.getElementById('shift-grid');
             
-            // Grouping logic
-            const grouped = shifts.reduce((acc, s) => {
-                if (!acc[s.UnitCode]) acc[s.UnitCode] = [];
-                acc[s.UnitCode].push(s);
+            // Merging Logic by UnitCode
+            const grouped = res.data.reduce((acc, shift) => {
+                if (!acc[shift.UnitCode]) acc[shift.UnitCode] = [];
+                acc[shift.UnitCode].push(shift);
                 return acc;
             }, {});
 
-            if (Object.keys(grouped).length === 0) {
-                grid.innerHTML = `<div class="col-span-full py-20 text-center opacity-30 uppercase tracking-widest text-sm">No Shift Cycles Configured</div>`;
-                return;
-            }
-
             grid.innerHTML = Object.keys(grouped).map(unitCode => {
                 const unitShifts = grouped[unitCode];
+                const unitInfo = units.find(u => u.UnitCode === unitCode) || { UnitDesc: 'Unknown Unit' };
+
                 return `
-                    <div class="industrial-card group">
-                        <div class="flex justify-between items-start mb-6">
-                            <div class="flex items-center gap-3">
-                                <div class="bg-sky-500/20 p-2 rounded-xl text-sky-400">
-                                    <i data-lucide="factory" size="18"></i>
-                                </div>
-                                <div>
-                                    <h2 class="text-white font-black text-lg leading-none">${unitCode}</h2>
-                                    <p class="text-[9px] opacity-40 uppercase tracking-widest mt-1">Operational Cycles</p>
-                                </div>
-                            </div>
-                            <div class="bg-white/5 px-3 py-1 rounded-full text-[10px] font-mono text-sky-500 border border-white/5">${unitShifts.length} SHIFTS</div>
+                <div class="industrial-card rounded-3xl overflow-hidden flex flex-col">
+                    <div class="p-6 bg-white/5 border-b border-white/5 flex justify-between items-center">
+                        <div>
+                            <h3 class="text-white font-bold text-lg leading-none mb-1">${unitCode}</h3>
+                            <p class="text-[10px] opacity-40 uppercase font-bold tracking-widest">${unitInfo.UnitDesc}</p>
                         </div>
-
-                        <div class="space-y-4">
-                            ${unitShifts.map(s => `
-                                <div class="bg-black/20 border border-white/[0.03] rounded-2xl p-4 relative overflow-hidden group/item">
-                                    <div class="flex justify-between items-center mb-2">
-                                        <span class="text-xs font-bold text-white/80">${s.ShiftCategory}</span>
-                                        <div class="flex gap-2">
-                                            <button onclick="editData('${s.UnitCode}', '${s.ShiftCategory}')" class="text-sky-500/30 hover:text-sky-400 transition"><i data-lucide="edit-3" size="14"></i></button>
-                                            <button onclick="deleteData('${s.UnitCode}', '${s.ShiftCategory}')" class="text-red-500/30 hover:text-red-400 transition"><i data-lucide="trash-2" size="14"></i></button>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="flex items-center gap-4 text-white mb-3">
-                                        <div class="flex flex-col">
-                                            <span class="text-[9px] opacity-40 uppercase">Time Block</span>
-                                            <span class="text-sm font-mono font-bold tracking-tighter">${s.TimeStart} - ${s.TimeEnd}</span>
-                                        </div>
-                                        <div class="w-px h-6 bg-white/10"></div>
-                                        <div class="flex flex-col">
-                                            <span class="text-[9px] opacity-40 uppercase">Personnel</span>
-                                            <span class="text-sm font-bold tracking-tighter">${s.TotalManpower} PAX</span>
-                                        </div>
-                                    </div>
-
-                                    <div class="flex justify-between items-end border-t border-white/5 pt-3 mt-1">
-                                        <div>
-                                            <span class="text-[9px] opacity-40 uppercase block mb-0.5">Assigned Leader</span>
-                                            <span class="text-[11px] text-sky-400 font-semibold">${s.LeaderName}</span>
-                                        </div>
-                                        <div class="text-right">
-                                            <span class="text-[8px] opacity-30 block">EFFECTIVE</span>
-                                            <span class="text-[9px] opacity-60 font-mono">${formatDate(s.EffectiveFrom)} - ${formatDate(s.EffectiveUntil)}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            `).join('')}
+                        <div class="h-10 w-10 rounded-full bg-sky-500/10 flex items-center justify-center border border-sky-500/20">
+                            <i data-lucide="layers" class="w-4 h-4 text-sky-400"></i>
                         </div>
                     </div>
-                `;
-            }).join('');
-            lucide.createIcons();
-        }
-
-        // CRUD Actions
-        let currentAction = 'add';
-
-        function openModal(action) {
-            currentAction = action;
-            document.getElementById('shift-modal').classList.remove('hidden');
-            document.getElementById('modal-title').innerText = action === 'add' ? 'New Shift Entry' : 'Update Shift Configuration';
-        }
-
-        function closeModal() {
-            document.getElementById('shift-modal').classList.add('hidden');
-            document.getElementById('shift-form').reset();
-            document.getElementById('primaryId').value = '';
-        }
-
-        document.getElementById('shift-form').onsubmit = async (e) => {
-            e.preventDefault();
-            loader.style.display = 'flex';
-            
-            const formData = new FormData(e.target);
-            const payload = {
-                tab: 'SHIFTS',
-                action: currentAction,
-                primaryId: document.getElementById('primaryId').value || formData.get('UnitCode')
-            };
-            
-            formData.forEach((value, key) => payload[key] = value);
-
-            try {
-                const res = await API.post(payload);
-                if (res.status === 'success') {
-                    Swal.fire({ icon: 'success', title: 'Cycle Synchronized', showConfirmButton: false, timer: 1500, background: '#151921', color: '#fff' });
-                    closeModal();
-                    init();
-                } else {
-                    throw new Error(res.message);
-                }
-            } catch (err) {
-                Swal.fire('Error', err.message, 'error');
-            } finally {
-                loader.style.display = 'none';
-            }
-        };
-
-        async function deleteData(unitId, shiftCat) {
-            const confirm = await Swal.fire({
-                title: 'Delete Shift?',
-                text: `Removing cycle "${shiftCat}" from unit ${unitId}`,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#0ea5e9',
-                cancelButtonColor: '#ef4444',
-                background: '#151921',
-                color: '#fff'
-            });
-
-            if (confirm.isConfirmed) {
-                loader.style.display = 'flex';
-                try {
-                    // Note: Your backend logic uses headers[0] (UnitCode) as primaryId.
-                    // This will delete based on UnitCode as per your current GAS.
-                    await API.post({ tab: 'SHIFTS', action: 'delete', primaryId: unitId });
-                    init();
-                } finally {
-                    loader.style.display = 'none';
-                }
-            }
-        }
-
-        // Note: For Update logic to work specifically on one shift within a unit, 
-        // the backend GAS primaryId logic would need an ID column. 
-        // With current GAS using UnitCode as ID, it updates by UnitCode.
-        
-        init();
-    </script>
-</body>
-</html>
+                    
+                    <div class="flex-1">
+                        ${unitShifts.map(s => `
+                        <div class="shift-row p-6 group hover:bg-sky-500/[0.02] tr
