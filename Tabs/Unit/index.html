@@ -2,105 +2,115 @@
 <html lang="en">
 <head>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="../../api.js"></script>
     <style>
-        body { background: transparent; color: #c9d1d9; font-family: 'Inter', sans-serif; }
-        .industrial-card { @apply bg-white/5 border border-white/10 rounded-2xl p-5 hover:border-sky-500/50 transition-all shadow-xl; }
-        input, select, textarea { @apply w-full bg-white/5 border border-white/10 rounded-xl p-3 outline-none focus:border-sky-500 text-sm text-white; }
-        .loader-overlay { @apply fixed inset-0 z-[200] flex items-center justify-center bg-[#0d1117]; }
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono&display=swap');
+        body { background: transparent; color: #c9d1d9; font-family: 'Inter', sans-serif; overflow-x: hidden; }
+        .industrial-card { @apply bg-white/5 border border-white/10 rounded-2xl p-5 hover:border-sky-500/50 transition-all hover:shadow-[0_0_20px_rgba(14,165,233,0.1)]; }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+        #spinner { @apply fixed inset-0 z-[100] flex items-center justify-center bg-[#0d1117]/80 backdrop-blur-sm transition-opacity duration-300; }
+        input { @apply w-full bg-white/5 border border-white/10 p-3 rounded-xl focus:border-sky-500 outline-none transition-all text-sm; }
     </style>
 </head>
 <body class="p-4 md:p-8">
-    <div id="local-loader" class="loader-overlay">
-        <div class="w-10 h-10 border-4 border-sky-500/20 border-t-sky-500 rounded-full animate-spin"></div>
-    </div>
+    <div id="spinner"><div class="w-10 h-10 border-4 border-sky-500/20 border-t-sky-500 rounded-full animate-spin"></div></div>
 
-    <div class="flex justify-between items-center mb-8">
-        <div><h1 class="text-2xl font-bold uppercase tracking-tighter">Unit Registry</h1></div>
-        <button onclick="openModal('add')" class="bg-sky-600 hover:bg-sky-500 text-white px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-sky-600/20">
-            <i data-lucide="plus"></i> <span class="hidden sm:inline">NEW UNIT</span>
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10">
+        <div><h1 class="text-3xl font-black tracking-tighter text-white uppercase italic">Unit Master</h1><p class="text-xs opacity-50 font-bold tracking-widest uppercase">Operational Headquarters</p></div>
+        <button onclick="openModal('add')" class="w-full md:w-auto bg-sky-600 hover:bg-sky-500 text-white px-8 py-3 rounded-xl font-black text-sm transition-all shadow-[0_4px_15px_rgba(14,165,233,0.3)] flex items-center justify-center gap-3">
+            <i data-lucide="plus-square"></i> INITIALIZE NEW UNIT
         </button>
     </div>
 
-    <div id="grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+    <div id="grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
 
     <!-- MODAL -->
-    <div id="modal" class="fixed inset-0 bg-black/80 backdrop-blur-md hidden flex items-center justify-center z-[100] p-4">
-        <div class="bg-[#161b22] border border-white/10 rounded-3xl w-full max-w-md p-8">
-            <h2 id="modal-title" class="text-xl font-bold mb-6">Add Unit</h2>
-            <form id="main-form" class="space-y-4">
+    <div id="modal" class="fixed inset-0 bg-black/90 backdrop-blur-md hidden flex items-center justify-center z-[110] p-4">
+        <div class="bg-[#161b22] border border-white/10 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl">
+            <div class="p-6 border-b border-white/5 flex justify-between items-center bg-white/5">
+                <h3 id="modal-title" class="text-xl font-black uppercase italic tracking-tighter">Unit Config</h3>
+                <button onclick="closeModal()" class="opacity-30 hover:opacity-100 transition"><i data-lucide="x"></i></button>
+            </div>
+            <form id="form" class="p-8 space-y-5">
                 <input type="hidden" id="primaryId">
-                <div><label class="text-[10px] font-bold opacity-50 ml-1">UNIT CODE</label><input id="UnitCode" required></div>
-                <div><label class="text-[10px] font-bold opacity-50 ml-1">DESCRIPTION</label><input id="UnitDesc" required></div>
-                <div><label class="text-[10px] font-bold opacity-50 ml-1">LEADER NAME</label><input id="UnitLeader" required></div>
-                <div class="flex gap-3 pt-4">
-                    <button type="submit" class="flex-1 bg-sky-600 py-3 rounded-xl font-bold">SAVE</button>
-                    <button type="button" onclick="closeModal()" class="flex-1 bg-white/5 py-3 rounded-xl font-bold">CANCEL</button>
+                <div><label class="text-[10px] font-black opacity-30 uppercase tracking-widest ml-1">Unit Identification</label>
+                <input id="UnitCode" placeholder="E.g. UNIT-01" required></div>
+                <div><label class="text-[10px] font-black opacity-30 uppercase tracking-widest ml-1">Description</label>
+                <input id="UnitDesc" placeholder="Production Line A" required></div>
+                <div><label class="text-[10px] font-black opacity-30 uppercase tracking-widest ml-1">Assigned Leader</label>
+                <input id="UnitLeader" placeholder="Chief Engineer" required></div>
+                <div class="flex gap-4 pt-4">
+                    <button type="submit" class="flex-1 bg-sky-600 py-4 rounded-2xl font-black text-sm tracking-widest uppercase hover:bg-sky-500">Sync Data</button>
+                    <button type="button" onclick="closeModal()" class="flex-1 bg-white/5 py-4 rounded-2xl font-black text-sm tracking-widest uppercase border border-white/10">Abort</button>
                 </div>
             </form>
         </div>
     </div>
 
     <script>
-        let currentAction = 'add';
+        let mode = 'add';
+        const spin = (show) => document.getElementById('spinner').style.opacity = show ? '1' : '0';
+        const toggleSpin = (show) => document.getElementById('spinner').classList.toggle('hidden', !show);
+
         async function load() {
-            document.getElementById('local-loader').classList.remove('hidden');
+            toggleSpin(true);
             const res = await API.get('UNIT');
-            document.getElementById('grid').innerHTML = res.data.map(u => `
+            const grid = document.getElementById('grid');
+            grid.innerHTML = res.data.map(u => `
                 <div class="industrial-card group">
-                    <div class="flex justify-between items-start mb-4">
-                        <span class="bg-sky-500/10 text-sky-400 px-3 py-1 rounded-lg font-mono text-[10px] font-bold">${u.UnitCode}</span>
-                        <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
-                            <button onclick="openModal('update', ${JSON.stringify(u).replace(/"/g, '&quot;')})" class="text-sky-400 p-2 hover:bg-white/5 rounded-lg"><i data-lucide="edit-3" size="16"></i></button>
-                            <button onclick="del('${u.UnitCode}')" class="text-red-500 p-2 hover:bg-white/5 rounded-lg"><i data-lucide="trash-2" size="16"></i></button>
+                    <div class="flex justify-between items-start mb-6">
+                        <span class="mono text-[10px] font-bold text-sky-400 bg-sky-400/10 px-3 py-1 rounded-full border border-sky-400/20">${u.UnitCode}</span>
+                        <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                            <button onclick="openModal('update', '${u.UnitCode}', '${u.UnitDesc}', '${u.UnitLeader}')" class="p-2 hover:bg-sky-500/20 text-sky-400 rounded-lg"><i data-lucide="edit-3" size="14"></i></button>
+                            <button onclick="del('${u.UnitCode}')" class="p-2 hover:bg-red-500/20 text-red-500 rounded-lg"><i data-lucide="trash-2" size="14"></i></button>
                         </div>
                     </div>
-                    <h3 class="text-white font-bold text-lg">${u.UnitDesc}</h3>
-                    <p class="text-xs opacity-50 mt-2 flex items-center gap-2"><i data-lucide="user" size="14"></i> ${u.UnitLeader}</p>
+                    <h2 class="text-xl font-black text-white italic mb-1 uppercase tracking-tighter">${u.UnitDesc}</h2>
+                    <div class="flex items-center gap-2 opacity-40 text-xs font-bold uppercase tracking-widest">
+                        <i data-lucide="user" size="12"></i> ${u.UnitLeader}
+                    </div>
                 </div>
             `).join('');
             lucide.createIcons();
-            document.getElementById('local-loader').classList.add('hidden');
+            toggleSpin(false);
         }
 
-        async function del(id) {
-            const conf = await Swal.fire({ title: 'Delete Unit?', text: id, icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444' });
-            if(conf.isConfirmed) {
-                Swal.fire({ title: 'Processing...', didOpen: () => Swal.showLoading() });
-                await API.post({ tab: 'UNIT', action: 'delete', primaryId: id });
-                load(); Swal.fire('Deleted', '', 'success');
-            }
+        function openModal(m, id='', desc='', leader='') {
+            mode = m; document.getElementById('modal').classList.remove('hidden');
+            document.getElementById('primaryId').value = id;
+            document.getElementById('UnitCode').value = id;
+            document.getElementById('UnitCode').disabled = (m === 'update');
+            document.getElementById('UnitDesc').value = desc;
+            document.getElementById('UnitLeader').value = leader;
         }
 
-        function openModal(action, data = null) {
-            currentAction = action;
-            document.getElementById('modal').classList.remove('hidden');
-            document.getElementById('modal-title').innerText = action === 'add' ? 'Register Unit' : 'Update Unit';
-            document.getElementById('UnitCode').disabled = (action === 'update');
-            if(data) {
-                document.getElementById('primaryId').value = data.UnitCode;
-                document.getElementById('UnitCode').value = data.UnitCode;
-                document.getElementById('UnitDesc').value = data.UnitDesc;
-                document.getElementById('UnitLeader').value = data.UnitLeader;
-            }
-        }
-
-        document.getElementById('main-form').onsubmit = async (e) => {
+        document.getElementById('form').onsubmit = async (e) => {
             e.preventDefault();
-            Swal.fire({ title: 'Saving...', didOpen: () => Swal.showLoading() });
-            const payload = {
-                tab: 'UNIT', action: currentAction, primaryId: document.getElementById('primaryId').value,
+            toggleSpin(true);
+            const p = { tab:'UNIT', action: mode, primaryId: document.getElementById('primaryId').value,
                 UnitCode: document.getElementById('UnitCode').value,
                 UnitDesc: document.getElementById('UnitDesc').value,
                 UnitLeader: document.getElementById('UnitLeader').value
             };
-            await API.post(payload);
-            closeModal(); load(); Swal.fire('Success', 'Unit Synchronized', 'success');
+            const res = await API.post(p);
+            if(res.status === 'success') { 
+                Swal.fire({ icon:'success', title:'Synchronized', background:'#161b22', color:'#fff', toast:true, position:'top-end', showConfirmButton:false, timer:2000 });
+                closeModal(); load(); 
+            }
         };
 
-        function closeModal() { document.getElementById('modal').classList.add('hidden'); document.getElementById('main-form').reset(); }
+        async function del(id) {
+            const ask = await Swal.fire({ title:'Purge Unit?', text:'All associated data will be archived.', icon:'warning', showCancelButton:true, background:'#161b22', color:'#fff', confirmButtonColor:'#ef4444' });
+            if(ask.isConfirmed) {
+                toggleSpin(true);
+                await API.post({ tab:'UNIT', action:'delete', primaryId: id });
+                load();
+            }
+        }
+
+        function closeModal() { document.getElementById('modal').classList.add('hidden'); }
         load();
     </script>
 </body>
