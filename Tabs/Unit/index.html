@@ -8,7 +8,7 @@
             </h1>
             <p class="text-xs font-mono text-gray-500 uppercase tracking-widest">Industrial Asset Management</p>
         </div>
-        <button onclick="openUnitModal()" class="group bg-cyan-600 hover:bg-cyan-500 text-white px-6 py-3 rounded-none skew-x-[-12deg] transition-all flex items-center gap-2 shadow-[4px_4px_0px_0px_rgba(6,182,212,0.3)]">
+        <button onclick="window.openUnitModal()" class="group bg-cyan-600 hover:bg-cyan-500 text-white px-6 py-3 rounded-none skew-x-[-12deg] transition-all flex items-center gap-2 shadow-[4px_4px_0px_0px_rgba(6,182,212,0.3)]">
             <div class="skew-x-[12deg] flex items-center gap-2">
                 <i data-lucide="plus-square" class="w-5 h-5"></i>
                 <span class="font-bold uppercase italic">Register New Unit</span>
@@ -23,48 +23,49 @@
             <span class="text-xs font-mono">SYSTEM STATUS: <span class="text-green-500 italic">NOMINAL</span></span>
         </div>
         <div class="flex-grow">
-            <input type="text" id="unitSearch" placeholder="SEARCH UNIT CODE..." onkeyup="filterUnits()" 
+            <input type="text" id="unitSearch" placeholder="SEARCH UNIT CODE..." onkeyup="window.filterUnits()" 
                 class="w-full bg-black/20 border border-white/10 px-4 py-2 text-xs font-mono focus:outline-none focus:border-cyan-500 transition-colors">
         </div>
     </div>
 
     <!-- Grid Layout -->
     <div id="unit-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <!-- Skeleton Loaders -->
-        <div class="glass p-8 animate-pulse border-white/5"></div>
-        <div class="glass p-8 animate-pulse border-white/5"></div>
-        <div class="glass p-8 animate-pulse border-white/5"></div>
+        <!-- Skeleton Loaders appear while fetching -->
+        <div class="glass p-8 animate-pulse border-white/5 h-48"></div>
+        <div class="glass p-8 animate-pulse border-white/5 h-48"></div>
+        <div class="glass p-8 animate-pulse border-white/5 h-48"></div>
     </div>
 </section>
 
 <!-- Register/Edit Modal -->
 <div id="unitModal" class="fixed inset-0 bg-black/90 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
     <div class="glass w-full max-w-lg p-8 border-t-4 border-cyan-500 relative">
-        <button onclick="closeUnitModal()" class="absolute top-4 right-4 text-gray-500 hover:text-white">
+        <button onclick="window.closeUnitModal()" class="absolute top-4 right-4 text-gray-500 hover:text-white transition-colors">
             <i data-lucide="x" class="w-6 h-6"></i>
         </button>
         
         <h2 id="modalTitle" class="text-2xl font-bold italic uppercase mb-6 tracking-tighter">Register Unit</h2>
         
         <form id="unitForm" class="space-y-4 font-mono text-sm">
+            <!-- Hidden input to identify if we are editing -->
             <input type="hidden" id="editOriginalCode">
             
             <div class="space-y-1">
                 <label class="text-cyan-500 text-[10px] uppercase">Unit Code</label>
-                <input type="text" name="UnitCode" required placeholder="E.G. CNC-01" class="w-full bg-white/5 border border-white/10 p-3 focus:border-cyan-500 outline-none">
+                <input type="text" name="UnitCode" required placeholder="E.G. CNC-01" class="w-full bg-white/5 border border-white/10 p-3 focus:border-cyan-500 outline-none transition-all">
             </div>
             
             <div class="space-y-1">
                 <label class="text-cyan-500 text-[10px] uppercase">Description</label>
-                <textarea name="UnitDesc" required placeholder="UNIT SPECIFICATIONS..." class="w-full bg-white/5 border border-white/10 p-3 focus:border-cyan-500 outline-none h-24"></textarea>
+                <textarea name="UnitDesc" required placeholder="UNIT SPECIFICATIONS..." class="w-full bg-white/5 border border-white/10 p-3 focus:border-cyan-500 outline-none h-24 transition-all"></textarea>
             </div>
 
             <div class="space-y-1">
                 <label class="text-cyan-500 text-[10px] uppercase">Unit Leader</label>
-                <input type="text" name="UnitLeader" required placeholder="OPERATOR NAME" class="w-full bg-white/5 border border-white/10 p-3 focus:border-cyan-500 outline-none">
+                <input type="text" name="UnitLeader" required placeholder="OPERATOR NAME" class="w-full bg-white/5 border border-white/10 p-3 focus:border-cyan-500 outline-none transition-all">
             </div>
 
-            <button type="submit" class="w-full bg-cyan-600 p-4 font-bold uppercase hover:bg-cyan-500 transition-colors mt-4">
+            <button type="submit" id="submitBtn" class="w-full bg-cyan-600 p-4 font-bold uppercase hover:bg-cyan-500 transition-colors mt-4 shadow-[0_0_15px_rgba(6,182,212,0.4)]">
                 Execute Command
             </button>
         </form>
@@ -76,54 +77,9 @@
 
     let unitData = [];
 
-    async function init() {
-        await refreshUnits();
-        lucide.createIcons();
-    }
-
-    async function refreshUnits() {
-        const grid = document.getElementById('unit-grid');
-        unitData = await API.fetch('UNIT');
-        renderGrid(unitData);
-    }
-
-    function renderGrid(data) {
-        const grid = document.getElementById('unit-grid');
-        grid.innerHTML = data.map(unit => `
-            <div class="glass p-6 rounded-xl border-l-4 border-cyan-500 hover:border-white transition-all group relative overflow-hidden">
-                <div class="absolute -right-4 -top-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                    <i data-lucide="layers" class="w-32 h-32"></i>
-                </div>
-                
-                <div class="flex justify-between items-start mb-4">
-                    <span class="text-xs font-mono text-cyan-400 bg-cyan-500/10 px-2 py-1">${unit.UnitCode}</span>
-                    <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onclick="editUnit('${unit.UnitCode}')" class="text-gray-400 hover:text-white"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
-                        <button onclick="deleteUnit('${unit.UnitCode}')" class="text-gray-400 hover:text-red-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                    </div>
-                </div>
-                
-                <h3 class="text-xl font-bold mb-1 uppercase tracking-tight">${unit.UnitDesc}</h3>
-                <p class="text-sm text-gray-400 mb-6 font-mono">LEAD: ${unit.UnitLeader}</p>
-                
-                <div class="flex items-center justify-between text-[10px] font-mono text-gray-500">
-                    <div class="flex items-center gap-2">
-                        <span class="w-2 h-2 rounded-full bg-cyan-500 animate-pulse"></span>
-                        ONLINE_LINKED
-                    </div>
-                    <span>REF: ${unit.UnitCode.toLowerCase()}</span>
-                </div>
-            </div>
-        `).join('');
-        lucide.createIcons();
-    }
-
-    window.filterUnits = () => {
-        const query = document.getElementById('unitSearch').value.toLowerCase();
-        const filtered = unitData.filter(u => u.UnitCode.toLowerCase().includes(query) || u.UnitDesc.toLowerCase().includes(query));
-        renderGrid(filtered);
-    };
-
+    // --- GLOBAL SCOPE ATTACHMENT ---
+    // These must be attached to 'window' because ES Modules create their own scope
+    
     window.openUnitModal = (editData = null) => {
         const modal = document.getElementById('unitModal');
         const form = document.getElementById('unitForm');
@@ -134,9 +90,14 @@
             form.UnitDesc.value = editData.UnitDesc;
             form.UnitLeader.value = editData.UnitLeader;
             document.getElementById('editOriginalCode').value = editData.UnitCode;
+            // Prevent changing the ID code during edit to maintain key integrity
+            form.UnitCode.setAttribute('readonly', true);
+            form.UnitCode.classList.add('opacity-50');
         } else {
             form.reset();
             document.getElementById('editOriginalCode').value = '';
+            form.UnitCode.removeAttribute('readonly');
+            form.UnitCode.classList.remove('opacity-50');
         }
         
         modal.classList.remove('hidden');
@@ -146,6 +107,86 @@
         document.getElementById('unitModal').classList.add('hidden');
     };
 
+    window.filterUnits = () => {
+        const query = document.getElementById('unitSearch').value.toLowerCase();
+        const filtered = unitData.filter(u => 
+            u.UnitCode.toLowerCase().includes(query) || 
+            u.UnitDesc.toLowerCase().includes(query) || 
+            u.UnitLeader.toLowerCase().includes(query)
+        );
+        renderGrid(filtered);
+    };
+
+    window.editUnit = (code) => {
+        const unit = unitData.find(u => u.UnitCode === code);
+        if (unit) window.openUnitModal(unit);
+    };
+
+    window.deleteUnit = async (code) => {
+        if (confirm(`INITIATE DELETION PROTOCOL FOR ${code}?`)) {
+            try {
+                await API.post('UNIT', 'delete', { UnitCode: code });
+                await refreshUnits();
+            } catch (err) {
+                alert("Deletion Failed: System Offline");
+            }
+        }
+    };
+
+    // --- INTERNAL LOGIC ---
+
+    async function refreshUnits() {
+        try {
+            unitData = await API.fetch('UNIT');
+            renderGrid(unitData);
+        } catch (error) {
+            console.error("Fetch Error:", error);
+            document.getElementById('unit-grid').innerHTML = '<div class="text-red-500 font-mono">CONNECTION_ERROR: FAILED TO FETCH DATA</div>';
+        }
+    }
+
+    function renderGrid(data) {
+        const grid = document.getElementById('unit-grid');
+        if (data.length === 0) {
+            grid.innerHTML = '<div class="col-span-full text-center text-gray-500 font-mono py-12">NO RECORDS FOUND</div>';
+            return;
+        }
+
+        grid.innerHTML = data.map(unit => `
+            <div class="glass p-6 rounded-xl border-l-4 border-cyan-500 hover:border-white transition-all group relative overflow-hidden">
+                <div class="absolute -right-4 -top-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                    <i data-lucide="layers" class="w-32 h-32"></i>
+                </div>
+                
+                <div class="flex justify-between items-start mb-4">
+                    <span class="text-xs font-mono text-cyan-400 bg-cyan-500/10 px-2 py-1">${unit.UnitCode}</span>
+                    <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onclick="window.editUnit('${unit.UnitCode}')" class="text-gray-400 hover:text-white transition-colors">
+                            <i data-lucide="edit-3" class="w-4 h-4"></i>
+                        </button>
+                        <button onclick="window.deleteUnit('${unit.UnitCode}')" class="text-gray-400 hover:text-red-500 transition-colors">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <h3 class="text-xl font-bold mb-1 uppercase tracking-tight">${unit.UnitDesc}</h3>
+                <p class="text-sm text-gray-400 mb-6 font-mono tracking-tight">LEAD: ${unit.UnitLeader}</p>
+                
+                <div class="flex items-center justify-between text-[10px] font-mono text-gray-500 border-t border-white/5 pt-4">
+                    <div class="flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-cyan-500 animate-pulse"></span>
+                        ONLINE_SECURE
+                    </div>
+                    <span>REF_ID: ${unit.UnitCode.toLowerCase()}</span>
+                </div>
+            </div>
+        `).join('');
+        lucide.createIcons();
+    }
+
+    // --- FORM HANDLING ---
+
     document.getElementById('unitForm').onsubmit = async (e) => {
         e.preventDefault();
         const formData = new FormData(e.target);
@@ -153,35 +194,25 @@
         const originalCode = document.getElementById('editOriginalCode').value;
         
         const action = originalCode ? 'update' : 'create';
+        const btn = document.getElementById('submitBtn');
         
-        // Add loading state
-        const btn = e.target.querySelector('button');
-        btn.innerText = 'PROCESSING...';
+        // UI Feedback
+        btn.innerText = 'SYNCING...';
         btn.disabled = true;
 
         try {
             await API.post('UNIT', action, payload);
-            closeUnitModal();
+            window.closeUnitModal();
             await refreshUnits();
         } catch (err) {
-            alert('Protocol Error: Failed to write to server.');
+            alert('Protocol Error: Failed to write to master sheet.');
         } finally {
             btn.innerText = 'Execute Command';
             btn.disabled = false;
         }
     };
 
-    window.editUnit = (code) => {
-        const unit = unitData.find(u => u.UnitCode === code);
-        openUnitModal(unit);
-    };
-
-    window.deleteUnit = async (code) => {
-        if (confirm(`INITIATE DELETION PROTOCOL FOR ${code}?`)) {
-            await API.post('UNIT', 'delete', { UnitCode: code });
-            await refreshUnits();
-        }
-    };
-
-    init();
+    // Initialize
+    refreshUnits();
+    lucide.createIcons();
 </script>
