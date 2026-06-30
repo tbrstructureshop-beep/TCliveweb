@@ -1,64 +1,56 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TC WEB LIVE | Industrial OS</title>
+    <title>TC WEB LIVE | Enterprise</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        :root {
-            --bg: #0a0c10; --panel: #161b22; --accent: #2f81f7; --text: #c9d1d9;
-        }
-        .light {
-            --bg: #f6f8fa; --panel: #ffffff; --accent: #0969da; --text: #24292f;
-        }
-        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; transition: 0.3s; }
-        .sidebar { background: var(--panel); border-right: 1px solid rgba(255,255,255,0.1); }
-        .nav-btn { @apply flex items-center gap-3 p-3 rounded-lg transition-all cursor-pointer hover:bg-sky-500/10 opacity-70; }
-        .nav-btn.active { @apply opacity-100 bg-sky-500/20 text-sky-400 border-l-4 border-sky-500; }
-        iframe { border: none; width: 100%; height: 100%; }
+        :root { --panel: #111827; --accent: #0ea5e9; }
+        body { background: #030712; color: #e5e7eb; font-family: 'Inter', sans-serif; transition: 0.3s; }
+        .light body { background: #f3f4f6; color: #1f2937; }
+        .sidebar { background: var(--panel); border-right: 1px solid rgba(255,255,255,0.05); }
+        .nav-link { @apply flex items-center gap-3 p-3 rounded-xl transition-all cursor-pointer opacity-60 hover:opacity-100 hover:bg-sky-500/10; }
+        .nav-link.active { @apply opacity-100 bg-sky-500 text-white shadow-lg shadow-sky-500/20; }
     </style>
 </head>
 <body class="flex h-screen overflow-hidden">
-
-    <!-- SIDEBAR -->
-    <aside class="w-64 sidebar flex flex-col p-4 hidden md:flex">
-        <div class="flex items-center gap-3 mb-8 px-2">
-            <i data-lucide="factory" class="text-sky-500"></i>
-            <span class="font-bold tracking-widest uppercase text-sm">TC Web Live</span>
+    <!-- Sidebar -->
+    <aside id="sidebar" class="w-64 sidebar flex flex-col p-5 transition-all duration-300 z-50 fixed md:relative -left-64 md:left-0 h-full">
+        <div class="flex items-center gap-3 mb-10 px-2">
+            <div class="p-2 bg-sky-500 rounded-lg"><i data-lucide="factory" class="text-white w-5 h-5"></i></div>
+            <span class="font-bold tracking-widest text-sm uppercase">TC Web Live</span>
         </div>
-
-        <nav class="space-y-1 flex-1">
-            <div onclick="route('Unit', this)" class="nav-btn active"><i data-lucide="layout-grid"></i> UNIT</div>
-            <div onclick="route('Shifts', this)" class="nav-btn"><i data-lucide="clock"></i> SHIFTS</div>
-            <div onclick="route('Safety', this)" class="nav-btn"><i data-lucide="shield-check"></i> SAFETY</div>
-            <div onclick="route('Attendance', this)" class="nav-btn"><i data-lucide="users"></i> ATTENDANCE</div>
-            <div onclick="route('OperationalDetail', this)" class="nav-btn"><i data-lucide="activity"></i> OPERATIONAL</div>
-            <div onclick="route('Equipment', this)" class="nav-btn"><i data-lucide="wrench"></i> EQUIPMENT</div>
-            <div onclick="route('Issue', this)" class="nav-btn"><i data-lucide="alert-circle"></i> ISSUE</div>
-            <div onclick="route('NextPlan', this)" class="nav-btn"><i data-lucide="calendar-plus"></i> NEXT PLAN</div>
+        <nav class="space-y-1 flex-1 overflow-y-auto">
+            <div onclick="route('Unit', this)" class="nav-link active"><i data-lucide="layout-grid"></i> UNIT</div>
+            <div onclick="route('Shifts', this)" class="nav-link"><i data-lucide="clock"></i> SHIFTS</div>
+            <div onclick="route('Safety', this)" class="nav-link"><i data-lucide="shield-check"></i> SAFETY</div>
+            <div onclick="route('Attendance', this)" class="nav-link"><i data-lucide="users"></i> ATTENDANCE</div>
+            <div onclick="route('Operational Detail', this)" class="nav-link"><i data-lucide="component"></i> OPERATIONAL</div>
+            <div onclick="route('Equipment', this)" class="nav-link"><i data-lucide="wrench"></i> EQUIPMENT</div>
+            <div onclick="route('Issue', this)" class="nav-link"><i data-lucide="alert-circle"></i> ISSUE</div>
+            <div onclick="route('Next Plan', this)" class="nav-link"><i data-lucide="calendar-range"></i> NEXT PLAN</div>
         </nav>
-
-        <div class="pt-4 border-t border-white/5 flex justify-between">
-            <button onclick="document.body.classList.toggle('light')" class="p-2 hover:bg-white/5 rounded"><i data-lucide="sun"></i></button>
-            <span class="text-[10px] opacity-30 self-center">v2.0.4-STABLE</span>
+        <div class="pt-5 border-t border-white/5 flex items-center justify-between">
+            <button onclick="toggleTheme()" class="p-2 rounded-lg hover:bg-white/5"><i data-lucide="sun"></i></button>
+            <span class="text-[10px] opacity-20">V.3.1.0-LIVE</span>
         </div>
     </aside>
 
-    <!-- CONTENT -->
-    <main class="flex-1 flex flex-col">
-        <header class="p-4 flex justify-between items-center bg-black/20 backdrop-blur-md">
-            <h1 id="page-title" class="text-lg font-medium">Unit Management</h1>
-            <div class="flex gap-2">
-                <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse mt-2"></div>
-                <span class="text-xs opacity-50 uppercase tracking-widest">System Online</span>
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col min-w-0">
+        <header class="h-16 flex items-center justify-between px-6 bg-black/10 backdrop-blur-md">
+            <button onclick="toggleSidebar()" class="md:hidden"><i data-lucide="menu"></i></button>
+            <h2 id="view-title" class="text-lg font-semibold uppercase tracking-widest">Unit Management</h2>
+            <div class="flex items-center gap-4">
+                <div class="hidden sm:block text-right"><p class="text-[10px] opacity-50 uppercase">Network Status</p><p class="text-xs text-green-400 font-bold">STABLE</p></div>
+                <div class="w-10 h-10 rounded-full bg-sky-500/20 border border-sky-500/50 flex items-center justify-center font-bold">TC</div>
             </div>
         </header>
-        
         <div class="flex-1 p-4 overflow-hidden">
-            <div class="w-full h-full rounded-xl overflow-hidden bg-white/5 border border-white/5">
-                <iframe id="main-frame" src="Tabs/Unit/index.html"></iframe>
+            <div class="w-full h-full rounded-2xl overflow-hidden bg-white/5 border border-white/5 relative">
+                <iframe id="content-frame" src="Tabs/Unit/index.html" class="w-full h-full border-none"></iframe>
             </div>
         </div>
     </main>
@@ -66,11 +58,14 @@
     <script>
         lucide.createIcons();
         function route(path, el) {
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
             el.classList.add('active');
-            document.getElementById('page-title').innerText = el.innerText;
-            document.getElementById('main-frame').src = `Tabs/${path}/index.html`;
+            document.getElementById('view-title').innerText = el.innerText;
+            document.getElementById('content-frame').src = `Tabs/${path}/index.html`;
+            if(window.innerWidth < 768) toggleSidebar();
         }
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('-left-64'); document.getElementById('sidebar').classList.toggle('left-0'); }
+        function toggleTheme() { document.documentElement.classList.toggle('light'); }
     </script>
 </body>
 </html>
