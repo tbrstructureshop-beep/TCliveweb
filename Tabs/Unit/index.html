@@ -18,15 +18,15 @@
             --input-bg: rgba(255, 255, 255, 0.05);
         }
         
-        /* LIGHT MODE OVERRIDES */
+        /* LIGHT MODE OVERRIDES - Synchronized with Parent */
         .light { 
-            --bg: #f1f5f9; 
+            --bg: transparent; /* Allows parent background to show through */
             --panel: #ffffff; 
-            --border: rgba(0,0,0,0.1); 
+            --border: #e2e8f0; 
             --accent: #0284c7;
-            --text-primary: #0f172a; 
-            --text-secondary: #475569; 
-            --input-bg: rgba(0,0,0,0.05);
+            --text-primary: #1e293b; /* Dark Navy for Bold text */
+            --text-secondary: #475569; /* Slate for Main text */
+            --input-bg: #f8fafc;
         }
         
         body { 
@@ -36,25 +36,40 @@
             transition: all 0.3s ease;
         }
         
-        /* INDUSTRIAL CARD STYLING */
-        .industrial-card {
-            background-color: var(--panel);
-            border: 1px solid var(--border);
+        /* UNIVERSAL CARD STYLING - Applies to all tabs */
+        .industrial-card, .attendance-card, .eq-card, .issue-card, .plan-card, .safety-card, .op-card {
+            background-color: var(--panel) !important;
+            border: 1px solid var(--border) !important;
             border-radius: 2rem;
             padding: 1.5rem;
             transition: all 0.3s ease;
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
         }
-        .industrial-card:hover { 
-            border-color: var(--accent);
+        
+        .industrial-card:hover, .attendance-card:hover, .eq-card:hover, .issue-card:hover, .plan-card:hover, .safety-card:hover, .op-card:hover { 
+            border-color: var(--accent) !important;
             transform: translateY(-2px);
         }
     
+        /* TEXT READABILITY ENGINE */
+        h1, h2, h3, h4, .text-white { 
+            color: var(--text-primary) !important; 
+        }
+        
+        /* High-contrast blue for light mode */
+        .light .text-sky-500, .light .text-sky-400 {
+            color: #0369a1 !important; 
+        }
+        .light .bg-sky-500\/10, .light .bg-sky-600\/10 {
+            background-color: rgba(2, 132, 199, 0.1) !important;
+            border-color: rgba(2, 132, 199, 0.2) !important;
+        }
+    
         /* INPUT & DROPDOWN ENGINE */
-        .input-field {
+        .input-field, .st-select {
             width: 100%;
-            background-color: var(--input-bg);
-            border: 1px solid var(--border);
+            background-color: var(--input-bg) !important;
+            border: 1px solid var(--border) !important;
             border-radius: 0.75rem;
             padding: 0.75rem;
             outline: none;
@@ -63,15 +78,21 @@
             transition: all 0.2s ease;
             appearance: none;
         }
+    
         .input-field:focus {
-            border-color: var(--accent);
-            background-color: var(--input-bg);
+            border-color: var(--accent) !important;
         }
-        
-        /* Cross-Browser Dropdown Option Visibility */
-        select.input-field option {
-            background-color: var(--panel);
-            color: var(--text-primary);
+    
+        /* Cross-Browser Dropdown Option Visibility Fix */
+        select option {
+            background-color: #ffffff !important;
+            color: #1e293b !important;
+        }
+    
+        /* Keep dark background for options only when in dark mode */
+        :not(.light) select option {
+            background-color: #151921 !important;
+            color: #ffffff !important;
         }
         
         .label-style {
@@ -79,31 +100,28 @@
             font-size: 10px;
             font-weight: 700;
             color: var(--text-secondary);
-            opacity: 0.6;
+            opacity: 0.8;
             margin-bottom: 0.25rem;
             display: block;
             letter-spacing: 0.1em;
         }
         
         /* MODAL CONTAINER */
-        .modal-container {
-            background-color: var(--panel);
-            border: 1px solid var(--border);
+        #attend-modal > div, #shift-modal > div, #eq-modal > div, 
+        #issue-modal > div, #plan-modal > div, #op-modal > div, 
+        #safety-modal > div, .modal-container {
+            background-color: var(--panel) !important;
+            border: 1px solid var(--border) !important;
             width: 100%;
-            max-width: 28rem;
             border-radius: 2.5rem;
             overflow: hidden;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            display: flex;
-            flex-direction: column;
-            max-height: 90vh;
         }
     
         /* TAILWIND LIGHT-MODE SYNC */
-        .light .text-white { color: var(--text-primary) !important; }
-        .light .bg-white\/5 { background-color: rgba(0,0,0,0.05); }
-        .light .bg-white\/10 { background-color: rgba(0,0,0,0.1); }
-        .light .text-sky-400 { color: var(--accent); }
+        .light .bg-white\/5 { background-color: rgba(0,0,0,0.05) !important; }
+        .light .bg-white\/10 { background-color: rgba(0,0,0,0.1) !important; }
+        .light .border-white\/5 { border-color: rgba(0,0,0,0.05) !important; }
     
         /* BLOCKING LOADER OVERLAY */
         #local-loader {
