@@ -227,19 +227,19 @@
             loader.style.opacity = "0";
             iframe.classList.add('loaded');
             
-            // Check if parent is currently in light mode
+            // Sync theme on load
             const isLight = document.documentElement.classList.contains('light');
-            if (isLight) {
-                iframe.contentDocument.documentElement.classList.add('light');
+            if (iframe.contentWindow && iframe.contentWindow.applyTheme) {
+                iframe.contentWindow.applyTheme(isLight);
             }
         };
 
         function toggleTheme() {
             const isLight = document.documentElement.classList.toggle('light');
-            // Sync to Iframe
-            const frame = document.getElementById('content-frame');
-            if (frame && frame.contentDocument) {
-                frame.contentDocument.documentElement.classList.toggle('light', isLight);
+            // Notify the iframe about the change
+            const iframe = document.getElementById('content-frame');
+            if (iframe.contentWindow && iframe.contentWindow.applyTheme) {
+                iframe.contentWindow.applyTheme(isLight);
             }
         }
 
