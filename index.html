@@ -173,6 +173,21 @@
     </div>
 
     <script>
+
+        window.GLOBAL_CACHE = {}; 
+
+        // Fungsi untuk menghapus cache (dipanggil otomatis oleh api.js saat ada input data)
+        window.clearCache = (tabName = null) => { 
+            if (tabName) {
+                delete window.GLOBAL_CACHE[tabName];
+                console.log(`%c[CACHE] Invalidation: ${tabName}`, "color: #ef4444; font-weight: bold;");
+            } else {
+                window.GLOBAL_CACHE = {};
+                console.log("%c[CACHE] Global Memory Reset", "color: #ef4444; font-weight: bold;");
+            }
+        };
+
+        
         lucide.createIcons();
 
         function toggleSidebar() {
