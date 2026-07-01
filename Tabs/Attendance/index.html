@@ -17,41 +17,37 @@
             --text-main: #475569; --text-bold: #1e293b; --input-bg: #f8fafc;
         }
         body { background: transparent; color: var(--text-main); font-family: 'Inter', sans-serif; overflow-x: hidden; transition: all 0.3s ease; }
-        
         .text-white, h1, h2, h3, h4 { color: var(--text-bold) !important; }
         
         /* Unit Tab Switcher */
-        .unit-nav-wrapper { position: relative; display: flex; align-items: center; gap: 10px; margin-bottom: 2rem; }
-        .unit-nav { display: flex; gap: 0.5rem; padding: 0.5rem; background: rgba(0,0,0,0.2); border-radius: 1.5rem; border: 1px solid var(--border); overflow-x: auto; scroll-behavior: smooth; flex: 1; }
+        .unit-nav-wrapper { position: relative; display: flex; align-items: center; gap: 10px; margin-bottom: 1.5rem; }
+        .unit-nav { display: flex; gap: 0.4rem; padding: 0.4rem; background: rgba(0,0,0,0.2); border-radius: 1.25rem; border: 1px solid var(--border); overflow-x: auto; scroll-behavior: smooth; flex: 1; }
         .unit-nav::-webkit-scrollbar { display: none; }
-        .unit-tab { padding: 0.75rem 1.5rem; border-radius: 1rem; font-size: 11px; font-weight: 800; white-space: nowrap; transition: 0.3s; color: var(--text-main); border: 1px solid transparent; }
-        .unit-tab.active { background: var(--accent); color: white !important; box-shadow: 0 10px 20px -5px rgba(14, 165, 233, 0.4); }
-        .nav-arrow { background: var(--panel); border: 1px solid var(--border); border-radius: 50%; p: 8px; color: var(--accent); cursor: pointer; transition: 0.2s; }
+        .unit-tab { padding: 0.6rem 1.25rem; border-radius: 0.9rem; font-size: 10px; font-weight: 800; white-space: nowrap; transition: 0.3s; color: var(--text-main); border: 1px solid transparent; }
+        .unit-tab.active { background: var(--accent); color: white !important; box-shadow: 0 8px 15px -5px rgba(14, 165, 233, 0.4); }
+        .nav-arrow { background: var(--panel); border: 1px solid var(--border); border-radius: 50%; width: 32px; height: 32px; display: flex; items-center; justify-content: center; color: var(--accent); cursor: pointer; transition: 0.2s; flex-shrink: 0; }
         .nav-arrow:hover { background: var(--accent); color: white; }
 
-        .attendance-card { background-color: var(--panel) !important; border: 1px solid var(--border) !important; border-radius: 2.5rem; padding: 2rem; margin-bottom: 2rem; }
+        .attendance-card { background-color: var(--panel) !important; border: 1px solid var(--border) !important; border-radius: 2rem; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 15px 30px -10px rgba(0,0,0,0.3); }
         
-        /* Cockpit Internal Tabs */
-        .card-tabs { display: flex; gap: 0.25rem; background: var(--input-bg); padding: 0.25rem; border-radius: 1rem; margin-bottom: 1.5rem; width: fit-content; }
-        .c-tab { padding: 0.5rem 1rem; border-radius: 0.75rem; font-size: 9px; font-weight: 800; text-transform: uppercase; transition: 0.2s; color: var(--text-main); opacity: 0.5; }
-        .c-tab.active { background: var(--panel); color: var(--accent) !important; opacity: 1; }
+        /* Metric Ribbon (Horizontal) */
+        .metric-ribbon { display: flex; flex-wrap: wrap; gap: 1rem; background: rgba(0,0,0,0.15); padding: 0.75rem 1.25rem; border-radius: 1.25rem; border: 1px solid var(--border); margin-bottom: 1.25rem; }
+        .metric-item { display: flex; align-items: baseline; gap: 0.5rem; }
+        .metric-val { font-size: 1.1rem; font-weight: 900; color: var(--text-bold); font-mono; }
+        .metric-lab { font-size: 8px; font-weight: 800; text-transform: uppercase; opacity: 0.4; letter-spacing: 0.05em; }
 
-        /* Summary Widgets */
-        .widget-grid { display: grid; grid-template-cols: repeat(4, 1fr); gap: 0.75rem; margin-bottom: 2rem; }
-        .widget-card { border-radius: 1.5rem; padding: 1.25rem; border: 1px solid var(--border); text-align: center; background: var(--input-bg); }
-        .widget-val { font-size: 1.5rem; font-weight: 900; line-height: 1; color: var(--text-bold); }
-        .widget-lab { font-size: 8px; font-weight: 800; text-transform: uppercase; opacity: 0.5; margin-top: 4px; display: block; }
+        /* Compact Card Tabs */
+        .card-tabs { display: flex; gap: 0.2rem; background: var(--input-bg); padding: 0.2rem; border-radius: 0.8rem; margin-bottom: 1rem; width: fit-content; }
+        .c-tab { padding: 0.4rem 0.8rem; border-radius: 0.6rem; font-size: 8px; font-weight: 900; text-transform: uppercase; transition: 0.2s; color: var(--text-main); opacity: 0.5; }
+        .c-tab.active { background: var(--panel); color: var(--accent) !important; opacity: 1; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
 
-        /* Detail Lists */
-        .detail-item { background: var(--input-bg); border: 1px solid var(--border); border-radius: 1rem; padding: 0.75rem 1rem; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center; }
-        
+        .detail-item { background: var(--input-bg); border: 1px solid var(--border); border-radius: 0.8rem; padding: 0.5rem 0.8rem; margin-bottom: 0.3rem; display: flex; justify-content: space-between; align-items: center; }
         .input-field { width: 100%; background: var(--input-bg) !important; border: 1px solid var(--border) !important; color: var(--text-bold) !important; border-radius: 0.75rem; padding: 0.75rem; font-size: 0.875rem; outline: none; }
         
         select option { background-color: #ffffff !important; color: #1e293b !important; }
         :not(.light) select option { background-color: #151921 !important; color: #ffffff !important; }
 
         #local-loader { display: none; position: fixed; inset: 0; background: rgba(11, 14, 20, 0.9); backdrop-filter: blur(8px); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; }
-        
         .light .bg-sky-500\/10 { background-color: rgba(2, 132, 199, 0.1); border-color: rgba(2, 132, 199, 0.2); }
         .light .text-sky-400 { color: #0369a1 !important; }
     </style>
@@ -60,31 +56,31 @@
 
     <div id="local-loader">
         <div class="flex flex-col items-center gap-3">
-            <div class="w-12 h-12 border-4 border-sky-500/10 border-t-sky-500 rounded-full animate-spin"></div>
-            <span class="text-[10px] font-mono uppercase tracking-[0.4em] text-sky-500 animate-pulse font-bold">Syncing_Attendance_Vault...</span>
+            <div class="w-10 h-10 border-4 border-sky-500/10 border-t-sky-500 rounded-full animate-spin"></div>
+            <span class="text-[9px] font-mono uppercase tracking-[0.4em] text-sky-500 font-bold">Syncing_Vault...</span>
         </div>
     </div>
 
     <!-- HEADER -->
-    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+    <div class="flex justify-between items-center mb-6">
         <div>
-            <h1 class="text-2xl font-black text-white tracking-tighter uppercase">Attendance Log</h1>
-            <p class="text-[10px] opacity-40 font-mono mt-1 uppercase tracking-widest">Resource Distribution Cockpit</p>
+            <h1 class="text-xl font-black text-white tracking-tighter uppercase">Attendance Log</h1>
+            <p class="text-[9px] opacity-40 font-mono mt-0.5 uppercase tracking-widest">Resource Cockpit V3.1</p>
         </div>
-        <button onclick="openModal()" class="bg-sky-600 hover:bg-sky-500 text-white px-6 py-3 rounded-2xl font-bold text-xs flex items-center gap-2 shadow-lg shadow-sky-600/20 transition-all active:scale-95">
-            <i data-lucide="plus" size="16"></i> LOG ENTRY
+        <button onclick="openModal()" class="bg-sky-600 hover:bg-sky-500 text-white px-5 py-2.5 rounded-xl font-bold text-[10px] flex items-center gap-2 transition-all active:scale-95 uppercase tracking-widest">
+            <i data-lucide="plus" size="14"></i> Log Entry
         </button>
     </div>
 
     <!-- UNIT TAB SWITCHER -->
     <div class="unit-nav-wrapper">
-        <button onclick="scrollNav(-100)" class="nav-arrow"><i data-lucide="chevron-left" size="16"></i></button>
+        <button onclick="scrollNav(-100)" class="nav-arrow"><i data-lucide="chevron-left" size="14"></i></button>
         <div id="unit-tabs" class="unit-nav"></div>
-        <button onclick="scrollNav(100)" class="nav-arrow"><i data-lucide="chevron-right" size="16"></i></button>
+        <button onclick="scrollNav(100)" class="nav-arrow"><i data-lucide="chevron-right" size="14"></i></button>
     </div>
 
-    <!-- MAIN DISPLAY AREA -->
-    <div id="main-content" class="space-y-6"></div>
+    <!-- MAIN DISPLAY -->
+    <div id="main-content" class="grid grid-cols-1 gap-4"></div>
 
     <!-- MODAL -->
     <div id="attend-modal" class="fixed inset-0 bg-black/90 backdrop-blur-md hidden flex items-center justify-center z-[110] p-4">
@@ -93,39 +89,28 @@
                 <h3 id="modal-title" class="text-xl font-bold text-white uppercase tracking-widest">Attendance Entry</h3>
                 <button onclick="closeModal()" class="p-2 hover:bg-white/5 rounded-full text-white/30 hover:text-white"><i data-lucide="x"></i></button>
             </div>
-            
             <form id="attend-form" class="p-8 overflow-y-auto grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div class="space-y-4">
                     <div class="grid grid-cols-2 gap-4">
                         <div><label class="label-style">Unit Code</label><select id="UnitCode" name="UnitCode" required class="input-field" onchange="updateShiftDropdown()"></select></div>
-                        <div><label class="label-style">Shift Category</label><select id="ShiftCategory" name="ShiftCategory" required class="input-field" onchange="syncManpowerFromShift()"><option value="" disabled selected>Select Unit First</option></select></div>
+                        <div><label class="label-style">Shift Category</label><select id="ShiftCategory" name="ShiftCategory" required class="input-field" onchange="syncManpowerFromShift()"><option value="" disabled selected>Select Unit</option></select></div>
                     </div>
                     <div class="p-4 bg-white/5 rounded-2xl border border-white/5 flex justify-between items-center">
-                        <div><span class="label-style">Total Manpower</span><span id="total-personnel" class="text-2xl font-black text-white">0</span></div>
+                        <div><span class="label-style">Personnel</span><span id="total-personnel" class="text-2xl font-black text-white">0</span></div>
                         <div class="text-right"><span class="label-style">Availability</span><span id="availability-pct" class="text-2xl font-black text-emerald-400">0%</span></div>
                     </div>
                     <div class="grid grid-cols-2 gap-4">
-                        <div><label class="label-style">Hadir (Manual)</label><input type="number" id="Hadir" name="Hadir" required value="0" class="input-field text-center text-xl font-bold" oninput="doCalculations()"></div>
-                        <div><label class="label-style">Absen (Auto)</label><input type="number" id="Absen" name="Absen" readonly class="input-field text-center text-xl font-bold opacity-40"></div>
+                        <div><label class="label-style">Hadir</label><input type="number" id="Hadir" name="Hadir" required value="0" class="input-field text-center text-xl font-bold" oninput="doCalculations()"></div>
+                        <div><label class="label-style">Absen</label><input type="number" id="Absen" name="Absen" readonly class="input-field text-center text-xl font-bold opacity-40"></div>
                     </div>
                     <div><label class="label-style">Utilization (<span id="util-val">50</span>%)</label><input type="range" id="Utilization" name="Utilization" min="0" max="100" value="50" oninput="document.getElementById('util-val').innerText = this.value"></div>
-                    <div><label class="label-style">Highlights Note</label><textarea id="HighlightManpower" name="HighlightManpower" class="input-field h-24 resize-none" placeholder="Enter manpower highlights..."></textarea></div>
+                    <div><label class="label-style">Highlights</label><textarea id="HighlightManpower" name="HighlightManpower" class="input-field h-20 resize-none" placeholder="Notes..."></textarea></div>
                 </div>
-
                 <div class="space-y-6">
-                    <div><label class="label-style">Absence List</label>
-                        <div class="flex gap-2 mb-3"><input id="abs-name" class="input-field" placeholder="Name"><select id="abs-status" class="input-field w-32"><option>Sick</option><option>Leave</option><option>Other</option><option>End Contract</option></select><button type="button" onclick="addItem('abs')" class="bg-sky-500 p-3 rounded-xl text-white"><i data-lucide="plus"></i></button></div>
-                        <div id="list-abs" class="max-h-24 overflow-y-auto space-y-1"></div>
-                    </div>
-                    <div><label class="label-style">Inspector Detail</label>
-                        <div class="flex gap-2 mb-3"><input id="insp-name" class="input-field" placeholder="Name"><input id="insp-task" class="input-field" placeholder="Task"><button type="button" onclick="addItem('insp')" class="bg-sky-500 p-3 rounded-xl text-white"><i data-lucide="plus"></i></button></div>
-                        <div id="list-insp" class="max-h-24 overflow-y-auto space-y-1"></div>
-                    </div>
-                    <div><label class="label-style">Overtime Request</label>
-                        <div class="flex gap-2 mb-3"><input id="ot-name" class="input-field" placeholder="Name"><input id="ot-hr" type="number" class="input-field w-20" placeholder="Hr"><button type="button" onclick="addItem('ot')" class="bg-sky-500 p-3 rounded-xl text-white"><i data-lucide="plus"></i></button></div>
-                        <div id="list-ot" class="max-h-24 overflow-y-auto space-y-1"></div>
-                    </div>
-                    <button type="submit" id="submit-btn" class="w-full bg-sky-600 py-4 rounded-2xl font-black text-white hover:bg-sky-500 transition-all uppercase tracking-widest text-xs">Execute Data Commit</button>
+                    <div><label class="label-style">Absence</label><div class="flex gap-2 mb-2"><input id="abs-name" class="input-field text-xs" placeholder="Name"><select id="abs-status" class="input-field w-28 text-xs"><option>Sick</option><option>Leave</option><option>Other</option></select><button type="button" onclick="addItem('abs')" class="bg-sky-500 px-3 rounded-xl text-white"><i data-lucide="plus" size="16"></i></button></div><div id="list-abs" class="max-h-20 overflow-y-auto"></div></div>
+                    <div><label class="label-style">Inspector</label><div class="flex gap-2 mb-2"><input id="insp-name" class="input-field text-xs" placeholder="Name"><input id="insp-task" class="input-field text-xs" placeholder="Task"><button type="button" onclick="addItem('insp')" class="bg-sky-500 px-3 rounded-xl text-white"><i data-lucide="plus" size="16"></i></button></div><div id="list-insp" class="max-h-20 overflow-y-auto"></div></div>
+                    <div><label class="label-style">Overtime</label><div class="flex gap-2 mb-2"><input id="ot-name" class="input-field text-xs" placeholder="Name"><input id="ot-hr" type="number" class="input-field w-20 text-xs" placeholder="Hr"><button type="button" onclick="addItem('ot')" class="bg-sky-500 px-3 rounded-xl text-white"><i data-lucide="plus" size="16"></i></button></div><div id="list-ot" class="max-h-20 overflow-y-auto"></div></div>
+                    <button type="submit" class="w-full bg-sky-600 py-4 rounded-2xl font-black text-white hover:bg-sky-500 transition-all uppercase tracking-widest text-[10px]">Execute Data Commit</button>
                 </div>
             </form>
         </div>
@@ -141,22 +126,16 @@
             loader.style.display = 'flex';
             try {
                 const [unitRes, shiftRes, attendRes] = await Promise.all([API.get('UNIT'), API.get('SHIFTS'), API.get('ATTENDANCE')]);
-                allShifts = shiftRes.data;
-                masterData = attendRes.data;
-                
+                allShifts = shiftRes.data; masterData = attendRes.data;
                 document.getElementById('UnitCode').innerHTML = unitRes.data.map(u => `<option value="${u.UnitCode}">${u.UnitCode}</option>`).join('');
                 renderTabs(unitRes.data);
-                
                 if(!activeUnit && unitRes.data.length > 0) activeUnit = unitRes.data[0].UnitCode;
                 renderView();
-            } catch (e) { Swal.fire('Error', 'Communication Failure', 'error'); } finally { loader.style.display = 'none'; }
+            } catch (e) { Swal.fire('Error', 'API Failure', 'error'); } finally { loader.style.display = 'none'; }
         }
 
         function renderTabs(units) {
-            const container = document.getElementById('unit-tabs');
-            container.innerHTML = units.map(u => `
-                <button onclick="switchUnit('${u.UnitCode}')" class="unit-tab ${u.UnitCode === activeUnit ? 'active' : ''}">${u.UnitCode}</button>
-            `).join('');
+            document.getElementById('unit-tabs').innerHTML = units.map(u => `<button onclick="switchUnit('${u.UnitCode}')" class="unit-tab ${u.UnitCode === activeUnit ? 'active' : ''}">${u.UnitCode}</button>`).join('');
         }
 
         function scrollNav(amt) { document.getElementById('unit-tabs').scrollLeft += amt; }
@@ -169,43 +148,41 @@
 
         function renderView() {
             const container = document.getElementById('main-content');
-            const items = masterData.filter(i => i.UnitCode === activeUnit).reverse(); // Latest first
-
-            if(!activeUnit) { container.innerHTML = `<div class="py-32 text-center opacity-20 font-mono tracking-[0.5em]">SELECT_NODE_TO_BEGIN</div>`; return; }
+            const items = masterData.filter(i => i.UnitCode === activeUnit).reverse();
+            if(!activeUnit) { container.innerHTML = `<div class="py-20 text-center opacity-20 font-mono tracking-widest">SELECT_NODE</div>`; return; }
 
             container.innerHTML = items.map((item, idx) => {
-                const id = `item-${idx}`;
+                const id = `at-${idx}`;
                 return `
                 <div class="attendance-card">
-                    <div class="flex justify-between items-start mb-6">
-                        <div>
-                            <div class="flex items-center gap-2 mb-1">
-                                <span class="bg-sky-500/10 text-sky-400 px-3 py-1 rounded-lg text-[10px] font-mono font-bold border border-sky-500/20">${item.ShiftCategory}</span>
-                                <span class="opacity-30 font-mono text-[10px]">${item.Timestamp}</span>
-                            </div>
-                            <h2 class="text-2xl font-black text-white uppercase">${activeUnit} Log</h2>
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="flex items-center gap-3">
+                            <span class="bg-sky-500/10 text-sky-400 px-2 py-1 rounded-md text-[9px] font-black border border-sky-500/20 uppercase">${item.ShiftCategory}</span>
+                            <span class="opacity-30 font-mono text-[9px]">${item.Timestamp}</span>
                         </div>
                         <div class="flex gap-2">
-                            <button onclick='editAttend(${JSON.stringify(item).replace(/'/g, "&apos;")})' class="p-3 bg-white/5 rounded-xl text-sky-500/50 hover:text-sky-400 transition"><i data-lucide="edit-3" size="16"></i></button>
-                            <button onclick="deleteAttend('${item.Timestamp}')" class="p-3 bg-white/5 rounded-xl text-red-500/30 hover:text-red-500 transition"><i data-lucide="trash-2" size="16"></i></button>
+                            <button onclick='editAttend(${JSON.stringify(item).replace(/'/g, "&apos;")})' class="text-sky-500/40 hover:text-sky-400 transition"><i data-lucide="edit-3" size="14"></i></button>
+                            <button onclick="deleteAttend('${item.Timestamp}')" class="text-red-500/30 hover:text-red-500 transition"><i data-lucide="trash-2" size="14"></i></button>
                         </div>
                     </div>
 
-                    <div class="widget-grid">
-                        <div class="widget-card"><span class="widget-val">${item.Hadir}</span><span class="widget-lab">Hadir</span></div>
-                        <div class="widget-card"><span class="widget-val text-red-500">${item.Absen}</span><span class="widget-lab">Absen</span></div>
-                        <div class="widget-card border-emerald-500/30"><span class="widget-val text-emerald-400">${item.Availability}%</span><span class="widget-lab">Avail</span></div>
-                        <div class="widget-card border-sky-500/30"><span class="widget-val text-sky-400">${item.Utilization}%</span><span class="widget-lab">Utilize</span></div>
+                    <div class="metric-ribbon">
+                        <div class="metric-item"><span class="metric-lab">Hadir:</span><span class="metric-val">${item.Hadir}</span></div>
+                        <div class="metric-item"><span class="metric-lab text-red-500/50">Absen:</span><span class="metric-val text-red-500">${item.Absen}</span></div>
+                        <div class="metric-item border-l border-white/10 pl-4"><span class="metric-lab text-emerald-500/50">Avail:</span><span class="metric-val text-emerald-400">${item.Availability}%</span></div>
+                        <div class="metric-item"><span class="metric-lab text-sky-500/50">Util:</span><span class="metric-val text-sky-400">${item.Utilization}%</span></div>
                     </div>
 
-                    <div class="card-tabs">
-                        <button onclick="switchCardTab('${id}', 'info')" class="c-tab active" id="tab-${id}-info">Overview</button>
-                        <button onclick="switchCardTab('${id}', 'abs')" class="c-tab" id="tab-${id}-abs">Absence</button>
-                        <button onclick="switchCardTab('${id}', 'insp')" class="c-tab" id="tab-${id}-insp">Inspectors</button>
-                        <button onclick="switchCardTab('${id}', 'ot')" class="c-tab" id="tab-${id}-ot">Overtime</button>
+                    <div class="flex items-center justify-between">
+                        <div class="card-tabs">
+                            <button onclick="switchCardTab('${id}', 'info')" class="c-tab active" id="tab-${id}-info">Overview</button>
+                            <button onclick="switchCardTab('${id}', 'abs')" class="c-tab" id="tab-${id}-abs">Absence</button>
+                            <button onclick="switchCardTab('${id}', 'insp')" class="c-tab" id="tab-${id}-insp">Inspectors</button>
+                            <button onclick="switchCardTab('${id}', 'ot')" class="c-tab" id="tab-${id}-ot">Overtime</button>
+                        </div>
                     </div>
 
-                    <div id="content-${id}" class="min-h-[100px] animate-in fade-in duration-300">
+                    <div id="content-${id}" class="mt-2 animate-in fade-in duration-300">
                         ${renderCardInfo(item)}
                     </div>
                 </div>`;
@@ -213,56 +190,45 @@
             lucide.createIcons();
         }
 
-        // --- INTERNAL CARD NAVIGATION ---
-        function renderCardInfo(item) { return `<div class="p-4 bg-white/5 rounded-2xl border border-white/5"><span class="label-style">Shift Highlight</span><p class="text-sm italic opacity-70 leading-relaxed">${item.HighlightManpower || 'No major highlights reported for this cycle.'}</p></div>`; }
+        function renderCardInfo(item) { return `<div class="p-3 bg-white/5 rounded-xl border border-white/5"><p class="text-xs italic opacity-60 leading-relaxed">${item.HighlightManpower || 'No highlights recorded.'}</p></div>`; }
         
-        function renderCardList(jsonStr, type) {
+        function renderCardList(jsonStr) {
             try {
                 const data = JSON.parse(jsonStr || '[]');
-                if(!data.length) return `<div class="py-10 text-center opacity-20 text-[10px] font-mono">NO_DATA_BUFFERED</div>`;
-                return data.map(i => `
-                    <div class="detail-item">
-                        <span class="text-xs font-bold text-white">${i.name}</span>
-                        <span class="text-[10px] font-mono opacity-50 uppercase">${i.status || i.job || i.hour+' HR'}</span>
-                    </div>
-                `).join('');
-            } catch(e) { return 'Error parsing data'; }
+                if(!data.length) return `<div class="py-4 text-center opacity-20 text-[9px] font-mono">NO_DATA_BUFFERED</div>`;
+                return data.map(i => `<div class="detail-item"><span class="text-[10px] font-bold text-white">${i.name}</span><span class="text-[9px] font-mono opacity-40 uppercase">${i.status || i.job || i.hour+' HR'}</span></div>`).join('');
+            } catch(e) { return 'Parse Error'; }
         }
 
         function switchCardTab(cardId, type) {
             const itemIdx = cardId.split('-')[1];
             const item = masterData.filter(i => i.UnitCode === activeUnit).reverse()[itemIdx];
             const content = document.getElementById(`content-${cardId}`);
-            
             if(type === 'info') content.innerHTML = renderCardInfo(item);
-            else if(type === 'abs') content.innerHTML = renderCardList(item.DetailAbsen, 'abs');
-            else if(type === 'insp') content.innerHTML = renderCardList(item.DetailInspectorName, 'insp');
-            else if(type === 'ot') content.innerHTML = renderCardList(item.PermintaanOvertime, 'ot');
-
+            else if(type === 'abs') content.innerHTML = renderCardList(item.DetailAbsen);
+            else if(type === 'insp') content.innerHTML = renderCardList(item.DetailInspectorName);
+            else if(type === 'ot') content.innerHTML = renderCardList(item.PermintaanOvertime);
             document.querySelectorAll(`#tab-${cardId}-info, #tab-${cardId}-abs, #tab-${cardId}-insp, #tab-${cardId}-ot`).forEach(b => b.classList.remove('active'));
             document.getElementById(`tab-${cardId}-${type}`).classList.add('active');
         }
 
-        // --- FORM ENGINE ---
         function openModal() {
             editId = null; document.getElementById('attend-modal').classList.remove('hidden');
-            document.getElementById('modal-title').innerText = "Attendance Log Entry";
+            document.getElementById('modal-title').innerText = "Attendance entry";
             document.getElementById('attend-form').reset();
             listAbs=[]; listInsp=[]; listOt=[]; renderAllLists();
         }
 
         function editAttend(item) {
             editId = item.Timestamp; document.getElementById('attend-modal').classList.remove('hidden');
-            document.getElementById('modal-title').innerText = "Edit Log Entry";
+            document.getElementById('modal-title').innerText = "Edit Entry";
             document.getElementById('UnitCode').value = item.UnitCode; updateShiftDropdown();
             document.getElementById('ShiftCategory').value = item.ShiftCategory;
             document.getElementById('Hadir').value = item.Hadir;
             document.getElementById('HighlightManpower').value = item.HighlightManpower;
             document.getElementById('Utilization').value = item.Utilization;
             document.getElementById('util-val').innerText = item.Utilization;
-            listAbs = JSON.parse(item.DetailAbsen || '[]');
-            listInsp = JSON.parse(item.DetailInspectorName || '[]');
-            listOt = JSON.parse(item.PermintaanOvertime || '[]');
+            listAbs = JSON.parse(item.DetailAbsen || '[]'); listInsp = JSON.parse(item.DetailInspectorName || '[]'); listOt = JSON.parse(item.PermintaanOvertime || '[]');
             syncManpowerFromShift(); renderAllLists();
         }
 
@@ -274,27 +240,19 @@
         }
 
         function removeItem(type, idx) {
-            if(type === 'abs') listAbs.splice(idx, 1);
-            if(type === 'insp') listInsp.splice(idx, 1);
-            if(type === 'ot') listOt.splice(idx, 1);
+            if(type === 'abs') listAbs.splice(idx, 1); if(type === 'insp') listInsp.splice(idx, 1); if(type === 'ot') listOt.splice(idx, 1);
             renderAllLists();
         }
 
-        function renderAllLists() {
-            renderGenericList('list-abs', listAbs, 'abs');
-            renderGenericList('list-insp', listInsp, 'insp');
-            renderGenericList('list-ot', listOt, 'ot');
-        }
-
+        function renderAllLists() { renderGenericList('list-abs', listAbs, 'abs'); renderGenericList('list-insp', listInsp, 'insp'); renderGenericList('list-ot', listOt, 'ot'); }
         function renderGenericList(cid, data, type) {
             document.getElementById(cid).innerHTML = data.map((item, i) => `
-                <div class="detail-item !py-2 !px-3"><span class="text-[10px] font-bold text-white">${item.name} <span class="opacity-30">(${item.status || item.job || item.hour+'h'})</span></span>
-                <button type="button" onclick="removeItem('${type}', ${i})" class="text-red-500/40 hover:text-red-500"><i data-lucide="x" size="12"></i></button></div>
+                <div class="detail-item !py-1.5 !px-3"><span class="text-[9px] font-bold text-white">${item.name} <span class="opacity-30">(${item.status || item.job || item.hour+'h'})</span></span>
+                <button type="button" onclick="removeItem('${type}', ${i})" class="text-red-500/40 hover:text-red-500"><i data-lucide="x" size="10"></i></button></div>
             `).join('');
             lucide.createIcons();
         }
 
-        // --- CALCULATIONS ---
         function updateShiftDropdown() {
             const uCode = document.getElementById('UnitCode').value;
             const available = allShifts.filter(s => s.UnitCode === uCode);
@@ -316,10 +274,6 @@
             document.getElementById('availability-pct').innerText = avail + '%';
         }
 
-        async function commitPlans() {
-            // Logic handled by form onsubmit
-        }
-
         document.getElementById('attend-form').onsubmit = async (e) => {
             e.preventDefault();
             loader.style.display = 'flex';
@@ -334,11 +288,8 @@
                 InspectorNo: listInsp.length
             };
             formData.forEach((v, k) => payload[k] = v);
-            try {
-                await API.post(payload);
-                Swal.fire({ icon: 'success', title: 'Data Committed', background: '#151921', color: '#fff', timer: 1500, showConfirmButton: false });
-                closeModal(); init();
-            } catch(e) { Swal.fire('Error', 'Commit Failed', 'error'); } finally { loader.style.display = 'none'; }
+            try { await API.post(payload); Swal.fire({ icon: 'success', title: 'Data Committed', background: '#151921', color: '#fff', timer: 1500, showConfirmButton: false }); closeModal(); init(); }
+            catch(e) { Swal.fire('Error', 'Transaction Failed', 'error'); } finally { loader.style.display = 'none'; }
         }
 
         async function deleteAttend(ts) {
