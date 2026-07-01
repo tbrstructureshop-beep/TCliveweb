@@ -9,113 +9,57 @@
     <script src="../../api.js"></script>
     <style>
         :root { 
-            --bg: #0b0e14; 
-            --panel: #151921; 
-            --border: rgba(255, 255, 255, 0.1); 
-            --accent: #0ea5e9; 
-            --text-main: #94a3b8;
-            --text-bold: #ffffff;
-            --input-bg: rgba(255, 255, 255, 0.05);
-            /* Specific Plan Colors */
-            --c-planned: #94a3b8; 
-            --c-pro: #3b82f6; 
-            --c-done: #10b981;
+            --bg: #0b0e14; --panel: #151921; --border: rgba(255, 255, 255, 0.1); --accent: #0ea5e9; 
+            --text-primary: #ffffff; --text-secondary: #94a3b8; --input-bg: rgba(255, 255, 255, 0.05);
         }
-    
-        .light {
-            --bg: transparent;
-            --panel: #ffffff; 
-            --border: #e2e8f0; 
-            --accent: #0284c7; 
-            --text-main: #475569;
-            --text-bold: #1e293b;
-            --input-bg: #f8fafc;
+        .light { 
+            --bg: transparent; --panel: #ffffff; --border: #e2e8f0; --accent: #0284c7;
+            --text-primary: #1e293b; --text-secondary: #475569; --input-bg: #f8fafc;
         }
-    
-        body { background: transparent; color: var(--text-main); font-family: 'Inter', sans-serif; overflow-x: hidden; transition: all 0.3s ease; }
+        body { background: transparent; color: var(--text-secondary); font-family: 'Inter', sans-serif; overflow-x: hidden; transition: all 0.3s ease; }
         
-        /* Global Text Fixes */
-        .text-white, h1, h2, h3, h4, .ana-val, .bulk-table { color: var(--text-bold) !important; }
-    
-        /* plan-card */
+        /* CARD SYSTEM */
         .plan-card { 
-            background-color: var(--panel) !important; 
-            border: 1px solid var(--border) !important; 
+            background-color: var(--panel) !important; border: 1px solid var(--border) !important; 
             border-radius: 2.5rem; padding: 2rem; margin-bottom: 2rem; transition: all 0.3s ease; 
         }
-        
-        /* Industrial Accordion */
-        details { 
-            background: var(--input-bg); 
-            border: 1px solid var(--border); 
-            border-radius: 1rem; margin-bottom: 0.75rem; overflow: hidden; 
+
+        /* STAT CARDS Summary */
+        .stat-square {
+            border-radius: 1.5rem; padding: 1.25rem; border: 1px solid var(--border);
+            background: var(--input-bg); transition: transform 0.2s;
         }
+        .stat-square:hover { transform: translateY(-3px); border-color: var(--accent); }
+        .stat-val { font-size: 1.5rem; font-weight: 900; color: var(--text-primary); line-height: 1; }
+        .stat-desc { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.6; margin-top: 4px; }
+
+        /* Accordion List */
+        details { background: var(--input-bg); border: 1px solid var(--border); border-radius: 1.25rem; overflow: hidden; }
         summary { 
-            list-style: none; padding: 1rem; cursor: pointer; display: flex; align-items: center; 
+            list-style: none; padding: 1.25rem; cursor: pointer; display: flex; align-items: center; 
             justify-content: space-between; font-size: 11px; font-weight: 800; text-transform: uppercase; 
-            letter-spacing: 0.1em; color: var(--accent); transition: background 0.2s; 
+            color: var(--accent); 
         }
-        summary:hover { background: rgba(255, 255, 255, 0.03); }
-        .light summary:hover { background: rgba(0, 0, 0, 0.02); }
-        
         summary::-webkit-details-marker { display: none; }
-        .details-content { 
-            padding: 1rem; border-top: 1px solid var(--border); 
-            background: rgba(0,0,0,0.1); 
-        }
-        .light .details-content { background: rgba(0,0,0,0.02); }
-    
-        /* Input & Dropdown Fix */
+        .details-content { padding: 0; border-top: 1px solid var(--border); }
+
+        /* INPUTS */
         .input-field, .st-select { 
-            width: 100%; background: var(--input-bg) !important; 
-            border: 1px solid var(--border) !important; 
-            color: var(--text-bold) !important;
-            border-radius: 0.75rem; padding: 0.75rem; outline: none; font-size: 0.875rem; transition: all 0.2s ease; 
+            width: 100%; background: var(--input-bg) !important; border: 1px solid var(--border) !important; 
+            color: var(--text-primary) !important; border-radius: 0.75rem; padding: 0.75rem; outline: none; font-size: 0.875rem; 
         }
-        .input-field:focus { border-color: var(--accent) !important; }
-        
-        /* Ensure Options are readable in both modes */
-        select option {
-            background-color: white !important;
-            color: #1e293b !important;
-        }
-        .dark select option {
-            background-color: #151921 !important;
-            color: white !important;
-        }
-    
-        .st-select { border-radius: 6px; font-size: 10px; font-weight: 700; padding: 4px 8px; }
-        
+        select option { background-color: white !important; color: #1e293b !important; }
+        .dark select option { background-color: #151921 !important; color: white !important; }
+
+        /* TABLE */
+        .bulk-table { width: 100%; font-size: 11px; color: var(--text-primary); }
+        .bulk-table th { text-align: left; padding: 12px; opacity: 0.4; border-bottom: 1px solid var(--border); text-transform: uppercase; }
+        .bulk-table td { padding: 12px; border-bottom: 1px solid var(--border); }
+
         #local-loader { 
-            display: none; position: fixed; inset: 0; background: rgba(11, 14, 20, 0.9); 
+            display: none; position: fixed; inset: 0; background: var(--bg); 
             backdrop-filter: blur(8px); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; 
         }
-        .light #local-loader { background: rgba(241, 245, 249, 0.9); }
-    
-        /* Bulk Table */
-        .bulk-table { width: 100%; font-size: 11px; }
-        .bulk-table th { text-align: left; padding: 10px; opacity: 0.4; border-bottom: 1px solid var(--border); }
-        .bulk-table td { padding: 8px; border-bottom: 1px solid var(--border); }
-    
-        /* Analysis Rows */
-        .ana-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 11px; }
-        .ana-label { opacity: 0.5; color: var(--text-main); }
-    
-        /* Modal Fix */
-        #plan-modal > div {
-            background-color: var(--panel) !important;
-            border: 1px solid var(--border) !important;
-        }
-    
-        /* Accessibility Blue Overrides */
-        .light .text-sky-500, .light .text-sky-400, .light .text-sky-600 {
-            color: #0369a1 !important;
-        }
-        .light .bg-sky-500\/10, .light .bg-sky-600\/10 {
-            background-color: rgba(2, 132, 199, 0.1) !important;
-            border-color: rgba(2, 132, 199, 0.2) !important;
-        }
-    
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
     </style>
@@ -132,10 +76,10 @@
     <!-- HEADER -->
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-10">
         <div>
-            <h1 class="text-2xl font-bold text-white tracking-tighter uppercase">Predictive Cycle Management</h1>
+            <h1 class="text-2xl font-bold text-white tracking-tighter uppercase">Predictive Cycle</h1>
             <p class="text-xs opacity-50 font-mono mt-1 uppercase tracking-tighter">Quad-Section Performance Architecture</p>
         </div>
-        <button onclick="openModal()" class="bg-sky-600 hover:bg-sky-500 text-white px-6 py-3 rounded-2xl font-bold text-xs flex items-center gap-2 shadow-lg shadow-sky-600/20 transition-all active:scale-95">
+        <button onclick="openModal('add')" class="bg-sky-600 hover:bg-sky-500 text-white px-6 py-3 rounded-2xl font-bold text-xs flex items-center gap-2 shadow-lg shadow-sky-600/20 transition-all active:scale-95">
             <i data-lucide="layout-grid" size="18"></i> CONFIGURE MULTI-PLAN
         </button>
     </div>
@@ -151,6 +95,7 @@
             </div>
             
             <div class="p-8 overflow-y-auto flex-1">
+                <input type="hidden" id="edit-id">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                     <div>
                         <label class="text-[10px] uppercase font-bold opacity-40 ml-1">Target Node</label>
@@ -161,16 +106,16 @@
                 <div class="border border-white/5 rounded-2xl overflow-hidden bg-black/20">
                     <table class="bulk-table">
                         <thead>
-                            <tr><th>Prototype Group</th><th>Functional Scope</th><th>Description</th><th>Status</th><th class="w-10"></th></tr>
+                            <tr><th>Prototype Group</th><th>Functional Scope</th><th>Description</th><th>Status</th><th id="th-action" class="w-10"></th></tr>
                         </thead>
                         <tbody id="bulk-body"></tbody>
                     </table>
-                    <button onclick="addInputRow()" class="w-full p-4 text-[10px] font-bold uppercase opacity-30 hover:opacity-100 hover:bg-white/5 transition border-t border-white/5">+ Append New Row</button>
+                    <button id="btn-add-row" onclick="addInputRow()" class="w-full p-4 text-[10px] font-bold uppercase opacity-30 hover:opacity-100 hover:bg-white/5 transition border-t border-white/5">+ Append New Row</button>
                 </div>
             </div>
 
             <div class="p-8 border-t border-white/5">
-                <button onclick="commitPlans()" class="w-full bg-sky-600 py-4 rounded-2xl font-black text-white hover:bg-sky-500 transition-all uppercase tracking-widest text-xs">Execute Data Authorization</button>
+                <button id="btn-submit" onclick="commitPlans()" class="w-full bg-sky-600 py-4 rounded-2xl font-black text-white hover:bg-sky-500 transition-all uppercase tracking-widest text-xs">Execute Data Authorization</button>
             </div>
         </div>
     </div>
@@ -180,15 +125,16 @@
         const loader = document.getElementById('local-loader');
         const TAB_NAME = 'NEXT PLAN';
         const STATUS_PRIO = { 'In Progress': 0, 'Planned': 1, 'Achieved': 2 };
-        let activeUnits = [];
+        let activeUnits = [], allPlanData = [];
 
         async function init() {
             loader.style.display = 'flex';
             try {
                 const [unitRes, planRes] = await Promise.all([API.get('UNIT'), API.get(TAB_NAME)]);
                 activeUnits = unitRes.data;
+                allPlanData = planRes.data;
                 document.getElementById('UnitCode').innerHTML = activeUnits.map(u => `<option value="${u.UnitCode}">${u.UnitCode}</option>`).join('');
-                renderCards(planRes.data);
+                renderCards(allPlanData);
             } catch (e) { Swal.fire('Error', 'API Link Failure', 'error'); } finally { loader.style.display = 'none'; }
         }
 
@@ -210,77 +156,55 @@
                 const items = grouped[uCode];
                 const sortedItems = [...items].sort((a, b) => STATUS_PRIO[a.Status] - STATUS_PRIO[b.Status]);
 
-                // Calculations
-                const scopes = { 'Group_1': 0, 'Group_2': 0, 'Group_3': 0 };
-                const funcs = {};
-                const stats = { 'Planned': 0, 'In Progress': 0, 'Achieved': 0 };
-                
+                // Stats Calculation
+                const stats = { G1:0, G2:0, G3:0, PL:0, IP:0, AC:0 };
                 items.forEach(i => {
-                    scopes[i.ScopeGroup] = (scopes[i.ScopeGroup] || 0) + 1;
-                    funcs[i.FunctionalScope] = (funcs[i.FunctionalScope] || 0) + 1;
-                    stats[i.Status] = (stats[i.Status] || 0) + 1;
+                    if(i.ScopeGroup === 'Group_1') stats.G1++;
+                    if(i.ScopeGroup === 'Group_2') stats.G2++;
+                    if(i.ScopeGroup === 'Group_3') stats.G3++;
+                    if(i.Status === 'Planned') stats.PL++;
+                    if(i.Status === 'In Progress') stats.IP++;
+                    if(i.Status === 'Achieved') stats.AC++;
                 });
 
                 return `
                 <div class="plan-card">
                     <div class="flex justify-between items-center mb-8">
                         <h2 class="text-3xl font-black text-white tracking-tighter uppercase">${uCode}</h2>
-                        <div class="text-[10px] font-mono text-sky-500 opacity-40">${items.length} ACTIVE_ITEMS</div>
+                        <span class="bg-sky-500/10 text-sky-500 text-[10px] font-mono px-3 py-1 rounded-lg border border-sky-500/20">${items.length} ACTIVE_ITEMS</span>
                     </div>
 
-                    <!-- DROP 1: SCOPE -->
-                    <details>
-                        <summary>Summary Prototype Scope <i data-lucide="chevron-down" size="14"></i></summary>
-                        <div class="details-content">
-                            <div class="ana-row"><span class="ana-label">1. Target Utama Shift</span><span class="ana-val">${scopes.Group_1 || 0}</span></div>
-                            <div class="ana-row"><span class="ana-label">2. Dukungan Unit Lain</span><span class="ana-val">${scopes.Group_2 || 0}</span></div>
-                            <div class="ana-row"><span class="ana-label text-red-500">3. Eskalasi Management</span><span class="ana-val text-red-500">${scopes.Group_3 || 0}</span></div>
-                        </div>
-                    </details>
+                    <!-- BEAUTIFIED SUMMARY GRID -->
+                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-8">
+                        <div class="stat-square border-rose-500/20"><div class="stat-val text-rose-500">${stats.G1}</div><div class="stat-desc">Shift Target</div></div>
+                        <div class="stat-square border-sky-500/20"><div class="stat-val text-sky-500">${stats.G2}</div><div class="stat-desc">Unit Support</div></div>
+                        <div class="stat-square border-amber-500/20"><div class="stat-val text-amber-500">${stats.G3}</div><div class="stat-desc">Escalation</div></div>
+                        <div class="stat-square border-slate-500/20"><div class="stat-val text-slate-400">${stats.PL}</div><div class="stat-desc">Planned</div></div>
+                        <div class="stat-square border-blue-500/20"><div class="stat-val text-blue-400">${stats.IP}</div><div class="stat-desc">In Progress</div></div>
+                        <div class="stat-square border-emerald-500/20"><div class="stat-val text-emerald-400">${stats.AC}</div><div class="stat-desc">Achieved</div></div>
+                    </div>
 
-                    <!-- DROP 2: FUNCTIONAL -->
-                    <details>
-                        <summary>Summary Functional Scope <i data-lucide="chevron-down" size="14"></i></summary>
-                        <div class="details-content">
-                            ${Object.entries(funcs).map(([f, c]) => `
-                                <div class="ana-row"><span class="ana-label">${f}</span><span class="ana-val">${c}</span></div>
-                            `).join('')}
-                        </div>
-                    </details>
-
-                    <!-- DROP 3: STATUS -->
-                    <details>
-                        <summary>Summary Execution Status <i data-lucide="chevron-down" size="14"></i></summary>
-                        <div class="details-content">
-                            <div class="ana-row"><span class="ana-label text-slate-400">Planned</span><span class="ana-val text-slate-400">${stats.Planned}</span></div>
-                            <div class="ana-row"><span class="ana-label text-blue-400">In Progress</span><span class="ana-val text-blue-400">${stats.In_Progress || stats['In Progress']}</span></div>
-                            <div class="ana-row"><span class="ana-label text-emerald-400">Achieved</span><span class="ana-val text-emerald-400">${stats.Achieved}</span></div>
-                        </div>
-                    </details>
-
-                    <!-- DROP 4: MASTER LIST -->
                     <details open>
-                        <summary>Master Activity Detail <i data-lucide="chevron-down" size="14"></i></summary>
-                        <div class="details-content overflow-x-auto p-0">
+                        <summary>Master Plan Control Detail <i data-lucide="chevron-down" size="14"></i></summary>
+                        <div class="details-content overflow-x-auto">
                             <table class="bulk-table">
-                                <thead class="opacity-30 uppercase font-bold">
-                                    <tr><th>Time</th><th>Func</th><th>Description</th><th>Status</th><th></th></tr>
+                                <thead>
+                                    <tr><th>Time</th><th>Func</th><th>Description</th><th>Status</th><th class="text-right">Actions</th></tr>
                                 </thead>
                                 <tbody>
                                     ${sortedItems.map(item => `
                                         <tr class="group/row">
-                                            <td class="opacity-30 text-[9px] font-mono w-24">${item.Timestamp.split(' ')[1] || item.Timestamp}</td>
-                                            <td class="text-sky-500 font-bold text-[9px] w-24 uppercase">${item.FunctionalScope}</td>
-                                            <td class="text-white/80 leading-relaxed max-w-xs">${item.Detail}</td>
+                                            <td class="opacity-40 font-mono w-24">${item.Timestamp.split(' ')[1] || '---'}</td>
+                                            <td class="font-bold text-sky-500 uppercase">${item.FunctionalScope}</td>
+                                            <td class="leading-relaxed max-w-sm">${item.Detail}</td>
                                             <td>
-                                                <select onchange="updateLiveStatus('${item.Timestamp}', this.value)" class="st-select">
+                                                <select onchange="updateLiveStatus('${item.Timestamp}', this.value)" class="st-select !w-32">
                                                     ${Object.keys(STATUS_PRIO).map(s => `<option ${item.Status === s ? 'selected' : ''}>${s}</option>`).join('')}
                                                 </select>
                                             </td>
-                                            <td class="text-right">
-                                                <button onclick="deletePlan('${item.Timestamp}')" class="text-red-500/20 hover:text-red-500 transition opacity-0 group-hover/row:opacity-100">
-                                                    <i data-lucide="trash-2" size="14"></i>
-                                                </button>
+                                            <td class="text-right whitespace-nowrap">
+                                                <button onclick="editPlan('${item.Timestamp}')" class="p-2 text-sky-500/40 hover:text-sky-400"><i data-lucide="edit-3" size="14"></i></button>
+                                                <button onclick="deletePlan('${item.Timestamp}')" class="p-2 text-red-500/40 hover:text-red-400"><i data-lucide="trash-2" size="14"></i></button>
                                             </td>
                                         </tr>
                                     `).join('')}
@@ -294,45 +218,91 @@
         }
 
         // --- MODAL ENGINE ---
-        function openModal() {
-            document.getElementById('plan-modal').classList.remove('hidden');
-            document.getElementById('bulk-body').innerHTML = "";
-            addInputRow();
+        function openModal(mode, data = null) {
+            const modal = document.getElementById('plan-modal');
+            const bulkBody = document.getElementById('bulk-body');
+            const btnAdd = document.getElementById('btn-add-row');
+            const unitSel = document.getElementById('UnitCode');
+            const btnSubmit = document.getElementById('btn-submit');
+            
+            modal.classList.remove('hidden');
+            bulkBody.innerHTML = "";
+            
+            if(mode === 'edit' && data) {
+                document.getElementById('edit-id').value = data.Timestamp;
+                unitSel.value = data.UnitCode;
+                unitSel.disabled = true;
+                btnAdd.classList.add('hidden');
+                btnSubmit.innerText = "Execute Data Update";
+                addInputRow(data);
+            } else {
+                document.getElementById('edit-id').value = "";
+                unitSel.disabled = false;
+                btnAdd.classList.remove('hidden');
+                btnSubmit.innerText = "Execute Data Authorization";
+                addInputRow();
+            }
         }
 
-        function addInputRow() {
+        function addInputRow(existing = null) {
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td><select class="input-field text-[10px] g-sel"><option value="Group_1">Shift Target</option><option value="Group_2">Unit Support</option><option value="Group_3">Escalation</option></select></td>
                 <td><select class="input-field text-[10px] f-sel"><option>Production Team</option><option>Engineering Support</option><option>Material & MPC</option><option>Tool & Equipment Team</option><option>Keuangan / Finance</option><option>Leader & Top Leader</option></select></td>
-                <td><input class="input-field d-inp" placeholder="..."></td>
+                <td><input class="input-field d-inp" placeholder="Details..."></td>
                 <td><select class="input-field text-[10px] s-sel"><option>Planned</option><option>In Progress</option><option>Achieved</option></select></td>
-                <td><button onclick="this.closest('tr').remove()" class="text-red-500/30"><i data-lucide="x" size="14"></i></button></td>
+                <td><button onclick="this.closest('tr').remove()" class="text-red-500/30 ${existing ? 'hidden' : ''}"><i data-lucide="x" size="14"></i></button></td>
             `;
+            
+            if(existing) {
+                tr.querySelector('.g-sel').value = existing.ScopeGroup;
+                tr.querySelector('.f-sel').value = existing.FunctionalScope;
+                tr.querySelector('.d-inp').value = existing.Detail;
+                tr.querySelector('.s-sel').value = existing.Status;
+            }
+            
             document.getElementById('bulk-body').appendChild(tr);
             lucide.createIcons();
         }
 
+        function editPlan(ts) {
+            const item = allPlanData.find(p => p.Timestamp === ts);
+            if(item) openModal('edit', item);
+        }
+
         async function commitPlans() {
             const unit = document.getElementById('UnitCode').value;
+            const editId = document.getElementById('edit-id').value;
             const rows = document.querySelectorAll('#bulk-body tr');
-            if(!rows.length) return;
-
+            
             loader.style.display = 'flex';
             try {
-                for(let r of rows) {
+                if(editId) {
+                    // Update Logic
+                    const r = rows[0];
                     await API.post({
-                        tab: TAB_NAME, action: 'add', UnitCode: unit,
+                        tab: TAB_NAME, action: 'update', primaryId: editId,
                         ScopeGroup: r.querySelector('.g-sel').value,
                         FunctionalScope: r.querySelector('.f-sel').value,
                         Detail: r.querySelector('.d-inp').value,
-                        Status: r.querySelector('.s-sel').value,
-                        primaryId: Date.now() + Math.random()
+                        Status: r.querySelector('.s-sel').value
                     });
+                } else {
+                    // Bulk Add Logic
+                    for(let r of rows) {
+                        await API.post({
+                            tab: TAB_NAME, action: 'add', UnitCode: unit,
+                            ScopeGroup: r.querySelector('.g-sel').value,
+                            FunctionalScope: r.querySelector('.f-sel').value,
+                            Detail: r.querySelector('.d-inp').value,
+                            Status: r.querySelector('.s-sel').value,
+                            primaryId: Date.now() + Math.random()
+                        });
+                    }
                 }
                 closeModal(); init();
-                Swal.fire({ icon: 'success', title: 'Cycle Commited', background: '#151921', color: '#fff', timer: 1500, showConfirmButton: false });
-            } catch(e) { Swal.fire('Error', 'Commit Failed', 'error'); } finally { loader.style.display = 'none'; }
+                Swal.fire({ icon: 'success', title: editId ? 'Entry Updated' : 'Cycle Committed', background: '#151921', color: '#fff', timer: 1500, showConfirmButton: false });
+            } catch(e) { Swal.fire('Error', 'Transaction Failed', 'error'); } finally { loader.style.display = 'none'; }
         }
 
         async function updateLiveStatus(ts, stat) {
