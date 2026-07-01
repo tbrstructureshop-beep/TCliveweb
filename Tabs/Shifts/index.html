@@ -17,8 +17,6 @@
             --input-bg: rgba(255, 255, 255, 0.05);
             --accent: #0ea5e9; 
         }
-    
-        /* Light Mode Overrides */
         .light {
             --bg: #f1f5f9;
             --panel: #ffffff;
@@ -28,16 +26,8 @@
             --input-bg: #f8fafc;
             --accent: #0284c7;
         }
-    
-        body { 
-            background: transparent; 
-            color: var(--text-main); 
-            font-family: 'Inter', sans-serif; 
-            overflow-x: hidden;
-            transition: all 0.3s ease;
-        }
+        body { background: transparent; color: var(--text-main); font-family: 'Inter', sans-serif; overflow-x: hidden; transition: all 0.3s ease; }
         
-        /* Industrial Card Layout */
         .industrial-card {
             background-color: var(--panel) !important;
             border: 1px solid var(--border) !important;
@@ -45,10 +35,15 @@
             padding: 1.5rem;
             margin-bottom: 1.5rem;
             transition: all 0.3s ease;
+            height: fit-content;
         }
         .industrial-card:hover { border-color: var(--accent) !important; }
-    
-        /* Shift Item (Inside Card) */
+
+        /* Accordion Styling */
+        details { transition: all 0.3s ease; }
+        summary { list-style: none; cursor: pointer; outline: none; }
+        summary::-webkit-details-marker { display: none; }
+        
         .shift-item {
             background-color: var(--input-bg);
             border: 1px solid var(--border);
@@ -57,9 +52,8 @@
             position: relative;
             margin-bottom: 1rem;
         }
-    
-        /* Standardized Input Fields & Dropdowns */
-        .input-field, .st-select {
+
+        .input-field {
             width: 100%;
             background-color: var(--input-bg) !important;
             border: 1px solid var(--border) !important;
@@ -68,91 +62,38 @@
             outline: none;
             color: var(--text-bright) !important;
             font-size: 0.875rem;
-            transition: all 0.2s ease;
-        }
-        .input-field:focus {
-            border-color: var(--accent) !important;
-        }
-    
-        /* Fix: Dropdown Option Visibility */
-        select option {
-            background-color: var(--panel) !important;
-            color: var(--text-bright) !important;
         }
         
-        .label-style {
-            text-transform: uppercase;
-            font-size: 10px;
-            font-weight: 700;
-            color: var(--text-main);
-            opacity: 0.7;
-            margin-bottom: 0.25rem;
-            display: block;
-            letter-spacing: 0.1em;
-        }
+        .label-style { text-transform: uppercase; font-size: 10px; font-weight: 700; opacity: 0.7; margin-bottom: 0.25rem; display: block; letter-spacing: 0.1em; }
         
-        /* Modal Container Sync */
-        .modal-container, #shift-modal > div {
-            background-color: var(--panel) !important;
-            border: 1px solid var(--border) !important;
-            width: 100%;
-            max-width: 36rem; 
-            border-radius: 2.5rem;
-            overflow: hidden;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            display: flex;
-            flex-direction: column;
-            max-height: 90vh;
-        }
-    
-        /* Accent color overrides for Light Mode Readability */
-        .light .text-sky-500, .light .text-sky-400 {
-            color: #0369a1 !important; 
-        }
-        .light .bg-sky-500\/10, .light .bg-sky-600\/10, .light .bg-sky-500\/20 {
-            background-color: rgba(2, 132, 199, 0.1) !important;
-            border-color: rgba(2, 132, 199, 0.2) !important;
-        }
-    
-        /* Headings & White-text classes Sync */
-        h1, h2, h3, h4, .text-white { 
-            color: var(--text-bright) !important; 
-        }
-    
-        /* Loader Sync */
         #local-loader {
             display: none;
-            position: fixed;
-            inset: 0;
-            background: var(--bg);
+            position: fixed; inset: 0;
+            background: rgba(11, 14, 20, 0.8);
             backdrop-filter: blur(8px);
-            z-index: 200;
+            z-index: 1000;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
+            align-items: center; justify-content: center;
         }
-    
-        /* Scrollbar Theme Sync */
+
+        .light .bg-sky-500\/10 { background-color: rgba(2, 132, 199, 0.1); border-color: rgba(2, 132, 199, 0.2); }
+        .light .text-sky-400 { color: #0369a1 !important; }
+        h1, h2, h3, h4, .text-white { color: var(--text-bright) !important; }
         ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-thumb { 
-            background: var(--border); 
-            border-radius: 10px; 
-        }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
     </style>
 </head>
 <body class="p-4 md:p-8">
 
     <div id="local-loader">
-        <div class="flex flex-col items-center gap-3">
-            <div class="w-10 h-10 border-4 border-sky-500/20 border-t-sky-500 rounded-full animate-spin"></div>
-            <span class="text-[10px] font-mono uppercase tracking-[0.3em] text-sky-500 animate-pulse text-center">Syncing_Shift_Matrix...</span>
-        </div>
+        <div class="w-12 h-12 border-4 border-sky-500/10 border-t-sky-500 rounded-full animate-spin mb-4"></div>
+        <span class="text-[10px] font-mono uppercase tracking-[0.3em] text-sky-500 font-bold">Synchronizing_Matrix...</span>
     </div>
 
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-10">
         <div>
-            <h1 class="text-2xl font-bold text-white tracking-tight uppercase">Shift Configuration</h1>
-            <p class="text-xs opacity-50 font-mono mt-1 uppercase tracking-tighter">Operational Work-Cycles & Resource Logic</p>
+            <h1 class="text-2xl font-bold uppercase tracking-tight">Shift Configuration</h1>
+            <p class="text-xs opacity-50 font-mono mt-1 uppercase">Cycle Parameters & Resource Logic</p>
         </div>
         <button onclick="openModal('add')" class="bg-sky-600 hover:bg-sky-500 text-white px-6 py-3 rounded-2xl font-bold text-sm flex items-center gap-2 shadow-lg shadow-sky-600/20 transition-all active:scale-95">
             <i data-lucide="plus-circle" size="18"></i> CONFIGURE SHIFT
@@ -163,64 +104,26 @@
 
     <!-- MODAL -->
     <div id="shift-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center z-[110] p-4">
-        <div class="modal-container">
+        <div class="bg-[#151921] border border-white/10 rounded-[2.5rem] w-full max-w-2xl shadow-2xl flex flex-col max-h-[90vh]">
             <div class="p-6 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
                 <div>
                     <h3 id="modal-title" class="text-xl font-bold text-white uppercase tracking-widest">Shift Data Entry</h3>
-                    <p class="text-[10px] opacity-40 uppercase tracking-tighter">Set cycle parameters & leadership</p>
                 </div>
-                <button onclick="closeModal()" class="p-2 hover:bg-white/5 rounded-full transition text-white/50 hover:text-white"><i data-lucide="x"></i></button>
+                <button onclick="closeModal()" class="p-2 hover:bg-white/5 rounded-full text-white/50"><i data-lucide="x"></i></button>
             </div>
-            
             <form id="shift-form" class="p-8 grid grid-cols-1 sm:grid-cols-2 gap-5 overflow-y-auto">
                 <input type="hidden" id="primaryId" name="primaryId">
-                
-                <div class="sm:col-span-2">
-                    <label class="label-style">Target Operational Unit</label>
-                    <select id="UnitCode" name="UnitCode" required class="input-field"></select>
-                </div>
-
-                <div>
-                    <label class="label-style">Shift Category Name</label>
-                    <input id="ShiftCategory" name="ShiftCategory" required placeholder="e.g. Night Shift" class="input-field">
-                </div>
-
-                <div>
-                    <label class="label-style">Total Manpower (Pax)</label>
-                    <input type="number" id="TotalManpower" name="TotalManpower" required placeholder="0" class="input-field">
-                </div>
-
-                <div>
-                    <label class="label-style">Time Start (24H)</label>
-                    <input type="time" id="TimeStart" name="TimeStart" required class="input-field">
-                </div>
-
-                <div>
-                    <label class="label-style">Time End (24H)</label>
-                    <input type="time" id="TimeEnd" name="TimeEnd" required class="input-field">
-                </div>
-
-                <div>
-                    <label class="label-style">Effective From</label>
-                    <input type="date" id="EffectiveFrom" name="EffectiveFrom" required class="input-field">
-                </div>
-
-                <div>
-                    <label class="label-style">Effective Until</label>
-                    <input type="date" id="EffectiveUntil" name="EffectiveUntil" required class="input-field">
-                </div>
-
-                <div class="sm:col-span-2">
-                    <label class="label-style">Shift Leader Name</label>
-                    <div class="relative">
-                        <i data-lucide="shield-check" size="16" class="absolute left-3 top-3.5 opacity-30 text-white"></i>
-                        <input id="LeaderName" name="LeaderName" required placeholder="Full Name" class="input-field pl-10">
-                    </div>
-                </div>
-
-                <div class="sm:col-span-2 flex gap-3 pt-4 border-t border-white/5 mt-2">
-                    <button type="submit" class="flex-1 bg-sky-600 py-4 rounded-2xl font-bold text-white hover:bg-sky-500 transition-all shadow-lg shadow-sky-600/10 uppercase tracking-widest text-xs">Commit Cycle</button>
-                    <button type="button" onclick="closeModal()" class="flex-1 bg-white/5 py-4 rounded-2xl font-bold text-white/50 hover:bg-white/10 transition-all uppercase tracking-widest text-xs">Cancel</button>
+                <div class="sm:col-span-2"><label class="label-style">Target Node</label><select id="UnitCode" name="UnitCode" required class="input-field"></select></div>
+                <div><label class="label-style">Shift Category</label><input id="ShiftCategory" name="ShiftCategory" required class="input-field"></div>
+                <div><label class="label-style">Manpower (Pax)</label><input type="number" id="TotalManpower" name="TotalManpower" required class="input-field"></div>
+                <div><label class="label-style">Start (24H)</label><input type="time" id="TimeStart" name="TimeStart" required class="input-field"></div>
+                <div><label class="label-style">End (24H)</label><input type="time" id="TimeEnd" name="TimeEnd" required class="input-field"></div>
+                <div><label class="label-style">From</label><input type="date" id="EffectiveFrom" name="EffectiveFrom" required class="input-field"></div>
+                <div><label class="label-style">Until</label><input type="date" id="EffectiveUntil" name="EffectiveUntil" required class="input-field"></div>
+                <div class="sm:col-span-2"><label class="label-style">Shift Leader</label><input id="LeaderName" name="LeaderName" required class="input-field"></div>
+                <div class="sm:col-span-2 pt-4 border-t border-white/5 flex gap-3">
+                    <button type="submit" class="flex-1 bg-sky-600 py-4 rounded-2xl font-bold text-white uppercase tracking-widest text-xs">Commit Cycle</button>
+                    <button type="button" onclick="closeModal()" class="flex-1 bg-white/5 py-4 rounded-2xl font-bold text-white/50 uppercase tracking-widest text-xs">Cancel</button>
                 </div>
             </form>
         </div>
@@ -229,55 +132,27 @@
     <script>
         lucide.createIcons();
         const loader = document.getElementById('local-loader');
-        let currentUnits = [];
-        let rawShifts = [];
-        let currentAction = 'add';
-
-        function toTitleCase(str) {
-            if (!str) return '';
-            return str.toLowerCase().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-        }
-
-        const formatDate = (dateStr) => {
-            if (!dateStr) return "-";
-            const options = { day: '2-digit', month: 'short', year: 'numeric' };
-            return new Date(dateStr).toLocaleDateString('en-GB', options);
-        };
+        let currentUnits = [], rawShifts = [], currentAction = 'add';
 
         async function init() {
             loader.style.display = 'flex';
             try {
-                const [unitRes, shiftRes] = await Promise.all([
-                    API.get('UNIT'),
-                    API.get('SHIFTS')
-                ]);
-                
+                const [unitRes, shiftRes] = await Promise.all([API.get('UNIT'), API.get('SHIFTS')]);
                 currentUnits = unitRes.data || [];
                 rawShifts = shiftRes.data || [];
-
-                const unitSelect = document.getElementById('UnitCode');
-                unitSelect.innerHTML = '<option value="" disabled selected>Select Active Unit...</option>' + 
-                    currentUnits.map(u => `<option value="${u.UnitCode}">${u.UnitCode} - ${toTitleCase(u.UnitDesc)}</option>`).join('');
-
+                document.getElementById('UnitCode').innerHTML = currentUnits.map(u => `<option value="${u.UnitCode}">${u.UnitCode}</option>`).join('');
                 renderGroupedShifts(rawShifts);
-            } catch (e) {
-                Swal.fire({ title: 'Sync Error', text: e.message, icon: 'error', background: '#151921', color: '#fff' });
-            } finally {
-                loader.style.display = 'none';
-            }
+            } catch (e) { 
+                Swal.fire({ title: 'Error', text: e.message, icon: 'error', background: '#151921', color: '#fff' }); 
+            } finally { loader.style.display = 'none'; }
         }
 
-        // --- FIXED GROUPING LOGIC ---
         function renderGroupedShifts(shifts) {
             const grid = document.getElementById('shift-grid');
-            const grouped = shifts.reduce((acc, s) => {
-                if (!acc[s.UnitCode]) acc[s.UnitCode] = [];
-                acc[s.UnitCode].push(s);
-                return acc;
-            }, {});
+            const grouped = shifts.reduce((acc, s) => { if (!acc[s.UnitCode]) acc[s.UnitCode] = []; acc[s.UnitCode].push(s); return acc; }, {});
 
             if (Object.keys(grouped).length === 0) {
-                grid.innerHTML = `<div class="col-span-full py-20 text-center opacity-30 uppercase tracking-widest text-sm font-mono">NO_SHIFT_DATA_BUFFERED</div>`;
+                grid.innerHTML = `<div class="col-span-full py-20 text-center opacity-30 font-mono uppercase">NO_DATA_BUFFERED</div>`;
                 return;
             }
 
@@ -288,52 +163,39 @@
                         <div class="flex justify-between items-center mb-6">
                             <div class="flex items-center gap-3">
                                 <div class="bg-sky-500/20 p-2 rounded-xl text-sky-400"><i data-lucide="factory" size="18"></i></div>
-                                <div>
-                                    <h2 class="text-white font-black text-lg leading-none uppercase">${unitCode}</h2>
-                                    <p class="text-[9px] opacity-40 uppercase tracking-widest mt-1">Operational Nodes</p>
-                                </div>
+                                <h2 class="text-xl font-black uppercase">${unitCode}</h2>
                             </div>
                             <div class="bg-white/5 px-3 py-1 rounded-full text-[10px] font-mono text-sky-500 border border-white/5">${unitShifts.length} CYCLES</div>
                         </div>
 
-                        <div class="space-y-4">
-                            ${unitShifts.map(s => `
-                                <div class="shift-item group">
-                                    <div class="flex justify-between items-center mb-3">
-                                        <span class="text-xs font-bold text-white/80">${toTitleCase(s.ShiftCategory)}</span>
-                                        <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
-                                            <button onclick="editData('${s.UnitCode}', '${s.ShiftCategory}')" class="text-sky-500/40 hover:text-sky-400 transition"><i data-lucide="edit-3" size="14"></i></button>
-                                            <button onclick="deleteData('${s.UnitCode}', '${s.ShiftCategory}')" class="text-red-500/40 hover:text-red-400 transition"><i data-lucide="trash-2" size="14"></i></button>
+                        <details class="group">
+                            <summary class="flex items-center justify-between p-4 bg-white/5 border border-white/5 rounded-2xl text-[10px] font-bold uppercase tracking-widest text-sky-400 hover:bg-white/10 transition">
+                                VIEW SHIFT DETAILS
+                                <i data-lucide="chevron-down" class="group-open:rotate-180 transition"></i>
+                            </summary>
+                            <div class="pt-4 space-y-4">
+                                ${unitShifts.map(s => `
+                                    <div class="shift-item group/item">
+                                        <div class="flex justify-between items-center mb-3">
+                                            <span class="text-xs font-bold text-white/80 uppercase">${s.ShiftCategory}</span>
+                                            <div class="flex gap-2 opacity-0 group-hover/item:opacity-100 transition-all">
+                                                <button onclick="editData('${s.UnitCode}', '${s.ShiftCategory}')" class="text-sky-500/40 hover:text-sky-400"><i data-lucide="edit-3" size="14"></i></button>
+                                                <button onclick="deleteData('${s.Timestamp}')" class="text-red-500/40 hover:text-red-400"><i data-lucide="trash-2" size="14"></i></button>
+                                            </div>
+                                        </div>
+                                        <div class="grid grid-cols-2 gap-4 text-white mb-3">
+                                            <div><span class="text-[9px] opacity-40 uppercase block">Time Block</span><span class="text-sm font-mono font-bold">${s.TimeStart} - ${s.TimeEnd}</span></div>
+                                            <div><span class="text-[9px] opacity-40 uppercase block">Personnel</span><span class="text-sm font-bold">${s.TotalManpower} PAX</span></div>
+                                        </div>
+                                        <div class="border-t border-white/5 pt-3">
+                                            <span class="text-[9px] opacity-40 uppercase block">Leader</span>
+                                            <span class="text-[11px] text-sky-400 font-semibold uppercase">${s.LeaderName}</span>
                                         </div>
                                     </div>
-                                    
-                                    <div class="flex items-center gap-4 text-white mb-3">
-                                        <div class="flex flex-col">
-                                            <span class="text-[9px] opacity-40 uppercase">Time Block</span>
-                                            <span class="text-sm font-mono font-bold tracking-tighter">${s.TimeStart} - ${s.TimeEnd}</span>
-                                        </div>
-                                        <div class="w-px h-6 bg-white/10"></div>
-                                        <div class="flex flex-col">
-                                            <span class="text-[9px] opacity-40 uppercase">Personnel</span>
-                                            <span class="text-sm font-bold tracking-tighter">${s.TotalManpower} PAX</span>
-                                        </div>
-                                    </div>
-
-                                    <div class="flex justify-between items-end border-t border-white/5 pt-3 mt-1">
-                                        <div>
-                                            <span class="text-[9px] opacity-40 uppercase block mb-0.5">Assigned Leader</span>
-                                            <span class="text-[11px] text-sky-400 font-semibold">${toTitleCase(s.LeaderName)}</span>
-                                        </div>
-                                        <div class="text-right">
-                                            <span class="text-[8px] opacity-30 block">EFFECTIVE</span>
-                                            <span class="text-[9px] opacity-60 font-mono">${formatDate(s.EffectiveFrom)} - ${formatDate(s.EffectiveUntil)}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
-                `;
+                                `).join('')}
+                            </div>
+                        </details>
+                    </div>`;
             }).join('');
             lucide.createIcons();
         }
@@ -345,17 +207,13 @@
             document.getElementById('UnitCode').disabled = (action !== 'add');
         }
 
-        function closeModal() {
-            document.getElementById('shift-modal').classList.add('hidden');
-            document.getElementById('shift-form').reset();
-        }
+        function closeModal() { document.getElementById('shift-modal').classList.add('hidden'); document.getElementById('shift-form').reset(); }
 
         function editData(unitCode, shiftCat) {
             const data = rawShifts.find(s => s.UnitCode === unitCode && s.ShiftCategory === shiftCat);
             if (!data) return;
-
             openModal('update');
-            document.getElementById('primaryId').value = data.UnitCode;
+            document.getElementById('primaryId').value = data.Timestamp; // Menggunakan Timestamp sebagai ID unik
             document.getElementById('UnitCode').value = data.UnitCode;
             document.getElementById('ShiftCategory').value = data.ShiftCategory;
             document.getElementById('TotalManpower').value = data.TotalManpower;
@@ -369,54 +227,32 @@
         document.getElementById('shift-form').onsubmit = async (e) => {
             e.preventDefault();
             loader.style.display = 'flex';
-            
             const formData = new FormData(e.target);
             const payload = {
                 tab: 'SHIFTS',
                 action: currentAction,
                 primaryId: document.getElementById('primaryId').value || formData.get('UnitCode')
             };
-            
-            formData.forEach((value, key) => {
-                if(key !== 'primaryId') payload[key] = value;
-            });
+            formData.forEach((v, k) => { if(k !== 'primaryId') payload[k] = v; });
 
             try {
                 const res = await API.post(payload);
                 if (res.status === 'success') {
-                    Swal.fire({ icon: 'success', title: 'Data Committed', toast: true, position: 'top-end', showConfirmButton: false, timer: 2000, background: '#151921', color: '#fff' });
                     closeModal();
-                    init();
-                } else {
-                    throw new Error(res.message);
+                    await init(); // Init menangani loader.none di akhir
+                    Swal.fire({ icon: 'success', title: 'Committed', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, background: '#151921', color: '#fff' });
                 }
-            } catch (err) {
-                Swal.fire({ title: 'Error', text: err.message, icon: 'error', background: '#151921', color: '#fff' });
-                loader.style.display = 'none';
-            }
+            } catch (err) { loader.style.display = 'none'; Swal.fire({ title: 'Error', text: err.message, icon: 'error' }); }
         };
 
-        async function deleteData(unitId, shiftCat) {
-            const confirm = await Swal.fire({
-                title: 'Delete Shift?',
-                text: `Removing "${shiftCat}" from unit ${unitId}`,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#ef4444',
-                background: '#151921',
-                color: '#fff'
-            });
-
-            if (confirm.isConfirmed) {
+        async function deleteData(ts) {
+            const res = await Swal.fire({ title: 'Delete Shift?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', background: '#151921', color: '#fff' });
+            if (res.isConfirmed) {
                 loader.style.display = 'flex';
                 try {
-                    // Berdasarkan p.primaryId (UnitCode)
-                    await API.post({ tab: 'SHIFTS', action: 'delete', primaryId: unitId });
-                    init();
-                } catch (e) {
-                    Swal.fire({ title: 'Error', text: e.message, icon: 'error', background: '#151921', color: '#fff' });
-                    loader.style.display = 'none';
-                }
+                    await API.post({ tab: 'SHIFTS', action: 'delete', primaryId: ts });
+                    await init();
+                } catch (e) { loader.style.display = 'none'; }
             }
         }
 
