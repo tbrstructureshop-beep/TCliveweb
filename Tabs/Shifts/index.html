@@ -68,7 +68,7 @@
             background-color: #151921;
             border: 1px solid var(--border);
             width: 100%;
-            max-width: 36rem; /* max-w-xl */
+            max-width: 36rem; 
             border-radius: 2.5rem;
             overflow: hidden;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
@@ -95,7 +95,6 @@
 </head>
 <body class="p-4 md:p-8">
 
-    <!-- BLOCKING LOCAL LOADER -->
     <div id="local-loader">
         <div class="flex flex-col items-center gap-3">
             <div class="w-10 h-10 border-4 border-sky-500/20 border-t-sky-500 rounded-full animate-spin"></div>
@@ -103,7 +102,6 @@
         </div>
     </div>
 
-    <!-- HEADER -->
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-10">
         <div>
             <h1 class="text-2xl font-bold text-white tracking-tight uppercase">Shift Configuration</h1>
@@ -114,10 +112,9 @@
         </button>
     </div>
 
-    <!-- GRID CONTAINER -->
     <div id="shift-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"></div>
 
-    <!-- MODAL FORM -->
+    <!-- MODAL -->
     <div id="shift-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center z-[110] p-4">
         <div class="modal-container">
             <div class="p-6 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
@@ -133,14 +130,12 @@
                 
                 <div class="sm:col-span-2">
                     <label class="label-style">Target Operational Unit</label>
-                    <select id="UnitCode" name="UnitCode" required class="input-field">
-                        <option value="" disabled selected>Select Active Unit...</option>
-                    </select>
+                    <select id="UnitCode" name="UnitCode" required class="input-field"></select>
                 </div>
 
                 <div>
                     <label class="label-style">Shift Category Name</label>
-                    <input id="ShiftCategory" name="ShiftCategory" required placeholder="e.g. Night Alpha" class="input-field">
+                    <input id="ShiftCategory" name="ShiftCategory" required placeholder="e.g. Night Shift" class="input-field">
                 </div>
 
                 <div>
@@ -210,12 +205,12 @@
                     API.get('SHIFTS')
                 ]);
                 
-                currentUnits = unitRes.data;
-                rawShifts = shiftRes.data;
+                currentUnits = unitRes.data || [];
+                rawShifts = shiftRes.data || [];
 
                 const unitSelect = document.getElementById('UnitCode');
                 unitSelect.innerHTML = '<option value="" disabled selected>Select Active Unit...</option>' + 
-                    currentUnits.map(u => `<option value="${u.UnitCode}">${u.UnitCode} - ${u.UnitDesc}</option>`).join('');
+                    currentUnits.map(u => `<option value="${u.UnitCode}">${u.UnitCode} - ${toTitleCase(u.UnitDesc)}</option>`).join('');
 
                 renderGroupedShifts(rawShifts);
             } catch (e) {
@@ -225,10 +220,11 @@
             }
         }
 
+        // --- FIXED GROUPING LOGIC ---
         function renderGroupedShifts(shifts) {
             const grid = document.getElementById('shift-grid');
             const grouped = shifts.reduce((acc, s) => {
-                if (!acc[s.UnitCode]) acc[acc.UnitCode = s.UnitCode] = [];
+                if (!acc[s.UnitCode]) acc[s.UnitCode] = [];
                 acc[s.UnitCode].push(s);
                 return acc;
             }, {});
@@ -250,7 +246,7 @@
                                     <p class="text-[9px] opacity-40 uppercase tracking-widest mt-1">Operational Nodes</p>
                                 </div>
                             </div>
-                            <div class="bg-white/5 px-3 py-1 rounded-full text-[10px] font-mono text-sky-500 border border-white/5">${unitShifts.length} UNITS</div>
+                            <div class="bg-white/5 px-3 py-1 rounded-full text-[10px] font-mono text-sky-500 border border-white/5">${unitShifts.length} CYCLES</div>
                         </div>
 
                         <div class="space-y-4">
@@ -299,15 +295,12 @@
             currentAction = action;
             document.getElementById('shift-modal').classList.remove('hidden');
             document.getElementById('modal-title').innerText = action === 'add' ? 'New Shift Entry' : 'Update Shift Config';
-            if (action === 'add') {
-                document.getElementById('UnitCode').disabled = false;
-            }
+            document.getElementById('UnitCode').disabled = (action !== 'add');
         }
 
         function closeModal() {
             document.getElementById('shift-modal').classList.add('hidden');
             document.getElementById('shift-form').reset();
-            document.getElementById('primaryId').value = '';
         }
 
         function editData(unitCode, shiftCat) {
@@ -317,7 +310,6 @@
             openModal('update');
             document.getElementById('primaryId').value = data.UnitCode;
             document.getElementById('UnitCode').value = data.UnitCode;
-            document.getElementById('UnitCode').disabled = true;
             document.getElementById('ShiftCategory').value = data.ShiftCategory;
             document.getElementById('TotalManpower').value = data.TotalManpower;
             document.getElementById('TimeStart').value = data.TimeStart;
@@ -345,26 +337,25 @@
             try {
                 const res = await API.post(payload);
                 if (res.status === 'success') {
-                    Swal.fire({ icon: 'success', title: 'Cycle Comitted', toast: true, position: 'top-end', showConfirmButton: false, timer: 2000, background: '#151921', color: '#fff' });
+                    Swal.fire({ icon: 'success', title: 'Data Committed', toast: true, position: 'top-end', showConfirmButton: false, timer: 2000, background: '#151921', color: '#fff' });
                     closeModal();
                     init();
                 } else {
                     throw new Error(res.message);
                 }
             } catch (err) {
-                Swal.fire({ title: 'Auth Error', text: err.message, icon: 'error', background: '#151921', color: '#fff' });
+                Swal.fire({ title: 'Error', text: err.message, icon: 'error', background: '#151921', color: '#fff' });
                 loader.style.display = 'none';
             }
         };
 
         async function deleteData(unitId, shiftCat) {
             const confirm = await Swal.fire({
-                title: 'Terminate Cycle?',
+                title: 'Delete Shift?',
                 text: `Removing "${shiftCat}" from unit ${unitId}`,
                 icon: 'warning',
                 showCancelButton: true,
-                confirmButtonColor: '#0ea5e9',
-                cancelButtonColor: '#ef4444',
+                confirmButtonColor: '#ef4444',
                 background: '#151921',
                 color: '#fff'
             });
@@ -372,11 +363,9 @@
             if (confirm.isConfirmed) {
                 loader.style.display = 'flex';
                 try {
-                    // Berdasarkan GAS: Mencari row berdasarkan p.primaryId (Kolom A / UnitCode)
-                    const res = await API.post({ tab: 'SHIFTS', action: 'delete', primaryId: unitId });
-                    if(res.status === 'success') {
-                        init();
-                    }
+                    // Berdasarkan p.primaryId (UnitCode)
+                    await API.post({ tab: 'SHIFTS', action: 'delete', primaryId: unitId });
+                    init();
                 } catch (e) {
                     Swal.fire({ title: 'Error', text: e.message, icon: 'error', background: '#151921', color: '#fff' });
                     loader.style.display = 'none';
