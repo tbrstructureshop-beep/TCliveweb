@@ -8,21 +8,77 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="../../api.js"></script>
     <style>
-        :root { --bg: #0b0e14; --panel: #151921; --border: #262c36; --accent: #0ea5e9; }
+        :root { 
+            --bg: #0b0e14; 
+            --panel: #151921; 
+            --border: rgba(255, 255, 255, 0.1); 
+            --accent: #0ea5e9; 
+        }
         body { background: transparent; color: #94a3b8; font-family: 'Inter', sans-serif; overflow-x: hidden; }
         
-        .industrial-card { @apply bg-white/[0.03] border border-white/5 rounded-3xl p-6 hover:border-sky-500/30 transition-all duration-300 shadow-xl; }
-        .input-field { @apply w-full bg-white/5 border border-white/10 rounded-xl p-3 outline-none focus:border-sky-500 text-white text-sm transition-all; }
-        .label-style { @apply text-[10px] uppercase font-bold opacity-40 mb-1 block tracking-widest; }
+        /* Industrial Card Styling */
+        .industrial-card {
+            background-color: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+            border-radius: 2rem;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        .industrial-card:hover { 
+            border-color: rgba(14, 165, 233, 0.3);
+            transform: translateY(-2px);
+        }
+
+        /* Standard CSS for Input Fields (No @apply) */
+        .input-field {
+            width: 100%;
+            background-color: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            padding: 0.75rem;
+            outline: none;
+            color: white;
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+        }
+        .input-field:focus {
+            border-color: var(--accent);
+            background-color: rgba(255, 255, 255, 0.08);
+        }
         
+        .label-style {
+            text-transform: uppercase;
+            font-size: 10px;
+            font-weight: 700;
+            opacity: 0.4;
+            margin-bottom: 0.25rem;
+            display: block;
+            letter-spacing: 0.1em;
+        }
+        
+        /* Modal Style Consistencies */
+        .modal-container {
+            background-color: #151921;
+            border: 1px solid var(--border);
+            width: 100%;
+            max-width: 28rem; /* max-w-md */
+            border-radius: 2.5rem;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            max-height: 90vh;
+        }
+
         /* Blocking Loading Overlay */
         #local-loader {
             display: none;
             position: fixed;
             inset: 0;
-            background: rgba(11, 14, 20, 0.8);
+            background: rgba(11, 14, 20, 0.9);
             backdrop-filter: blur(8px);
-            z-index: 100;
+            z-index: 200;
             flex-direction: column;
             align-items: center;
             justify-content: center;
@@ -60,8 +116,8 @@
 
     <!-- MODAL FORM -->
     <div id="unit-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center z-[110] p-4">
-        <div class="bg-[#151921] border border-white/10 rounded-[2rem] w-full max-w-md shadow-2xl overflow-hidden">
-            <div class="p-6 border-b border-white/5 flex justify-between items-center">
+        <div class="modal-container">
+            <div class="p-6 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
                 <div>
                     <h3 id="modal-title" class="text-xl font-bold text-white uppercase tracking-widest">Unit Entry</h3>
                     <p class="text-[10px] opacity-40 uppercase tracking-tighter">Define operational identifier</p>
@@ -69,12 +125,12 @@
                 <button onclick="closeModal()" class="p-2 hover:bg-white/5 rounded-full transition text-white/50 hover:text-white"><i data-lucide="x"></i></button>
             </div>
             
-            <form id="unit-form" class="p-8 space-y-5">
+            <form id="unit-form" class="p-8 space-y-5 overflow-y-auto">
                 <input type="hidden" id="primaryId">
                 
                 <div>
                     <label class="label-style">Unit Identifier (Code)</label>
-                    <input id="UnitCode" name="UnitCode" required placeholder="e.g. UN-01" class="input-field font-mono">
+                    <input id="UnitCode" name="UnitCode" required placeholder="e.g. TCP-10" class="input-field font-mono">
                 </div>
 
                 <div>
@@ -85,7 +141,7 @@
                 <div>
                     <label class="label-style">Unit Leader Name</label>
                     <div class="relative">
-                        <i data-lucide="user" size="16" class="absolute left-3 top-3.5 opacity-30"></i>
+                        <i data-lucide="user" size="16" class="absolute left-3 top-3.5 opacity-30 text-white"></i>
                         <input id="UnitLeader" name="UnitLeader" required placeholder="Full Name" class="input-field pl-10">
                     </div>
                 </div>
@@ -103,6 +159,14 @@
         const loader = document.getElementById('local-loader');
         let currentAction = 'add';
 
+        // Helper function for Title Case
+        function toTitleCase(str) {
+            if (!str) return '';
+            return str.toLowerCase().split(' ').map(word => {
+                return word.charAt(0).toUpperCase() + word.slice(1);
+            }).join(' ');
+        }
+
         async function init() {
             loader.style.display = 'flex';
             try {
@@ -113,7 +177,7 @@
                     throw new Error(res.message);
                 }
             } catch (e) {
-                Swal.fire('Sync Failed', e.message, 'error');
+                Swal.fire({ title: 'Sync Failed', text: e.message, icon: 'error', background: '#151921', color: '#fff' });
             } finally {
                 loader.style.display = 'none';
             }
@@ -140,13 +204,13 @@
                         </div>
                     </div>
                     
-                    <h3 class="text-white font-bold text-lg leading-tight mb-2 uppercase">${u.UnitDesc}</h3>
+                    <h3 class="text-white font-bold text-lg leading-tight mb-2">${toTitleCase(u.UnitDesc)}</h3>
                     
                     <div class="flex items-center gap-2 pt-4 border-t border-white/5 mt-4">
                         <div class="h-6 w-6 rounded-full bg-white/5 flex items-center justify-center">
                             <i data-lucide="shield-check" size="12" class="text-sky-500"></i>
                         </div>
-                        <span class="text-[11px] font-semibold text-white/60 tracking-wide truncate">${u.UnitLeader}</span>
+                        <span class="text-[11px] font-semibold text-white/60 tracking-wide truncate">${toTitleCase(u.UnitLeader)}</span>
                     </div>
                 </div>
             `).join('');
@@ -172,7 +236,7 @@
             openModal('update');
             document.getElementById('primaryId').value = code;
             document.getElementById('UnitCode').value = code;
-            document.getElementById('UnitCode').disabled = true; // Code is primaryId, usually not editable
+            document.getElementById('UnitCode').disabled = true; 
             document.getElementById('UnitDesc').value = desc;
             document.getElementById('UnitLeader').value = leader;
         }
@@ -200,7 +264,7 @@
                     throw new Error(res.message);
                 }
             } catch (err) {
-                Swal.fire('Operation Failed', err.message, 'error');
+                Swal.fire({ title: 'Operation Failed', text: err.message, icon: 'error', background: '#151921', color: '#fff' });
                 loader.style.display = 'none';
             }
         };
@@ -223,7 +287,7 @@
                     const res = await API.post({ tab: 'UNIT', action: 'delete', primaryId: id });
                     if(res.status === 'success') init();
                 } catch (e) {
-                    Swal.fire('Error', e.message, 'error');
+                    Swal.fire({ title: 'Error', text: e.message, icon: 'error', background: '#151921', color: '#fff' });
                     loader.style.display = 'none';
                 }
             }
