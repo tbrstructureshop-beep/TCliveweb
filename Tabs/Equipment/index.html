@@ -207,19 +207,20 @@
         lucide.createIcons();
         const loader = document.getElementById('local-loader');
         const TAB_NAME = 'EQUIPMENT';
-        let bulkData = [], currentMode = 'single';
-
+        let bulkData = [], currentMode = 'single', editId = null;
+    
         const ST_ORDER = { 'Unserviceable (Damaged)': 0, 'In Service (Calibrated)': 1, 'Servicable (good condition)': 2 };
-
+    
         async function init() {
             loader.style.display = 'flex';
             try {
                 const [unitRes, eqRes] = await Promise.all([API.get('UNIT'), API.get(TAB_NAME)]);
                 document.getElementById('UnitCode').innerHTML = unitRes.data.map(u => `<option value="${u.UnitCode}">${u.UnitCode}</option>`).join('');
                 renderCards(eqRes.data);
-            } catch (e) { Swal.fire('Error', 'Communication Failed', 'error'); } finally { loader.style.display = 'none'; }
+            } catch (e) { Swal.fire('Error', 'Communication Failed', 'error'); } 
+            finally { loader.style.display = 'none'; }
         }
-
+    
         function renderCards(data) {
             const container = document.getElementById('eq-container');
             const grouped = data.reduce((acc, item) => {
@@ -228,14 +229,13 @@
                 acc[uc].push(item);
                 return acc;
             }, {});
-
+    
             if(Object.keys(grouped).length === 0) {
                 container.innerHTML = `<div class="py-32 text-center opacity-20 font-mono tracking-[0.5em]">SYSTEM_INVENTORY_EMPTY</div>`;
                 return;
             }
-
+    
             container.innerHTML = Object.keys(grouped).map(uCode => {
-                // Sort by Condition Priority
                 const items = grouped[uCode].sort((a, b) => ST_ORDER[a.Status] - ST_ORDER[b.Status]);
                 
                 const stats = {
@@ -244,7 +244,7 @@
                     unsrv: items.filter(i => i.Status === 'Unserviceable (Damaged)').length,
                     insrv: items.filter(i => i.Status === 'In Service (Calibrated)').length
                 };
-
+    
                 return `
                 <div class="eq-card">
                     <div class="flex flex-col xl:flex-row justify-between items-center gap-6 mb-8">
@@ -253,14 +253,14 @@
                             <h2 class="text-3xl font-black text-white tracking-tighter uppercase">${uCode}</h2>
                         </div>
                         <div class="flex flex-wrap gap-2 w-full xl:w-auto">
-                            <div class="stat-box border-sky-500/20"><span class="stat-val text-white">${stats.total}</span><span class="stat-lab">Total</span></div>
+                            <div class="stat-box border-sky-500/20"><span class="stat-val">${stats.total}</span><span class="stat-lab">Total</span></div>
                             <div class="stat-box border-emerald-500/20"><span class="stat-val text-emerald-400">${stats.srv}</span><span class="stat-lab">Good</span></div>
                             <div class="stat-box border-blue-500/20"><span class="stat-val text-blue-400">${stats.insrv}</span><span class="stat-lab">Calib</span></div>
                             <div class="stat-box border-red-500/30 ${stats.unsrv > 0 ? 'animate-pulse' : ''}"><span class="stat-val text-red-500">${stats.unsrv}</span><span class="stat-lab">Damaged</span></div>
                         </div>
                     </div>
-
-                    <details class="group">
+    
+                    <details class="group" open>
                         <summary class="list-none flex items-center justify-between p-4 bg-white/5 border border-white/5 rounded-2xl cursor-pointer hover:bg-white/10 transition">
                             <span class="text-[10px] font-bold tracking-widest uppercase text-sky-400">Inventory Registry Details</span>
                             <i data-lucide="chevron-down" class="group-open:rotate-180 transition"></i>
@@ -268,28 +268,26 @@
                         <div class="mt-6 overflow-x-auto">
                             <table class="w-full text-left text-xs">
                                 <thead class="opacity-20 uppercase font-bold border-b border-white/5">
-                                    <tr><th class="p-3">Part Number</th><th class="p-3">Description</th><th class="p-3">Note</th><th class="p-3">Status</th><th class="p-3 text-right">Delete</th></tr>
+                                    <tr><th class="p-3">Part Number</th><th class="p-3">Description</th><th class="p-3">Note</th><th class="p-3">Status</th><th class="p-3 text-right">Actions</th></tr>
                                 </thead>
                                 <tbody>
-                                    ${items.map(item => {
-                                        let rowStyle = "";
-                                        if(item.Status === 'Unserviceable (Damaged)') rowStyle = "bg-red-500/5 border-l-2 border-l-red-500";
-                                        
-                                        return `
-                                        <tr class="border-b border-white/[0.02] hover:bg-white/[0.02] ${rowStyle}">
+                                    ${items.map(item => `
+                                        <tr class="border-b border-white/[0.02] hover:bg-white/[0.02] ${item.Status === 'Unserviceable (Damaged)' ? 'bg-red-500/5 border-l-2 border-l-red-500' : ''}">
                                             <td class="p-3 font-mono text-sky-400">${item.EqpPartNumber || '-'}</td>
                                             <td class="p-3 font-black text-white uppercase">${item.EqpDescription || '-'}</td>
                                             <td class="p-3 opacity-60 text-[11px]">${item.Note || '-'}</td>
                                             <td class="p-3">
-                                                <select onchange="updateStatus('${uCode}', '${item.EqpPartNumber}', this.value)" class="st-select">
+                                                <select onchange="quickUpdateStatus('${item.Timestamp}', this.value)" class="st-select">
                                                     ${['Servicable (good condition)', 'Unserviceable (Damaged)', 'In Service (Calibrated)'].map(s => `<option ${item.Status === s ? 'selected' : ''}>${s}</option>`).join('')}
                                                 </select>
                                             </td>
                                             <td class="p-3 text-right">
-                                                <button onclick="deleteItem('${item.EqpPartNumber}')" class="text-white/10 hover:text-red-500 transition"><i data-lucide="trash-2" size="14"></i></button>
+                                                <div class="flex gap-2 justify-end">
+                                                    <button onclick='editItem(${JSON.stringify(item).replace(/'/g, "&apos;")})' class="text-white/20 hover:text-sky-400 transition"><i data-lucide="edit-3" size="14"></i></button>
+                                                    <button onclick="deleteItem('${item.Timestamp}')" class="text-white/10 hover:text-red-500 transition"><i data-lucide="trash-2" size="14"></i></button>
+                                                </div>
                                             </td>
-                                        </tr>`;
-                                    }).join('')}
+                                        </tr>`).join('')}
                                 </tbody>
                             </table>
                         </div>
@@ -298,20 +296,32 @@
             }).join('');
             lucide.createIcons();
         }
-
-        // --- CORE ENGINE ---
+    
         function openModal(mode) {
             currentMode = mode;
+            editId = null;
             document.getElementById('eq-modal').classList.remove('hidden');
             document.getElementById('modal-title').innerText = mode === 'bulk' ? 'Bulk Registry Engine' : 'Manual Item Entry';
             document.getElementById('single-container').classList.toggle('hidden', mode === 'bulk');
             document.getElementById('bulk-container').classList.toggle('hidden', mode === 'single');
+            if(mode === 'single') document.getElementById('s-pno').disabled = false;
             if(mode === 'bulk') focusBuffer();
         }
-
-        function closeModal() { document.getElementById('eq-modal').classList.add('hidden'); bulkData = []; renderBulkTable(); }
+    
+        function editItem(item) {
+            openModal('single');
+            editId = item.Timestamp;
+            document.getElementById('modal-title').innerText = 'Edit Inventory Record';
+            document.getElementById('UnitCode').value = item.UnitCode;
+            document.getElementById('s-pno').value = item.EqpPartNumber;
+            document.getElementById('s-desc').value = item.EqpDescription;
+            document.getElementById('s-note').value = item.Note;
+            document.getElementById('s-status').value = item.Status;
+        }
+    
+        function closeModal() { document.getElementById('eq-modal').classList.add('hidden'); bulkData = []; renderBulkTable(); editId = null; }
         function focusBuffer() { document.getElementById('paste-buffer').focus(); }
-
+    
         document.getElementById('paste-buffer').addEventListener('paste', (e) => {
             e.preventDefault();
             const raw = (e.clipboardData || window.clipboardData).getData('text');
@@ -322,7 +332,7 @@
             });
             renderBulkTable();
         });
-
+    
         function renderBulkTable() {
             const body = document.getElementById('bulk-table-body');
             body.innerHTML = bulkData.length ? bulkData.map((d, i) => `
@@ -335,13 +345,23 @@
             `).join('') : '<tr><td colspan="4" class="text-center py-10 opacity-20 italic">No stream detected...</td></tr>';
             lucide.createIcons();
         }
-
+    
         async function submitData() {
             loader.style.display = 'flex';
             const unit = document.getElementById('UnitCode').value;
             try {
                 if(currentMode === 'single') {
-                    await API.post({ tab: TAB_NAME, action: 'add', UnitCode: unit, EqpPartNumber: document.getElementById('s-pno').value, EqpDescription: document.getElementById('s-desc').value, Status: document.getElementById('s-status').value, Note: document.getElementById('s-note').value, primaryId: document.getElementById('s-pno').value });
+                    const payload = { 
+                        tab: TAB_NAME, 
+                        action: editId ? 'update' : 'add', 
+                        primaryId: editId || document.getElementById('s-pno').value,
+                        UnitCode: unit, 
+                        EqpPartNumber: document.getElementById('s-pno').value, 
+                        EqpDescription: document.getElementById('s-desc').value, 
+                        Status: document.getElementById('s-status').value, 
+                        Note: document.getElementById('s-note').value 
+                    };
+                    await API.post(payload);
                 } else {
                     for(let d of bulkData) {
                         await API.post({ tab: TAB_NAME, action: 'add', UnitCode: unit, EqpPartNumber: d.pno, EqpDescription: d.desc, Status: 'Servicable (good condition)', Note: d.note, primaryId: d.pno });
@@ -349,24 +369,29 @@
                 }
                 Swal.fire({ icon: 'success', title: 'Committed', background: '#151921', color: '#fff', timer: 1500, showConfirmButton: false });
                 closeModal(); init();
-            } catch(e) { Swal.fire('Error', 'Transaction Failed', 'error'); } finally { loader.style.display = 'none'; }
+            } catch(e) { Swal.fire('Error', 'Transaction Failed', 'error'); } 
+            finally { loader.style.display = 'none'; }
         }
-
-        async function updateStatus(uCode, pNo, status) {
+    
+        async function quickUpdateStatus(ts, status) {
             loader.style.display = 'flex';
-            await API.post({ tab: TAB_NAME, action: 'update', primaryId: pNo, Status: status });
-            init();
+            try {
+                await API.post({ tab: TAB_NAME, action: 'update', primaryId: ts, Status: status });
+                init();
+            } catch(e) { Swal.fire('Error', 'Update Failed', 'error'); loader.style.display = 'none'; }
         }
-
-        async function deleteItem(pNo) {
+    
+        async function deleteItem(ts) {
             const res = await Swal.fire({ title: 'Purge Item?', text: "Permanent removal from inventory.", icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', background: '#151921', color: '#fff' });
             if(res.isConfirmed) {
                 loader.style.display = 'flex';
-                await API.post({ tab: TAB_NAME, action: 'delete', primaryId: pNo });
-                init();
+                try {
+                    await API.post({ tab: TAB_NAME, action: 'delete', primaryId: ts });
+                    init();
+                } catch(e) { Swal.fire('Error', 'Delete Failed', 'error'); loader.style.display = 'none'; }
             }
         }
-
+    
         init();
     </script>
 </body>
