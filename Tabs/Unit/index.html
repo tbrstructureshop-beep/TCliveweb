@@ -11,10 +11,45 @@
         :root { 
             --bg: #0b0e14; 
             --panel: #151921; 
-            --border: rgba(255, 255, 255, 0.1); 
-            --accent: #0ea5e9; 
+            --border: rgba(255,255,255,0.1); 
+            --accent: #0ea5e9;
+            --text-primary: #ffffff; /* New Variable for bold text */
+            --text-secondary: #94a3b8; /* New Variable for dim text */
         }
-        body { background: transparent; color: #94a3b8; font-family: 'Inter', sans-serif; overflow-x: hidden; }
+        
+        /* LIGHT MODE OVERRIDES */
+        .light { 
+            --bg: #f1f5f9; 
+            --panel: #ffffff; 
+            --border: rgba(0,0,0,0.1); 
+            --accent: #0284c7;
+            --text-primary: #0f172a; 
+            --text-secondary: #475569; 
+        }
+        
+        body { 
+            background: transparent; 
+            color: var(--text-secondary); /* Use variable instead of hardcolor */
+            font-family: 'Inter', sans-serif; 
+        }
+        
+        /* This fixes your dropdown visibility */
+        .input-field { 
+            background-color: var(--panel); /* Match panel color */
+            color: var(--text-primary) !important; /* Ensure text is visible */
+            border: 1px solid var(--border);
+        }
+        
+        /* Ensure dropdown options are readable in both modes */
+        select.input-field option {
+            background-color: var(--panel);
+            color: var(--text-primary);
+        }
+        
+        /* Fix for Tailwind text-white classes in light mode */
+        .light .text-white { color: var(--text-primary) !important; }
+        .light .bg-white\/5 { background-color: rgba(0,0,0,0.05); }
+        .light .bg-white\/10 { background-color: rgba(0,0,0,0.1); }
         
         /* Industrial Card Styling */
         .industrial-card {
