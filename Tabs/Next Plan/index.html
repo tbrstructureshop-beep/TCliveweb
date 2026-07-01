@@ -21,21 +21,22 @@
         .text-white, h1, h2, h3, h4 { color: var(--text-bold) !important; }
         .plan-card { background-color: var(--panel) !important; border: 1px solid var(--border) !important; border-radius: 2.5rem; padding: 2rem; margin-bottom: 2rem; }
         
-        /* Summary Widgets */
+        /* BEAUTIFIED WIDGETS */
+        .widget-grid { display: grid; gap: 0.75rem; margin-bottom: 1rem; }
         .widget-card {
-            border-radius: 1.25rem; padding: 1rem; border: 1px solid var(--border);
+            border-radius: 1.25rem; padding: 1.25rem 1rem; border: 1px solid var(--border);
             display: flex; flex-direction: column; justify-content: center; align-items: center;
-            text-align: center; transition: transform 0.2s;
+            text-align: center; transition: all 0.3s ease;
         }
-        .widget-val { font-size: 1.5rem; font-weight: 900; line-height: 1; margin-bottom: 0.25rem; }
-        .widget-lab { font-size: 8px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.6; }
-        .widget-desc { font-size: 9px; opacity: 0.4; margin-top: 4px; line-height: 1.1; font-weight: 500; }
+        .widget-val { font-size: 1.75rem; font-weight: 900; line-height: 1; margin-bottom: 0.25rem; }
+        .widget-lab { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; }
+        .widget-desc { font-size: 8px; opacity: 0.5; margin-top: 6px; line-height: 1.2; font-weight: 500; max-width: 120px; }
 
-        /* Accordion */
-        details { background: var(--input-bg); border: 1px solid var(--border); border-radius: 1.5rem; margin-top: 1.5rem; overflow: hidden; }
+        /* ACCORDIONS (Hidden by Default) */
+        details { background: var(--input-bg); border: 1px solid var(--border); border-radius: 1.5rem; margin-top: 0.75rem; overflow: hidden; }
         summary { list-style: none; padding: 1.25rem; cursor: pointer; display: flex; align-items: center; justify-content: space-between; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); }
         summary::-webkit-details-marker { display: none; }
-        .details-content { padding: 0; border-top: 1px solid var(--border); background: rgba(0,0,0,0.1); }
+        .details-content { padding: 1.25rem; border-top: 1px solid var(--border); background: rgba(0,0,0,0.1); }
         .light .details-content { background: rgba(0,0,0,0.02); }
 
         .input-field, .st-select { width: 100%; background: var(--input-bg) !important; border: 1px solid var(--border) !important; color: var(--text-bold) !important; border-radius: 0.75rem; padding: 0.75rem; outline: none; font-size: 0.875rem; }
@@ -56,7 +57,7 @@
     <div id="local-loader">
         <div class="flex flex-col items-center gap-3">
             <div class="w-12 h-12 border-4 border-sky-500/10 border-t-sky-500 rounded-full animate-spin"></div>
-            <span class="text-[10px] font-mono uppercase tracking-[0.4em] text-sky-500 animate-pulse font-bold">Processing_Cycle_Plans...</span>
+            <span class="text-[10px] font-mono uppercase tracking-[0.4em] text-sky-500 animate-pulse font-bold">Synchronizing_Plan_Matrix...</span>
         </div>
     </div>
 
@@ -64,7 +65,7 @@
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-10">
         <div>
             <h1 class="text-2xl font-bold text-white tracking-tighter uppercase">Predictive Cycle Management</h1>
-            <p class="text-xs opacity-50 font-mono mt-1 uppercase tracking-tighter">Multi-Section Performance Widgets</p>
+            <p class="text-xs opacity-50 font-mono mt-1 uppercase tracking-tighter">Strategic Planning & Resource allocation</p>
         </div>
         <button onclick="openModal('add')" class="bg-sky-600 hover:bg-sky-500 text-white px-6 py-3 rounded-2xl font-bold text-xs flex items-center gap-2 shadow-lg shadow-sky-600/20 transition-all active:scale-95">
             <i data-lucide="plus-circle" size="18"></i> CONFIGURE PLAN
@@ -96,7 +97,7 @@
                         </thead>
                         <tbody id="bulk-body"></tbody>
                     </table>
-                    <button id="add-row-btn" onclick="addInputRow()" class="w-full p-4 text-[10px] font-bold uppercase opacity-30 hover:opacity-100 hover:bg-white/5 transition border-t border-white/5">+ Append New Entry Row</button>
+                    <button id="add-row-btn" onclick="addInputRow()" class="w-full p-4 text-[10px] font-bold uppercase opacity-30 hover:opacity-100 hover:bg-white/5 transition border-t border-white/5">+ Append New Row</button>
                 </div>
             </div>
 
@@ -113,18 +114,18 @@
         const STATUS_PRIO = { 'In Progress': 0, 'Planned': 1, 'Achieved': 2 };
         
         const SCOPE_DEFS = {
-            'Group_1': { lab: 'Shift Target', desc: 'Main production goals for current shift', color: 'border-sky-500/30 bg-sky-500/5 text-sky-400' },
-            'Group_2': { lab: 'Unit Support', desc: 'Dependencies from supporting departments', color: 'border-indigo-500/30 bg-indigo-500/5 text-indigo-400' },
-            'Group_3': { lab: 'Escalation', desc: 'Critical items requiring management decision', color: 'border-rose-500/30 bg-rose-500/5 text-rose-500' }
+            'Group_1': { lab: 'Shift Target', desc: 'Primary production goals for current shift duration', color: 'border-sky-500/30 bg-sky-500/5 text-sky-400' },
+            'Group_2': { lab: 'Unit Support', desc: 'Critical cross-unit dependencies and logistics', color: 'border-indigo-500/30 bg-indigo-500/5 text-indigo-400' },
+            'Group_3': { lab: 'Escalation', desc: 'Issues requiring external management authorization', color: 'border-rose-500/30 bg-rose-500/5 text-rose-500' }
         };
 
         const FUNC_DEFS = {
-            'Production Team': 'bg-blue-500/5 border-blue-500/20 text-blue-400',
-            'Engineering Support': 'bg-purple-500/5 border-purple-500/20 text-purple-400',
-            'Material & MPC': 'bg-amber-500/5 border-amber-500/20 text-amber-400',
-            'Tool & Equipment Team': 'bg-emerald-500/5 border-emerald-500/20 text-emerald-400',
-            'Keuangan / Finance': 'bg-pink-500/5 border-pink-500/20 text-pink-400',
-            'Leader & Top Leader': 'bg-slate-500/5 border-slate-500/20 text-slate-100'
+            'Production Team': 'border-blue-500/20 bg-blue-500/5 text-blue-400',
+            'Engineering Support': 'border-purple-500/20 bg-purple-500/5 text-purple-400',
+            'Material & MPC': 'border-amber-500/20 bg-amber-500/5 text-amber-400',
+            'Tool & Equipment Team': 'border-emerald-500/20 bg-emerald-500/5 text-emerald-400',
+            'Keuangan / Finance': 'border-pink-500/20 bg-pink-500/5 text-pink-400',
+            'Leader & Top Leader': 'border-slate-500/20 bg-slate-500/5 text-slate-100'
         };
 
         let activeUnits = [], editId = null;
@@ -157,13 +158,13 @@
                 const items = grouped[uCode];
                 const sortedItems = [...items].sort((a, b) => STATUS_PRIO[a.Status] - STATUS_PRIO[b.Status]);
 
-                // Summary Counters
+                // Summaries
                 const scopes = { 'Group_1': 0, 'Group_2': 0, 'Group_3': 0 };
                 const funcs = {};
                 const stats = { 'Planned': 0, 'In Progress': 0, 'Achieved': 0 };
                 
                 items.forEach(i => {
-                    scopes[i.ScopeGroup]++;
+                    if(scopes[i.ScopeGroup] !== undefined) scopes[i.ScopeGroup]++;
                     funcs[i.FunctionalScope] = (funcs[i.FunctionalScope] || 0) + 1;
                     stats[i.Status]++;
                 });
@@ -172,64 +173,71 @@
                 <div class="plan-card">
                     <div class="flex justify-between items-center mb-8">
                         <h2 class="text-3xl font-black text-white tracking-tighter uppercase">${uCode}</h2>
-                        <div class="text-[10px] font-mono text-sky-500 opacity-40">${items.length} ACTIVE_PLAN_NODES</div>
+                        <div class="text-[10px] font-mono text-sky-500 opacity-40">${items.length} ACTIVE_ITEMS</div>
                     </div>
 
-                    <!-- WIDGET SECTION: SCOPE -->
-                    <div class="mb-6">
-                        <span class="text-[9px] uppercase font-black tracking-widest opacity-30 mb-3 block">Prototype Scope Hierarchy</span>
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                            ${Object.entries(SCOPE_DEFS).map(([key, def]) => `
-                                <div class="widget-card ${def.color}">
-                                    <span class="widget-val">${scopes[key] || 0}</span>
-                                    <span class="widget-lab">${def.lab}</span>
-                                    <span class="widget-desc">${def.desc}</span>
+                    <!-- SCOPE SUMMARY -->
+                    <details>
+                        <summary>Summary Prototype Scope <i data-lucide="chevron-down" size="14"></i></summary>
+                        <div class="details-content">
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                ${Object.entries(SCOPE_DEFS).map(([key, def]) => `
+                                    <div class="widget-card ${def.color}">
+                                        <span class="widget-val">${scopes[key] || 0}</span>
+                                        <span class="widget-lab">${def.lab}</span>
+                                        <span class="widget-desc">${def.desc}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </details>
+
+                    <!-- FUNCTIONAL SUMMARY -->
+                    <details>
+                        <summary>Summary Functional Responsibility <i data-lucide="chevron-down" size="14"></i></summary>
+                        <div class="details-content">
+                            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                                ${Object.entries(FUNC_DEFS).map(([key, style]) => `
+                                    <div class="widget-card ${style} !py-4">
+                                        <span class="widget-val !text-xl">${funcs[key] || 0}</span>
+                                        <span class="widget-lab !text-[7px]">${key.replace('Team', '').trim()}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </details>
+
+                    <!-- EXECUTION STATUS SUMMARY -->
+                    <details>
+                        <summary>Summary Execution Status <i data-lucide="chevron-down" size="14"></i></summary>
+                        <div class="details-content">
+                            <div class="grid grid-cols-3 gap-4">
+                                <div class="widget-card border-slate-500/20 bg-slate-500/5 text-slate-400">
+                                    <span class="widget-val">${stats.Planned}</span><span class="widget-lab">Planned</span>
                                 </div>
-                            `).join('')}
-                        </div>
-                    </div>
-
-                    <!-- WIDGET SECTION: FUNCTIONAL -->
-                    <div class="mb-6">
-                        <span class="text-[9px] uppercase font-black tracking-widest opacity-30 mb-3 block">Functional Responsibility Grid</span>
-                        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
-                            ${Object.entries(FUNC_DEFS).map(([key, style]) => `
-                                <div class="widget-card ${style} !py-3">
-                                    <span class="widget-val !text-lg">${funcs[key] || 0}</span>
-                                    <span class="widget-lab !text-[7px]">${key.replace('Team', '')}</span>
+                                <div class="widget-card border-blue-500/20 bg-blue-500/5 text-blue-400">
+                                    <span class="widget-val">${stats['In Progress'] || stats.In_Progress || 0}</span><span class="widget-lab">In Progress</span>
                                 </div>
-                            `).join('')}
-                        </div>
-                    </div>
-
-                    <!-- WIDGET SECTION: EXECUTION -->
-                    <div>
-                        <span class="text-[9px] uppercase font-black tracking-widest opacity-30 mb-3 block">Execution Cycle Status</span>
-                        <div class="grid grid-cols-3 gap-3">
-                            <div class="widget-card border-slate-500/20 bg-slate-500/5 text-slate-400">
-                                <span class="widget-val">${stats.Planned}</span><span class="widget-lab">Planned</span>
-                            </div>
-                            <div class="widget-card border-blue-500/20 bg-blue-500/5 text-blue-400">
-                                <span class="widget-val">${stats['In Progress'] || 0}</span><span class="widget-lab">In Progress</span>
-                            </div>
-                            <div class="widget-card border-emerald-500/20 bg-emerald-500/5 text-emerald-400">
-                                <span class="widget-val">${stats.Achieved}</span><span class="widget-lab">Achieved</span>
+                                <div class="widget-card border-emerald-500/20 bg-emerald-500/5 text-emerald-400">
+                                    <span class="widget-val">${stats.Achieved}</span><span class="widget-lab">Achieved</span>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    </details>
 
+                    <!-- MASTER LIST -->
                     <details open>
-                        <summary>Master Task Activity Detail <i data-lucide="chevron-down" size="14"></i></summary>
-                        <div class="details-content overflow-x-auto">
+                        <summary>Activity Registry Detail <i data-lucide="chevron-down" size="14"></i></summary>
+                        <div class="details-content overflow-x-auto p-0">
                             <table class="bulk-table">
-                                <thead class="opacity-30 uppercase font-bold text-[9px]">
-                                    <tr><th>Time</th><th>Func Scope</th><th>Description</th><th>Status</th><th></th></tr>
+                                <thead class="opacity-30 uppercase font-bold">
+                                    <tr><th>Time</th><th>Functional Scope</th><th>Description</th><th>Status</th><th></th></tr>
                                 </thead>
                                 <tbody>
                                     ${sortedItems.map(item => `
                                         <tr class="group/row">
                                             <td class="opacity-30 text-[9px] font-mono w-24">${item.Timestamp.split(' ')[1] || item.Timestamp}</td>
-                                            <td class="text-sky-500 font-bold text-[9px] w-32 uppercase">${item.FunctionalScope}</td>
+                                            <td class="text-sky-500 font-bold text-[9px] w-40 uppercase">${item.FunctionalScope}</td>
                                             <td class="text-white/80 leading-relaxed text-[11px]">${item.Detail}</td>
                                             <td>
                                                 <select onchange="updateLiveStatus('${item.Timestamp}', this.value)" class="st-select">
@@ -253,8 +261,7 @@
             lucide.createIcons();
         }
 
-        // --- CORE ACTIONS ---
-        function openModal(mode) {
+        function openModal() {
             editId = null;
             document.getElementById('plan-modal').classList.remove('hidden');
             document.getElementById('modal-title').innerText = "Planning Engine";
@@ -267,11 +274,10 @@
         function editPlan(item) {
             editId = item.Timestamp;
             document.getElementById('plan-modal').classList.remove('hidden');
-            document.getElementById('modal-title').innerText = "Edit Plan Record";
+            document.getElementById('modal-title').innerText = "Edit Strategy Plan";
             document.getElementById('add-row-btn').classList.add('hidden');
-            document.getElementById('submit-btn').innerText = "Update Record";
+            document.getElementById('submit-btn').innerText = "Update Plan Record";
             document.getElementById('UnitCode').value = item.UnitCode;
-            
             document.getElementById('bulk-body').innerHTML = "";
             addInputRow(item);
         }
@@ -289,7 +295,7 @@
                 </select></td>
                 <td><input class="input-field d-inp" value="${data?.Detail || ''}" placeholder="..."></td>
                 <td><select class="input-field text-[10px] s-sel">
-                    ${Object.keys(STATUS_PRIO).map(s => `<option ${data?.Status===s?'selected':''}>${s}</option>`).join('')}
+                    ${Object.keys(STATUS_PRIO).map(s => `<option ${data?.Status === s ? 'selected' : ''}>${s}</option>`).join('')}
                 </select></td>
                 <td>${data ? '' : '<button onclick="this.closest(\'tr\').remove()" class="text-red-500/30"><i data-lucide="x" size="14"></i></button>'}</td>
             `;
