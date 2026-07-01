@@ -11,7 +11,6 @@
         :root { 
             --bg: #0b0e14; --panel: #151921; --border: rgba(255, 255, 255, 0.1); --accent: #0ea5e9; 
             --text-main: #94a3b8; --text-bold: #ffffff; --input-bg: rgba(255, 255, 255, 0.05);
-            --c-srv: #10b981; --c-usrv: #ef4444; --c-ins: #3b82f6;
         }
         .light {
             --bg: transparent; --panel: #ffffff; --border: #e2e8f0; --accent: #0284c7; 
@@ -27,27 +26,21 @@
         .unit-tab { padding: 0.75rem 1.5rem; border-radius: 1rem; font-size: 11px; font-weight: 800; white-space: nowrap; transition: 0.3s; color: var(--text-main); border: 1px solid transparent; }
         .unit-tab.active { background: var(--accent); color: white !important; box-shadow: 0 10px 20px -5px rgba(14, 165, 233, 0.4); }
         .nav-arrow { background: var(--panel); border: 1px solid var(--border); border-radius: 50%; width: 32px; height: 32px; display: flex; items-center; justify-content: center; color: var(--accent); cursor: pointer; transition: 0.2s; flex-shrink: 0; }
-        .nav-arrow:hover { background: var(--accent); color: white; }
 
-        .eq-card { background: var(--panel) !important; border: 1px solid var(--border) !important; border-radius: 2.5rem; padding: 2rem; margin-bottom: 2rem; transition: all 0.3s ease; box-shadow: 0 15px 35px -10px rgba(0,0,0,0.3); }
-        .stat-box { flex: 1; min-width: 90px; padding: 12px 8px; border-radius: 1.25rem; border: 1px solid var(--border); text-align: center; background: rgba(0,0,0,0.05); }
-        .light .stat-box { background: rgba(0,0,0,0.02); }
-        .stat-val { display: block; font-size: 1.25rem; font-weight: 900; line-height: 1; margin-bottom: 4px; }
-        .stat-lab { font-size: 8px; font-weight: 800; text-transform: uppercase; opacity: 0.5; }
-
+        .eq-card { background: var(--panel) !important; border: 1px solid var(--border) !important; border-radius: 2.5rem; padding: 2rem; margin-bottom: 2rem; box-shadow: 0 15px 35px -10px rgba(0,0,0,0.3); }
+        .stat-box { flex: 1; min-width: 90px; padding: 12px 8px; border-radius: 1.25rem; border: 1px solid var(--border); text-align: center; background: var(--input-bg); }
+        
         .input-field, .st-select { width: 100%; background: var(--input-bg) !important; border: 1px solid var(--border) !important; color: var(--text-bold) !important; border-radius: 0.75rem; padding: 0.75rem; outline: none; font-size: 0.875rem; }
         select option { background-color: #ffffff !important; color: #1e293b !important; }
         :not(.light) select option { background-color: #151921 !important; color: #ffffff !important; }
         
         .label-style { text-transform: uppercase; font-size: 10px; font-weight: 700; opacity: 0.4; margin-bottom: 0.25rem; display: block; letter-spacing: 0.1em; }
         #local-loader { display: none; position: fixed; inset: 0; background: rgba(11, 14, 20, 0.9); backdrop-filter: blur(8px); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; }
-        .bulk-table-container { border: 1px solid var(--border); border-radius: 1rem; overflow: hidden; background: rgba(0,0,0,0.05); }
-        .bulk-table { width: 100%; font-size: 11px; }
-        .bulk-table th { padding: 12px; background: rgba(0,0,0,0.05); text-align: left; opacity: 0.5; }
-        .bulk-table td { padding: 10px; border-top: 1px solid var(--border); }
+        
+        .master-table { width: 100%; font-size: 11px; }
+        .master-table th { padding: 12px; text-align: left; opacity: 0.4; text-transform: uppercase; border-bottom: 1px solid var(--border); }
+        .master-table td { padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.02); vertical-align: middle; }
 
-        .light .text-sky-500, .light .text-sky-400 { color: #0369a1 !important; }
-        .light .bg-sky-500\/10 { background-color: rgba(2, 132, 199, 0.1) !important; border-color: rgba(2, 132, 199, 0.2) !important; }
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
     </style>
@@ -66,11 +59,11 @@
             <p class="text-xs opacity-50 font-mono mt-1 uppercase tracking-tighter">Inventory Health & Resource Management</p>
         </div>
         <div class="flex gap-3">
-            <button onclick="openModal('bulk')" class="bg-white/5 border border-white/10 hover:bg-white/10 text-white px-5 py-3 rounded-2xl font-bold text-xs flex items-center gap-2 transition-all">
-                <i data-lucide="package-search" size="16"></i> BULK GRID LOAD
+            <button onclick="openModal('bulk')" class="bg-white/5 border border-white/10 hover:bg-white/10 text-white px-5 py-2.5 rounded-xl font-bold text-[10px] uppercase transition-all">
+                <i data-lucide="package-search" size="14"></i> Bulk Load
             </button>
-            <button onclick="openModal('single')" class="bg-sky-600 hover:bg-sky-500 text-white px-6 py-3 rounded-2xl font-bold text-xs flex items-center gap-2 shadow-lg shadow-sky-600/20 transition-all">
-                <i data-lucide="plus" size="16"></i> ADD ITEM
+            <button onclick="openModal('single')" class="bg-sky-600 hover:bg-sky-500 text-white px-5 py-2.5 rounded-xl font-bold text-[10px] uppercase transition-all shadow-lg shadow-sky-600/20">
+                <i data-lucide="plus" size="14"></i> Add Item
             </button>
         </div>
     </div>
@@ -91,7 +84,6 @@
                 <h3 id="modal-title" class="text-xl font-bold text-white uppercase tracking-widest">Inventory Control</h3>
                 <button onclick="closeModal()" class="p-2 text-white/30 hover:text-white"><i data-lucide="x"></i></button>
             </div>
-            
             <div class="p-8 overflow-y-auto flex-1">
                 <div class="mb-8"><label class="label-style">Deployment Node</label><select id="UnitCode" class="input-field"></select></div>
                 <div id="bulk-container" class="hidden">
@@ -100,13 +92,14 @@
                         <p class="text-sm text-sky-400 font-bold">Paste from Excel (CTRL+V)</p>
                         <p class="text-[10px] opacity-30 mt-1 uppercase font-mono">PN | DESC | NOTE</p>
                     </div>
-                    <div class="bulk-table-container">
-                        <table class="bulk-table"><thead><tr><th>Part Number</th><th>Description</th><th>Note</th><th class="w-10"></th></tr></thead><tbody id="bulk-table-body"></tbody></table>
+                    <div class="border border-white/10 rounded-xl overflow-hidden">
+                        <table class="master-table"><thead><tr><th>PN</th><th>Desc</th><th>Note</th><th class="w-10"></th></tr></thead><tbody id="bulk-table-body"></tbody></table>
                     </div>
                 </div>
                 <div id="single-container" class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div><label class="label-style">Part Number</label><input id="s-pno" class="input-field" placeholder="PN-999-X"></div>
-                    <div><label class="label-style">Eqp Description</label><input id="s-desc" class="input-field" placeholder="Tool name..."></div>
+                    <input type="hidden" id="primaryId">
+                    <div><label class="label-style">Part Number</label><input id="s-pno" class="input-field" placeholder="PN-XXX"></div>
+                    <div><label class="label-style">Eqp Description</label><input id="s-desc" class="input-field" placeholder="Description..."></div>
                     <div class="md:col-span-2"><label class="label-style">Note</label><input id="s-note" class="input-field" placeholder="Condition or location..."></div>
                     <div><label class="label-style">Status</label><select id="s-status" class="input-field"><option>Servicable (good condition)</option><option>Unserviceable (Damaged)</option><option>In Service (Calibrated)</option></select></div>
                 </div>
@@ -149,15 +142,14 @@
         function renderCards() {
             const container = document.getElementById('eq-container');
             const items = rawData.filter(i => i.UnitCode === activeUnit).sort((a, b) => ST_ORDER[a.Status] - ST_ORDER[b.Status]);
-            
-            if(!activeUnit) { container.innerHTML = `<div class="py-20 text-center opacity-20 font-mono uppercase tracking-widest">SELECT_NODE</div>`; return; }
+            if(!activeUnit) { container.innerHTML = `<div class="py-20 text-center opacity-20 font-mono uppercase tracking-widest">Select_Node</div>`; return; }
 
             const stats = { total: items.length, srv: items.filter(i => i.Status === 'Servicable (good condition)').length, unsrv: items.filter(i => i.Status === 'Unserviceable (Damaged)').length, insrv: items.filter(i => i.Status === 'In Service (Calibrated)').length };
 
             container.innerHTML = `
                 <div class="eq-card animate-in fade-in duration-500">
                     <div class="flex flex-col xl:flex-row justify-between items-center gap-6 mb-8">
-                        <div class="w-full xl:w-auto"><span class="label-style">Active Node</span><h2 class="text-4xl font-black text-white tracking-tighter uppercase">${activeUnit}</h2></div>
+                        <div class="w-full xl:w-auto"><span class="label-style">Active Node</span><h2 class="text-4xl font-black text-white tracking-tighter">${activeUnit}</h2></div>
                         <div class="flex flex-wrap gap-2 w-full xl:w-auto">
                             <div class="stat-box"><span class="stat-val">${stats.total}</span><span class="stat-lab">Total</span></div>
                             <div class="stat-box border-emerald-500/20"><span class="stat-val text-emerald-400">${stats.srv}</span><span class="stat-lab">Good</span></div>
@@ -167,22 +159,22 @@
                     </div>
                     <div class="overflow-x-auto">
                         <table class="master-table">
-                            <thead class="opacity-20 uppercase font-bold text-[9px] border-b border-white/5"><tr><th class="p-3">Part Number</th><th class="p-3">Description</th><th class="p-3">Note</th><th class="p-3">Status</th><th class="p-3 text-right">Actions</th></tr></thead>
+                            <thead><tr><th>PN</th><th>Description</th><th>Note</th><th>Status</th><th class="text-right">Action</th></tr></thead>
                             <tbody>
                                 ${items.map(item => `
-                                    <tr class="border-b border-white/[0.02] hover:bg-white/[0.02] ${item.Status === 'Unserviceable (Damaged)' ? 'bg-red-500/5 border-l-4 border-l-red-500' : ''}">
-                                        <td class="p-3 font-mono text-sky-400 text-[10px]">${item.EqpPartNumber}</td>
-                                        <td class="p-3 font-black text-white uppercase text-[10px]">${item.EqpDescription}</td>
-                                        <td class="p-3 opacity-60 text-[10px]">${item.Note || '-'}</td>
-                                        <td class="p-3">
-                                            <select onchange="quickUpdateStatus('${item.Timestamp}', this.value)" class="st-select">
+                                    <tr class="group hover:bg-white/5 border-b border-white/[0.02] ${item.Status === 'Unserviceable (Damaged)' ? 'bg-red-500/5 border-l-4 border-l-red-500' : ''}">
+                                        <td class="font-mono text-sky-400 text-[10px]">${item.EqpPartNumber}</td>
+                                        <td class="font-black text-white uppercase text-[10px]">${item.EqpDescription}</td>
+                                        <td class="opacity-60 text-[10px]">${item.Note || '-'}</td>
+                                        <td>
+                                            <select onchange="quickUpdateStatus('${item.Timestamp}', this.value)" class="bg-transparent border-none text-[10px] font-bold outline-none cursor-pointer">
                                                 ${['Servicable (good condition)', 'Unserviceable (Damaged)', 'In Service (Calibrated)'].map(s => `<option ${item.Status === s ? 'selected' : ''}>${s}</option>`).join('')}
                                             </select>
                                         </td>
-                                        <td class="p-3 text-right">
-                                            <div class="flex gap-2 justify-end opacity-0 group-hover/row:opacity-100 transition">
-                                                <button onclick='editItem(${JSON.stringify(item).replace(/'/g, "&apos;")})' class="text-white/20 hover:text-sky-400 transition"><i data-lucide="edit-3" size="14"></i></button>
-                                                <button onclick="deleteItem('${item.Timestamp}')" class="text-white/10 hover:text-red-500 transition"><i data-lucide="trash-2" size="14"></i></button>
+                                        <td class="text-right">
+                                            <div class="flex gap-2 justify-end opacity-0 group-hover:opacity-100 transition">
+                                                <button onclick='editItem(${JSON.stringify(item).replace(/'/g, "&apos;")})' class="text-sky-500/50 hover:text-sky-400 transition"><i data-lucide="edit-3" size="14"></i></button>
+                                                <button onclick="deleteItem('${item.Timestamp}')" class="text-red-500/30 hover:text-red-500 transition"><i data-lucide="trash-2" size="14"></i></button>
                                             </div>
                                         </td>
                                     </tr>`).join('')}
@@ -207,7 +199,7 @@
             document.getElementById('s-desc').value = item.EqpDescription; document.getElementById('s-note').value = item.Note; document.getElementById('s-status').value = item.Status;
         }
 
-        function closeModal() { document.getElementById('eq-modal').classList.add('hidden'); bulkData = []; renderBulkTable(); editId = null; }
+        function closeModal() { document.getElementById('eq-modal').classList.add('hidden'); bulkData = []; editId = null; }
         function focusBuffer() { document.getElementById('paste-buffer').focus(); }
 
         document.getElementById('paste-buffer').addEventListener('paste', (e) => {
@@ -225,12 +217,11 @@
 
         async function submitData() {
             loader.style.display = 'flex';
-            const unit = document.getElementById('UnitCode').value;
             try {
                 if(currentMode === 'single') {
-                    await API.post({ tab: TAB_NAME, action: editId ? 'update' : 'add', primaryId: editId || document.getElementById('s-pno').value, UnitCode: unit, EqpPartNumber: document.getElementById('s-pno').value, EqpDescription: document.getElementById('s-desc').value, Status: document.getElementById('s-status').value, Note: document.getElementById('s-note').value });
+                    await API.post({ tab: TAB_NAME, action: editId ? 'update' : 'add', primaryId: editId || document.getElementById('s-pno').value, UnitCode: document.getElementById('UnitCode').value, EqpPartNumber: document.getElementById('s-pno').value, EqpDescription: document.getElementById('s-desc').value, Status: document.getElementById('s-status').value, Note: document.getElementById('s-note').value });
                 } else {
-                    for(let d of bulkData) await API.post({ tab: TAB_NAME, action: 'add', UnitCode: unit, EqpPartNumber: d.pno, EqpDescription: d.desc, Status: 'Servicable (good condition)', Note: d.note, primaryId: d.pno });
+                    for(let d of bulkData) await API.post({ tab: TAB_NAME, action: 'add', UnitCode: document.getElementById('UnitCode').value, EqpPartNumber: d.pno, EqpDescription: d.desc, Status: 'Servicable (good condition)', Note: d.note, primaryId: d.pno });
                 }
                 closeModal(); await init();
             } catch(e) { loader.style.display = 'none'; }
@@ -239,9 +230,8 @@
         async function quickUpdateStatus(ts, status) { loader.style.display = 'flex'; try { await API.post({ tab: TAB_NAME, action: 'update', primaryId: ts, Status: status }); await init(); } catch(e) { loader.style.display = 'none'; } }
         async function deleteItem(ts) {
             const res = await Swal.fire({ title: 'Purge Item?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', background: '#151921', color: '#fff' });
-            if(res.isConfirmed) { loader.style.display = 'flex'; try { await API.post({ tab: TAB_NAME, action: 'delete', primaryId: ts }); await init(); } catch(e) { loader.style.display = 'none'; } }
+            if(res.isConfirmed) { loader.style.display = 'flex'; try { await API.post({ tab: 'EQUIPMENT', action: 'delete', primaryId: ts }); await init(); } catch(e) { loader.style.display = 'none'; } }
         }
-
         init();
     </script>
 </body>
