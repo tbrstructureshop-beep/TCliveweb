@@ -12,61 +12,88 @@
             --bg: #0b0e14; 
             --panel: #151921; 
             --border: rgba(255, 255, 255, 0.1); 
+            --text-main: #94a3b8;
+            --text-bright: #ffffff;
+            --input-bg: rgba(255, 255, 255, 0.05);
             --accent: #0ea5e9; 
         }
-        body { background: transparent; color: #94a3b8; font-family: 'Inter', sans-serif; overflow-x: hidden; }
+    
+        /* Light Mode Overrides */
+        .light {
+            --bg: #f1f5f9;
+            --panel: #ffffff;
+            --border: rgba(0, 0, 0, 0.1);
+            --text-main: #475569;
+            --text-bright: #0f172a;
+            --input-bg: rgba(0, 0, 0, 0.05);
+        }
+    
+        body { 
+            background: transparent; 
+            color: var(--text-main); 
+            font-family: 'Inter', sans-serif; 
+            overflow-x: hidden;
+            transition: all 0.3s ease;
+        }
         
-        /* Industrial Card */
+        /* Industrial Card Layout */
         .industrial-card {
-            background-color: rgba(255, 255, 255, 0.03);
-            border: 1px solid var(--border);
+            background-color: var(--panel) !important;
+            border: 1px solid var(--border) !important;
             border-radius: 2rem;
             padding: 1.5rem;
             margin-bottom: 1.5rem;
             transition: all 0.3s ease;
         }
-        .industrial-card:hover { border-color: rgba(14, 165, 233, 0.3); }
-
+        .industrial-card:hover { border-color: var(--accent) !important; }
+    
+        /* Shift Item (Inside Card) */
         .shift-item {
-            background-color: rgba(0, 0, 0, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            background-color: var(--input-bg);
+            border: 1px solid var(--border);
             border-radius: 1.25rem;
             padding: 1.25rem;
             position: relative;
             margin-bottom: 1rem;
         }
-
-        /* Standard CSS for Input Fields */
-        .input-field {
+    
+        /* Standardized Input Fields & Dropdowns */
+        .input-field, .st-select {
             width: 100%;
-            background-color: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--border);
+            background-color: var(--input-bg) !important;
+            border: 1px solid var(--border) !important;
             border-radius: 0.75rem;
             padding: 0.75rem;
             outline: none;
-            color: white;
+            color: var(--text-bright) !important;
             font-size: 0.875rem;
             transition: all 0.2s ease;
         }
         .input-field:focus {
-            border-color: var(--accent);
-            background-color: rgba(255, 255, 255, 0.08);
+            border-color: var(--accent) !important;
+        }
+    
+        /* Browser compatibility for dropdown list */
+        select.input-field option {
+            background-color: var(--panel) !important;
+            color: var(--text-bright) !important;
         }
         
         .label-style {
             text-transform: uppercase;
             font-size: 10px;
             font-weight: 700;
-            opacity: 0.4;
+            color: var(--text-main);
+            opacity: 0.6;
             margin-bottom: 0.25rem;
             display: block;
             letter-spacing: 0.1em;
         }
         
-        /* Modal Container Style */
+        /* Modal Container Sync */
         .modal-container {
-            background-color: #151921;
-            border: 1px solid var(--border);
+            background-color: var(--panel) !important;
+            border: 1px solid var(--border) !important;
             width: 100%;
             max-width: 36rem; 
             border-radius: 2.5rem;
@@ -76,21 +103,30 @@
             flex-direction: column;
             max-height: 90vh;
         }
-
+    
+        /* Loader & Headings Sync */
         #local-loader {
             display: none;
             position: fixed;
             inset: 0;
-            background: rgba(11, 14, 20, 0.9);
+            background: var(--bg);
             backdrop-filter: blur(8px);
             z-index: 200;
             flex-direction: column;
             align-items: center;
             justify-content: center;
         }
-
+    
+        h1, h2, h3, .text-white { 
+            color: var(--text-bright) !important; 
+        }
+    
+        /* Scrollbar Theme Sync */
         ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-thumb { background: #262c36; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { 
+            background: var(--border); 
+            border-radius: 10px; 
+        }
     </style>
 </head>
 <body class="p-4 md:p-8">
