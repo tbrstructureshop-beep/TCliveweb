@@ -9,37 +9,115 @@
     <script src="../../api.js"></script>
     <style>
         :root { 
-            --bg: #0b0e14; --panel: #151921; --border: rgba(255, 255, 255, 0.1); --accent: #0ea5e9; 
-            --c-planned: #94a3b8; --c-pro: #3b82f6; --c-done: #10b981;
+            --bg: #0b0e14; 
+            --panel: #151921; 
+            --border: rgba(255, 255, 255, 0.1); 
+            --accent: #0ea5e9; 
+            --text-main: #94a3b8;
+            --text-bold: #ffffff;
+            --input-bg: rgba(255, 255, 255, 0.05);
+            /* Specific Plan Colors */
+            --c-planned: #94a3b8; 
+            --c-pro: #3b82f6; 
+            --c-done: #10b981;
         }
-        body { background: transparent; color: #94a3b8; font-family: 'Inter', sans-serif; overflow-x: hidden; }
+    
+        .light {
+            --bg: transparent;
+            --panel: #ffffff; 
+            --border: #e2e8f0; 
+            --accent: #0284c7; 
+            --text-main: #475569;
+            --text-bold: #1e293b;
+            --input-bg: #f8fafc;
+        }
+    
+        body { background: transparent; color: var(--text-main); font-family: 'Inter', sans-serif; overflow-x: hidden; transition: all 0.3s ease; }
         
-        .plan-card { background-color: rgba(255, 255, 255, 0.03); border: 1px solid var(--border); border-radius: 2.5rem; padding: 2rem; margin-bottom: 2rem; transition: all 0.3s ease; }
+        /* Global Text Fixes */
+        .text-white, h1, h2, h3, h4, .ana-val, .bulk-table { color: var(--text-bold) !important; }
+    
+        /* plan-card */
+        .plan-card { 
+            background-color: var(--panel) !important; 
+            border: 1px solid var(--border) !important; 
+            border-radius: 2.5rem; padding: 2rem; margin-bottom: 2rem; transition: all 0.3s ease; 
+        }
         
         /* Industrial Accordion */
-        details { background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border); border-radius: 1rem; margin-bottom: 0.75rem; overflow: hidden; }
-        summary { list-style: none; padding: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: space-between; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); transition: background 0.2s; }
+        details { 
+            background: var(--input-bg); 
+            border: 1px solid var(--border); 
+            border-radius: 1rem; margin-bottom: 0.75rem; overflow: hidden; 
+        }
+        summary { 
+            list-style: none; padding: 1rem; cursor: pointer; display: flex; align-items: center; 
+            justify-content: space-between; font-size: 11px; font-weight: 800; text-transform: uppercase; 
+            letter-spacing: 0.1em; color: var(--accent); transition: background 0.2s; 
+        }
         summary:hover { background: rgba(255, 255, 255, 0.03); }
+        .light summary:hover { background: rgba(0, 0, 0, 0.02); }
+        
         summary::-webkit-details-marker { display: none; }
-        .details-content { padding: 1rem; border-top: 1px solid var(--border); background: rgba(0,0,0,0.1); }
-
-        .input-field { width: 100%; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border); border-radius: 0.75rem; padding: 0.75rem; outline: none; color: white; font-size: 0.875rem; transition: all 0.2s ease; }
-        .input-field:focus { border-color: var(--accent); }
+        .details-content { 
+            padding: 1rem; border-top: 1px solid var(--border); 
+            background: rgba(0,0,0,0.1); 
+        }
+        .light .details-content { background: rgba(0,0,0,0.02); }
+    
+        /* Input & Dropdown Fix */
+        .input-field, .st-select { 
+            width: 100%; background: var(--input-bg) !important; 
+            border: 1px solid var(--border) !important; 
+            color: var(--text-bold) !important;
+            border-radius: 0.75rem; padding: 0.75rem; outline: none; font-size: 0.875rem; transition: all 0.2s ease; 
+        }
+        .input-field:focus { border-color: var(--accent) !important; }
         
-        .st-select { background: #0b0e14; border: 1px solid var(--border); border-radius: 6px; font-size: 10px; font-weight: 700; color: white; padding: 4px 8px; outline: none; }
+        /* Ensure Options are readable in both modes */
+        select option {
+            background-color: white !important;
+            color: #1e293b !important;
+        }
+        .dark select option {
+            background-color: #151921 !important;
+            color: white !important;
+        }
+    
+        .st-select { border-radius: 6px; font-size: 10px; font-weight: 700; padding: 4px 8px; }
         
-        #local-loader { display: none; position: fixed; inset: 0; background: rgba(11, 14, 20, 0.9); backdrop-filter: blur(8px); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; }
-
-        .bulk-table { width: 100%; font-size: 11px; color: white; }
+        #local-loader { 
+            display: none; position: fixed; inset: 0; background: rgba(11, 14, 20, 0.9); 
+            backdrop-filter: blur(8px); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; 
+        }
+        .light #local-loader { background: rgba(241, 245, 249, 0.9); }
+    
+        /* Bulk Table */
+        .bulk-table { width: 100%; font-size: 11px; }
         .bulk-table th { text-align: left; padding: 10px; opacity: 0.4; border-bottom: 1px solid var(--border); }
-        .bulk-table td { padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.02); }
-
-        .ana-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.03); font-size: 11px; }
-        .ana-label { opacity: 0.5; }
-        .ana-val { font-weight: 900; color: white; }
-
+        .bulk-table td { padding: 8px; border-bottom: 1px solid var(--border); }
+    
+        /* Analysis Rows */
+        .ana-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 11px; }
+        .ana-label { opacity: 0.5; color: var(--text-main); }
+    
+        /* Modal Fix */
+        #plan-modal > div {
+            background-color: var(--panel) !important;
+            border: 1px solid var(--border) !important;
+        }
+    
+        /* Accessibility Blue Overrides */
+        .light .text-sky-500, .light .text-sky-400, .light .text-sky-600 {
+            color: #0369a1 !important;
+        }
+        .light .bg-sky-500\/10, .light .bg-sky-600\/10 {
+            background-color: rgba(2, 132, 199, 0.1) !important;
+            border-color: rgba(2, 132, 199, 0.2) !important;
+        }
+    
         ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-thumb { background: #262c36; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
     </style>
 </head>
 <body class="p-4 md:p-8">
