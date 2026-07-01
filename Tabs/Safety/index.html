@@ -13,22 +13,39 @@
             --panel: #151921; 
             --border: rgba(255, 255, 255, 0.1); 
             --accent: #0ea5e9; 
+            --text-main: #94a3b8;
+            --text-bold: #ffffff;
+            --input-bg: rgba(255, 255, 255, 0.05);
         }
-        body { background: transparent; color: #94a3b8; font-family: 'Inter', sans-serif; overflow-x: hidden; }
+        /* Interface Mode Logic */
+        .light {
+            --bg: transparent; 
+            --panel: #ffffff; 
+            --border: #e2e8f0; 
+            --accent: #0284c7; 
+            --text-main: #475569;
+            --text-bold: #1e293b;
+            --input-bg: #f8fafc;
+        }
+    
+        body { background: transparent; color: var(--text-main); font-family: 'Inter', sans-serif; overflow-x: hidden; transition: color 0.3s ease; }
         
-        /* Industrial Card */
+        /* Text Color Standardization */
+        .text-white, h1, h2, h3, h4 { color: var(--text-bold) !important; }
+    
+        /* Safety Card - Updated to use Panel variable */
         .safety-card {
-            background-color: rgba(255, 255, 255, 0.03);
+            background-color: var(--panel);
             border: 1px solid var(--border);
             border-radius: 2rem;
             overflow: hidden;
             transition: all 0.3s ease;
             display: flex;
             flex-direction: column;
-            h-full: 100%;
+            height: 100%;
         }
-        .safety-card:hover { border-color: rgba(14, 165, 233, 0.3); }
-
+        .safety-card:hover { border-color: var(--accent); }
+    
         .status-badge {
             font-size: 9px;
             padding: 0.25rem 0.5rem;
@@ -37,30 +54,35 @@
             text-transform: uppercase;
             letter-spacing: -0.025em;
         }
-
-        /* FIX INPUT FIELD - Pengganti @apply */
+    
+        /* Input Field & Dropdowns - Unified */
         .input-field {
             width: 100%;
-            background-color: rgba(255, 255, 255, 0.05);
+            background-color: var(--input-bg);
             border: 1px solid var(--border);
             border-radius: 0.75rem;
             padding: 0.75rem;
             outline: none;
-            color: white;
+            color: var(--text-bold);
             font-size: 0.875rem;
             transition: all 0.2s ease;
             appearance: none;
         }
         .input-field:focus {
             border-color: var(--accent);
-            background-color: rgba(255, 255, 255, 0.08);
+            background-color: var(--input-bg);
         }
         
+        /* Cross-browser Dropdown Option Fix */
         select.input-field option {
-            background-color: #151921;
-            color: white;
+            background-color: #ffffff;
+            color: #1e293b;
         }
-
+        .dark select.input-field option {
+            background-color: #151921;
+            color: #ffffff;
+        }
+    
         .label-style {
             text-transform: uppercase;
             font-size: 10px;
@@ -70,9 +92,11 @@
             display: block;
             letter-spacing: 0.1em;
         }
-
-        /* Modal Constraints */
+    
+        /* Modal Styling */
         #safety-modal > div {
+            background-color: var(--panel);
+            border: 1px solid var(--border);
             max-height: 90vh;
             display: flex;
             flex-direction: column;
@@ -80,7 +104,7 @@
         #safety-form {
             overflow-y: auto;
         }
-
+    
         #local-loader {
             display: none;
             position: fixed;
@@ -92,22 +116,34 @@
             align-items: center;
             justify-content: center;
         }
-
+    
         .img-preview {
             width: 100%;
             height: 12rem;
             object-fit: cover;
             border-radius: 1rem;
             border: 1px solid var(--border);
-            background-color: rgba(0,0,0,0.4);
+            background-color: var(--input-bg);
             display: flex;
             align-items: center;
             justify-content: center;
             overflow: hidden;
         }
         
+        /* Light Mode Visibility Enhancements */
+        .light .text-sky-500, .light .text-sky-400 {
+            color: #0369a1 !important; 
+        }
+        .light .bg-sky-500\/10, .light .bg-sky-600\/10 {
+            background-color: rgba(2, 132, 199, 0.1) !important;
+            border-color: rgba(2, 132, 199, 0.2) !important;
+        }
+        .light .bg-white\/5 {
+            background-color: rgba(0, 0, 0, 0.05) !important;
+        }
+    
         ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-thumb { background: #262c36; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
     </style>
 </head>
 <body class="p-4 md:p-8">
