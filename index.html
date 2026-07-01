@@ -14,16 +14,20 @@
             --panel: #151921;
             --border: #262c36;
             --accent: #0ea5e9;
+            --text-main: #94a3b8;
+            --text-bold: #ffffff;
         }
         .light {
-            --bg: #f8fafc;
+            --bg: #f1f5f9;
             --panel: #ffffff;
             --border: #e2e8f0;
             --accent: #0284c7;
+            --text-main: #475569;
+            --text-bold: #1e293b;
         }
         body { 
             background-color: var(--bg); 
-            color: #94a3b8; 
+            color: var(--text-main); 
             font-family: 'Inter', sans-serif;
             transition: all 0.3s ease;
         }
@@ -38,7 +42,11 @@
             z-index: 100;
             transform: translateX(-100%);
         }
-        /* Always show on Desktop */
+
+        /* Responsive Text Scaling for Sidebar */
+        .sidebar span { color: var(--text-main); transition: color 0.3s; }
+        .sidebar .text-white { color: var(--text-bold) !important; }
+
         @media (min-width: 1024px) {
             .sidebar { transform: translateX(0); position: relative; }
             #sidebar-overlay { display: none !important; }
@@ -47,14 +55,18 @@
 
         .nav-active { 
             background: linear-gradient(90deg, rgba(14, 165, 233, 0.15) 0%, transparent 100%);
-            color: var(--accent);
+            color: var(--accent) !important;
             border-left: 3px solid var(--accent);
         }
+        .nav-active span { color: var(--accent) !important; }
+
         .glass-header {
-            background: rgba(11, 14, 20, 0.8);
+            background: var(--bg); /* Reactive to theme */
+            opacity: 0.95;
             backdrop-filter: blur(12px);
             border-bottom: 1px solid var(--border);
         }
+        #current-tab-title { color: var(--text-bold); }
 
         #sidebar-overlay {
             background: rgba(0,0,0,0.6);
@@ -227,19 +239,25 @@
             loader.style.opacity = "0";
             iframe.classList.add('loaded');
             
-            // Sync theme on load
+            // Sync theme to iframe immediately upon loading a new tab
             const isLight = document.documentElement.classList.contains('light');
-            if (iframe.contentWindow && iframe.contentWindow.applyTheme) {
-                iframe.contentWindow.applyTheme(isLight);
+            if (iframe.contentWindow) {
+                // Method 1: Direct class manipulation
+                iframe.contentWindow.document.documentElement.classList.toggle('light', isLight);
+                // Method 2: Call internal function if exists
+                if (iframe.contentWindow.applyTheme) {
+                    iframe.contentWindow.applyTheme(isLight);
+                }
             }
         };
 
         function toggleTheme() {
             const isLight = document.documentElement.classList.toggle('light');
-            // Notify the iframe about the change
-            const iframe = document.getElementById('content-frame');
-            if (iframe.contentWindow && iframe.contentWindow.applyTheme) {
-                iframe.contentWindow.applyTheme(isLight);
+            if (iframe && iframe.contentWindow) {
+                iframe.contentWindow.document.documentElement.classList.toggle('light', isLight);
+                if (iframe.contentWindow.applyTheme) {
+                    iframe.contentWindow.applyTheme(isLight);
+                }
             }
         }
 
