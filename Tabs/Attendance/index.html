@@ -8,17 +8,109 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="../../api.js"></script>
     <style>
-        :root { --bg: #0b0e14; --panel: #151921; --border: rgba(255,255,255,0.1); --accent: #0ea5e9; }
-        body { background: transparent; color: #94a3b8; font-family: 'Inter', sans-serif; overflow-x: hidden; }
+        :root { 
+            --bg: #0b0e14; 
+            --panel: #151921; 
+            --border: rgba(255,255,255,0.1); 
+            --accent: #0ea5e9; 
+            --text-main: #94a3b8;
+            --text-bold: #ffffff;
+            --input-bg: rgba(255, 255, 255, 0.05);
+        }
+        /* Interface Mode Swaps */
+        .light {
+            --bg: transparent; 
+            --panel: #ffffff; 
+            --border: #e2e8f0; 
+            --accent: #0284c7; 
+            --text-main: #475569;
+            --text-bold: #1e293b;
+            --input-bg: #f8fafc;
+        }
+    
+        body { 
+            background: transparent; 
+            color: var(--text-main); 
+            font-family: 'Inter', sans-serif; 
+            overflow-x: hidden;
+            transition: color 0.3s ease;
+        }
+    
+        /* Layout Components */
         .unit-group-header { border-left: 3px solid var(--accent); padding-left: 1rem; margin-bottom: 1.5rem; }
-        .attendance-card { background-color: rgba(255, 255, 255, 0.03); border: 1px solid var(--border); border-radius: 2rem; padding: 1.5rem; transition: all 0.3s ease; }
-        .input-field { width: 100%; background-color: rgba(255, 255, 255, 0.05); border: 1px solid var(--border); border-radius: 0.75rem; padding: 0.75rem; outline: none; color: white; font-size: 0.875rem; transition: all 0.2s ease; }
-        .label-style { text-transform: uppercase; font-size: 10px; font-weight: 700; opacity: 0.4; margin-bottom: 0.25rem; display: block; letter-spacing: 0.1em; }
+        
+        .attendance-card { 
+            background-color: var(--panel) !important; 
+            border: 1px solid var(--border) !important; 
+            border-radius: 2rem; 
+            padding: 1.5rem; 
+            transition: all 0.3s ease; 
+        }
+    
+        /* Text Color Fixes */
+        .text-white, h1, h2, h3, h4 { color: var(--text-bold) !important; }
+        .label-style { text-transform: uppercase; font-size: 10px; font-weight: 700; opacity: 0.4; margin-bottom: 0.25rem; display: block; letter-spacing: 0.1em; color: var(--text-main); }
+    
+        /* Input & Dropdown Fix */
+        .input-field { 
+            width: 100%; 
+            background-color: var(--input-bg) !important; 
+            border: 1px solid var(--border) !important; 
+            color: var(--text-bold) !important;
+            border-radius: 0.75rem; 
+            padding: 0.75rem; 
+            outline: none; 
+            font-size: 0.875rem; 
+            transition: all 0.2s ease; 
+        }
+    
+        /* Dropdown Options Readability */
+        select option {
+            background-color: #ffffff !important;
+            color: #1e293b !important;
+        }
+        /* Dark mode override for options if the browser supports it */
+        @media (prefers-color-scheme: dark) {
+            .dark select option {
+                background-color: #151921 !important;
+                color: #ffffff !important;
+            }
+        }
+    
+        /* List & Dynamic Items */
+        .list-item { 
+            background: var(--input-bg); 
+            border: 1px solid var(--border); 
+            border-radius: 0.75rem; 
+            padding: 0.5rem 0.75rem; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 0.5rem; 
+        }
+    
+        /* Blue Readability in Light Mode */
+        .light .text-sky-500, .light .text-sky-400, .light .text-sky-600 {
+            color: #0369a1 !important; 
+        }
+        .light .bg-sky-500\/10, .light .bg-sky-600\/10, .light .bg-sky-500\/20 {
+            background-color: rgba(2, 132, 199, 0.1) !important;
+            border-color: rgba(2, 132, 199, 0.2) !important;
+        }
+    
+        /* UI Elements */
         #local-loader { display: none; position: fixed; inset: 0; background: rgba(11, 14, 20, 0.9); backdrop-filter: blur(8px); z-index: 100; flex-direction: column; align-items: center; justify-content: center; }
-        .list-item { background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border); border-radius: 0.75rem; padding: 0.5rem 0.75rem; display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
         input[type=range] { width: 100%; accent-color: var(--accent); cursor: pointer; }
+        
+        /* Modal Theme Fix */
+        #attend-modal > div {
+            background-color: var(--panel) !important;
+            border: 1px solid var(--border) !important;
+        }
+    
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-thumb { background: #262c36; border-radius: 10px; }
+        .light ::-webkit-scrollbar-thumb { background: #cbd5e1; }
     </style>
 </head>
 <body class="p-4 md:p-8">
