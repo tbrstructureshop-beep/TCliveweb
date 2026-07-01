@@ -1,1 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root { 
+            --bg: #0b0e14; --panel: #151921; --border: rgba(255, 255, 255, 0.1); --accent: #0ea5e9; 
+            --text-main: #94a3b8; --text-bold: #ffffff;
+        }
+        .light {
+            --bg: transparent; --panel: #ffffff; --border: #e2e8f0; --accent: #0284c7; 
+            --text-main: #475569; --text-bold: #1e293b;
+        }
+        body { 
+            background: transparent; 
+            color: var(--text-main); 
+            font-family: 'Inter', sans-serif; 
+            height: 100vh; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        .coming-soon-card {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 3rem;
+            padding: 4rem 2rem;
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+        .icon-box {
+            width: 80px;
+            height: 80px;
+            background: var(--accent);
+            border-radius: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 2rem;
+            color: white;
+            box-shadow: 0 10px 20px -5px rgba(14, 165, 233, 0.4);
+        }
+        h2 { color: var(--text-bold) !important; font-weight: 900; letter-spacing: -0.025em; text-transform: uppercase; margin-bottom: 1rem; font-size: 1.5rem; }
+        p { line-height: 1.6; opacity: 0.7; font-size: 0.875rem; }
+        .status-tag {
+            display: inline-block;
+            background: rgba(245, 158, 11, 0.1);
+            color: #f59e0b;
+            border: 1px solid rgba(245, 158, 11, 0.2);
+            padding: 0.5rem 1rem;
+            border-radius: 1rem;
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-top: 2rem;
+        }
+    </style>
+</head>
+<body>
 
+    <div class="coming-soon-card animate-in fade-in zoom-in duration-700">
+        <div class="icon-box">
+            <i data-lucide="line-chart" size="40"></i>
+        </div>
+        
+        <h2>Analytical Intelligence</h2>
+        <p>
+            The visualization engine is currently under development. 
+            We will launch this module as soon as sufficient historical data has been collected to generate meaningful insights and trend reports.
+        </p>
+
+        <div class="status-tag">
+            <i data-lucide="database" class="inline-block mr-2 w-3 h-3"></i>
+            Data Aggregation in Progress
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>
