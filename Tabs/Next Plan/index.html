@@ -19,25 +19,28 @@
         body { background: transparent; color: var(--text-main); font-family: 'Inter', sans-serif; overflow-x: hidden; transition: all 0.3s ease; }
         
         .text-white, h1, h2, h3, h4 { color: var(--text-bold) !important; }
-        .plan-card { background-color: var(--panel) !important; border: 1px solid var(--border) !important; border-radius: 2.5rem; padding: 2rem; margin-bottom: 2rem; }
+        .plan-card { background-color: var(--panel) !important; border: 1px solid var(--border) !important; border-radius: 2.5rem; padding: 2rem; margin-bottom: 2.5rem; box-shadow: 0 20px 40px -15px rgba(0,0,0,0.5); }
         
-        /* BEAUTIFIED WIDGETS */
-        .widget-grid { display: grid; gap: 0.75rem; margin-bottom: 1rem; }
-        .widget-card {
-            border-radius: 1.25rem; padding: 1.25rem 1rem; border: 1px solid var(--border);
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-            text-align: center; transition: all 0.3s ease;
-        }
-        .widget-val { font-size: 1.75rem; font-weight: 900; line-height: 1; margin-bottom: 0.25rem; }
-        .widget-lab { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; }
-        .widget-desc { font-size: 8px; opacity: 0.5; margin-top: 6px; line-height: 1.2; font-weight: 500; max-width: 120px; }
+        /* Cockpit Tabs Navigation */
+        .tab-nav { display: flex; gap: 0.5rem; background: rgba(0,0,0,0.2); padding: 0.4rem; border-radius: 1.25rem; border: 1px solid var(--border); margin-bottom: 1.5rem; }
+        .tab-btn { flex: 1; padding: 0.6rem; border-radius: 0.9rem; font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; transition: all 0.3s ease; color: var(--text-main); opacity: 0.6; }
+        .tab-btn.active { background: var(--accent); color: white; opacity: 1; box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3); }
 
-        /* ACCORDIONS (Hidden by Default) */
-        details { background: var(--input-bg); border: 1px solid var(--border); border-radius: 1.5rem; margin-top: 0.75rem; overflow: hidden; }
+        /* Summary Widget Cards */
+        .widget-card {
+            border-radius: 1.5rem; padding: 1.5rem 1rem; border: 1px solid var(--border);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            text-align: center; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .widget-val { font-size: 2rem; font-weight: 900; line-height: 1; margin-bottom: 0.5rem; }
+        .widget-lab { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; }
+        .widget-desc { font-size: 8px; opacity: 0.4; margin-top: 8px; line-height: 1.3; font-weight: 500; max-width: 140px; }
+
+        /* Accordion for Master List */
+        details { background: var(--input-bg); border: 1px solid var(--border); border-radius: 1.5rem; margin-top: 1.5rem; overflow: hidden; transition: all 0.3s ease; }
         summary { list-style: none; padding: 1.25rem; cursor: pointer; display: flex; align-items: center; justify-content: space-between; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); }
         summary::-webkit-details-marker { display: none; }
-        .details-content { padding: 1.25rem; border-top: 1px solid var(--border); background: rgba(0,0,0,0.1); }
-        .light .details-content { background: rgba(0,0,0,0.02); }
+        .details-content { padding: 0; border-top: 1px solid var(--border); background: rgba(0,0,0,0.1); }
 
         .input-field, .st-select { width: 100%; background: var(--input-bg) !important; border: 1px solid var(--border) !important; color: var(--text-bold) !important; border-radius: 0.75rem; padding: 0.75rem; outline: none; font-size: 0.875rem; }
         select option { background-color: white !important; color: #1e293b !important; }
@@ -57,7 +60,7 @@
     <div id="local-loader">
         <div class="flex flex-col items-center gap-3">
             <div class="w-12 h-12 border-4 border-sky-500/10 border-t-sky-500 rounded-full animate-spin"></div>
-            <span class="text-[10px] font-mono uppercase tracking-[0.4em] text-sky-500 animate-pulse font-bold">Synchronizing_Plan_Matrix...</span>
+            <span class="text-[10px] font-mono uppercase tracking-[0.4em] text-sky-500 animate-pulse font-bold">Accessing_Plan_Matrix...</span>
         </div>
     </div>
 
@@ -65,9 +68,9 @@
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-10">
         <div>
             <h1 class="text-2xl font-bold text-white tracking-tighter uppercase">Predictive Cycle Management</h1>
-            <p class="text-xs opacity-50 font-mono mt-1 uppercase tracking-tighter">Strategic Planning & Resource allocation</p>
+            <p class="text-xs opacity-50 font-mono mt-1 uppercase tracking-tighter">Strategic Planning Cockpit // Version 2.0</p>
         </div>
-        <button onclick="openModal('add')" class="bg-sky-600 hover:bg-sky-500 text-white px-6 py-3 rounded-2xl font-bold text-xs flex items-center gap-2 shadow-lg shadow-sky-600/20 transition-all active:scale-95">
+        <button onclick="openModal()" class="bg-sky-600 hover:bg-sky-500 text-white px-6 py-3 rounded-2xl font-bold text-xs flex items-center gap-2 shadow-lg shadow-sky-600/20 transition-all active:scale-95">
             <i data-lucide="plus-circle" size="18"></i> CONFIGURE PLAN
         </button>
     </div>
@@ -97,7 +100,7 @@
                         </thead>
                         <tbody id="bulk-body"></tbody>
                     </table>
-                    <button id="add-row-btn" onclick="addInputRow()" class="w-full p-4 text-[10px] font-bold uppercase opacity-30 hover:opacity-100 hover:bg-white/5 transition border-t border-white/5">+ Append New Row</button>
+                    <button id="add-row-btn" onclick="addInputRow()" class="w-full p-4 text-[10px] font-bold uppercase opacity-30 hover:opacity-100 hover:bg-white/5 transition border-t border-white/5">+ Append New Entry Row</button>
                 </div>
             </div>
 
@@ -114,9 +117,9 @@
         const STATUS_PRIO = { 'In Progress': 0, 'Planned': 1, 'Achieved': 2 };
         
         const SCOPE_DEFS = {
-            'Group_1': { lab: 'Shift Target', desc: 'Primary production goals for current shift duration', color: 'border-sky-500/30 bg-sky-500/5 text-sky-400' },
-            'Group_2': { lab: 'Unit Support', desc: 'Critical cross-unit dependencies and logistics', color: 'border-indigo-500/30 bg-indigo-500/5 text-indigo-400' },
-            'Group_3': { lab: 'Escalation', desc: 'Issues requiring external management authorization', color: 'border-rose-500/30 bg-rose-500/5 text-rose-500' }
+            'Group_1': { lab: 'Shift Target', desc: 'Main production goals for current shift execution', color: 'border-sky-500/30 bg-sky-500/5 text-sky-400' },
+            'Group_2': { lab: 'Unit Support', desc: 'Dependencies from cross-functional units', color: 'border-indigo-500/30 bg-indigo-500/5 text-indigo-400' },
+            'Group_3': { lab: 'Escalation', desc: 'Management intervention for critical blocks', color: 'border-rose-500/30 bg-rose-500/5 text-rose-500' }
         };
 
         const FUNC_DEFS = {
@@ -128,21 +131,22 @@
             'Leader & Top Leader': 'border-slate-500/20 bg-slate-500/5 text-slate-100'
         };
 
-        let activeUnits = [], editId = null;
+        let activeUnits = [], editId = null, masterData = [];
 
         async function init() {
             loader.style.display = 'flex';
             try {
                 const [unitRes, planRes] = await Promise.all([API.get('UNIT'), API.get(TAB_NAME)]);
                 activeUnits = unitRes.data;
+                masterData = planRes.data;
                 document.getElementById('UnitCode').innerHTML = activeUnits.map(u => `<option value="${u.UnitCode}">${u.UnitCode}</option>`).join('');
-                renderCards(planRes.data);
+                renderCards();
             } catch (e) { Swal.fire('Error', 'API Link Failure', 'error'); } finally { loader.style.display = 'none'; }
         }
 
-        function renderCards(data) {
+        function renderCards() {
             const container = document.getElementById('plan-container');
-            const grouped = data.reduce((acc, item) => {
+            const grouped = masterData.reduce((acc, item) => {
                 const uc = item.UnitCode || 'Unknown';
                 if(!acc[uc]) acc[uc] = [];
                 acc[uc].push(item);
@@ -158,7 +162,7 @@
                 const items = grouped[uCode];
                 const sortedItems = [...items].sort((a, b) => STATUS_PRIO[a.Status] - STATUS_PRIO[b.Status]);
 
-                // Summaries
+                // Summaries Pre-calculation
                 const scopes = { 'Group_1': 0, 'Group_2': 0, 'Group_3': 0 };
                 const funcs = {};
                 const stats = { 'Planned': 0, 'In Progress': 0, 'Achieved': 0 };
@@ -170,74 +174,37 @@
                 });
 
                 return `
-                <div class="plan-card">
+                <div class="plan-card" id="card-${uCode}">
                     <div class="flex justify-between items-center mb-8">
                         <h2 class="text-3xl font-black text-white tracking-tighter uppercase">${uCode}</h2>
-                        <div class="text-[10px] font-mono text-sky-500 opacity-40">${items.length} ACTIVE_ITEMS</div>
+                        <div class="text-[10px] font-mono text-sky-500 opacity-40">${items.length} ACTIVE_PLAN_NODES</div>
                     </div>
 
-                    <!-- SCOPE SUMMARY -->
-                    <details>
-                        <summary>Summary Prototype Scope <i data-lucide="chevron-down" size="14"></i></summary>
-                        <div class="details-content">
-                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                ${Object.entries(SCOPE_DEFS).map(([key, def]) => `
-                                    <div class="widget-card ${def.color}">
-                                        <span class="widget-val">${scopes[key] || 0}</span>
-                                        <span class="widget-lab">${def.lab}</span>
-                                        <span class="widget-desc">${def.desc}</span>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        </div>
-                    </details>
+                    <!-- Cockpit Tabs Nav -->
+                    <div class="tab-nav">
+                        <button onclick="switchTab('${uCode}', 'scope')" id="btn-${uCode}-scope" class="tab-btn active">Scope</button>
+                        <button onclick="switchTab('${uCode}', 'func')" id="btn-${uCode}-func" class="tab-btn">Functional</button>
+                        <button onclick="switchTab('${uCode}', 'stat')" id="btn-${uCode}-stat" class="tab-btn">Status</button>
+                    </div>
 
-                    <!-- FUNCTIONAL SUMMARY -->
-                    <details>
-                        <summary>Summary Functional Responsibility <i data-lucide="chevron-down" size="14"></i></summary>
-                        <div class="details-content">
-                            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-                                ${Object.entries(FUNC_DEFS).map(([key, style]) => `
-                                    <div class="widget-card ${style} !py-4">
-                                        <span class="widget-val !text-xl">${funcs[key] || 0}</span>
-                                        <span class="widget-lab !text-[7px]">${key.replace('Team', '').trim()}</span>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        </div>
-                    </details>
+                    <!-- Tab Content Container -->
+                    <div id="content-${uCode}" class="min-h-[160px]">
+                        ${renderTabContent(uCode, 'scope', {scopes, funcs, stats})}
+                    </div>
 
-                    <!-- EXECUTION STATUS SUMMARY -->
+                    <!-- Activity List Dropdown -->
                     <details>
-                        <summary>Summary Execution Status <i data-lucide="chevron-down" size="14"></i></summary>
-                        <div class="details-content">
-                            <div class="grid grid-cols-3 gap-4">
-                                <div class="widget-card border-slate-500/20 bg-slate-500/5 text-slate-400">
-                                    <span class="widget-val">${stats.Planned}</span><span class="widget-lab">Planned</span>
-                                </div>
-                                <div class="widget-card border-blue-500/20 bg-blue-500/5 text-blue-400">
-                                    <span class="widget-val">${stats['In Progress'] || stats.In_Progress || 0}</span><span class="widget-lab">In Progress</span>
-                                </div>
-                                <div class="widget-card border-emerald-500/20 bg-emerald-500/5 text-emerald-400">
-                                    <span class="widget-val">${stats.Achieved}</span><span class="widget-lab">Achieved</span>
-                                </div>
-                            </div>
-                        </div>
-                    </details>
-
-                    <!-- MASTER LIST -->
-                    <details open>
-                        <summary>Activity Registry Detail <i data-lucide="chevron-down" size="14"></i></summary>
+                        <summary>Master Activity Detail <i data-lucide="chevron-down" size="14"></i></summary>
                         <div class="details-content overflow-x-auto p-0">
                             <table class="bulk-table">
-                                <thead class="opacity-30 uppercase font-bold">
+                                <thead class="opacity-30 uppercase font-bold text-[9px]">
                                     <tr><th>Time</th><th>Functional Scope</th><th>Description</th><th>Status</th><th></th></tr>
                                 </thead>
                                 <tbody>
                                     ${sortedItems.map(item => `
                                         <tr class="group/row">
                                             <td class="opacity-30 text-[9px] font-mono w-24">${item.Timestamp.split(' ')[1] || item.Timestamp}</td>
-                                            <td class="text-sky-500 font-bold text-[9px] w-40 uppercase">${item.FunctionalScope}</td>
+                                            <td class="text-sky-500 font-bold text-[9px] w-32 uppercase">${item.FunctionalScope}</td>
                                             <td class="text-white/80 leading-relaxed text-[11px]">${item.Detail}</td>
                                             <td>
                                                 <select onchange="updateLiveStatus('${item.Timestamp}', this.value)" class="st-select">
@@ -261,10 +228,51 @@
             lucide.createIcons();
         }
 
+        function renderTabContent(uCode, type, data) {
+            if (type === 'scope') {
+                return `<div class="grid grid-cols-1 sm:grid-cols-3 gap-3 animate-in fade-in duration-300">
+                    ${Object.entries(SCOPE_DEFS).map(([key, def]) => `
+                        <div class="widget-card ${def.color}"><span class="widget-val">${data.scopes[key] || 0}</span><span class="widget-lab">${def.lab}</span><span class="widget-desc">${def.desc}</span></div>
+                    `).join('')}
+                </div>`;
+            }
+            if (type === 'func') {
+                return `<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 animate-in fade-in duration-300">
+                    ${Object.entries(FUNC_DEFS).map(([key, style]) => `
+                        <div class="widget-card ${style} !py-4"><span class="widget-val !text-lg">${data.funcs[key] || 0}</span><span class="widget-lab !text-[7px]">${key.replace('Team', '')}</span></div>
+                    `).join('')}
+                </div>`;
+            }
+            if (type === 'stat') {
+                return `<div class="grid grid-cols-3 gap-3 animate-in fade-in duration-300">
+                    <div class="widget-card border-slate-500/20 bg-slate-500/5 text-slate-400"><span class="widget-val">${data.stats.Planned}</span><span class="widget-lab">Planned</span></div>
+                    <div class="widget-card border-blue-500/20 bg-blue-500/5 text-blue-400"><span class="widget-val">${data.stats['In Progress'] || data.stats.In_Progress || 0}</span><span class="widget-lab">In Progress</span></div>
+                    <div class="widget-card border-emerald-500/20 bg-emerald-500/5 text-emerald-400"><span class="widget-val">${data.stats.Achieved}</span><span class="widget-lab">Achieved</span></div>
+                </div>`;
+            }
+        }
+
+        function switchTab(uCode, type) {
+            const items = masterData.filter(i => i.UnitCode === uCode);
+            const scopes = { 'Group_1': 0, 'Group_2': 0, 'Group_3': 0 };
+            const funcs = {};
+            const stats = { 'Planned': 0, 'In Progress': 0, 'Achieved': 0 };
+            items.forEach(i => {
+                if(scopes[i.ScopeGroup] !== undefined) scopes[i.ScopeGroup]++;
+                funcs[i.FunctionalScope] = (funcs[i.FunctionalScope] || 0) + 1;
+                stats[i.Status]++;
+            });
+
+            document.getElementById(`content-${uCode}`).innerHTML = renderTabContent(uCode, type, {scopes, funcs, stats});
+            document.querySelectorAll(`#card-${uCode} .tab-btn`).forEach(b => b.classList.remove('active'));
+            document.getElementById(`btn-${uCode}-${type}`).classList.add('active');
+        }
+
+        // --- CORE ACTIONS ---
         function openModal() {
             editId = null;
             document.getElementById('plan-modal').classList.remove('hidden');
-            document.getElementById('modal-title').innerText = "Planning Engine";
+            document.getElementById('modal-title').innerText = "Strategic Planning Engine";
             document.getElementById('add-row-btn').classList.remove('hidden');
             document.getElementById('submit-btn').innerText = "Execute Data Authorization";
             document.getElementById('bulk-body').innerHTML = "";
@@ -274,9 +282,9 @@
         function editPlan(item) {
             editId = item.Timestamp;
             document.getElementById('plan-modal').classList.remove('hidden');
-            document.getElementById('modal-title').innerText = "Edit Strategy Plan";
+            document.getElementById('modal-title').innerText = "Edit Cycle Record";
             document.getElementById('add-row-btn').classList.add('hidden');
-            document.getElementById('submit-btn').innerText = "Update Plan Record";
+            document.getElementById('submit-btn').innerText = "Update Record";
             document.getElementById('UnitCode').value = item.UnitCode;
             document.getElementById('bulk-body').innerHTML = "";
             addInputRow(item);
@@ -333,7 +341,7 @@
                     }
                 }
                 closeModal(); init();
-                Swal.fire({ icon: 'success', title: editId ? 'Record Updated' : 'Cycle Committed', background: '#151921', color: '#fff', timer: 1500, showConfirmButton: false });
+                Swal.fire({ icon: 'success', title: editId ? 'Record Synced' : 'Cycle Committed', background: '#151921', color: '#fff', timer: 1500, showConfirmButton: false });
             } catch(e) { Swal.fire('Error', 'Commit Failed', 'error'); } finally { loader.style.display = 'none'; }
         }
 
