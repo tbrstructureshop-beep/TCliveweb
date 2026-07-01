@@ -9,108 +9,51 @@
     <script src="../../api.js"></script>
     <style>
         :root { 
-            --bg: #0b0e14; 
-            --panel: #151921; 
-            --border: rgba(255,255,255,0.1); 
-            --accent: #0ea5e9; 
-            --text-main: #94a3b8;
-            --text-bold: #ffffff;
-            --input-bg: rgba(255, 255, 255, 0.05);
+            --bg: #0b0e14; --panel: #151921; --border: rgba(255, 255, 255, 0.1); --accent: #0ea5e9; 
+            --text-main: #94a3b8; --text-bold: #ffffff; --input-bg: rgba(255, 255, 255, 0.05);
         }
-        /* Interface Mode Swaps */
         .light {
-            --bg: transparent; 
-            --panel: #ffffff; 
-            --border: #e2e8f0; 
-            --accent: #0284c7; 
-            --text-main: #475569;
-            --text-bold: #1e293b;
-            --input-bg: #f8fafc;
+            --bg: transparent; --panel: #ffffff; --border: #e2e8f0; --accent: #0284c7; 
+            --text-main: #475569; --text-bold: #1e293b; --input-bg: #f8fafc;
         }
-    
-        body { 
-            background: transparent; 
-            color: var(--text-main); 
-            font-family: 'Inter', sans-serif; 
-            overflow-x: hidden;
-            transition: color 0.3s ease;
-        }
-    
-        /* Layout Components */
-        .unit-group-header { border-left: 3px solid var(--accent); padding-left: 1rem; margin-bottom: 1.5rem; }
+        body { background: transparent; color: var(--text-main); font-family: 'Inter', sans-serif; overflow-x: hidden; transition: all 0.3s ease; }
         
-        .attendance-card { 
-            background-color: var(--panel) !important; 
-            border: 1px solid var(--border) !important; 
-            border-radius: 2rem; 
-            padding: 1.5rem; 
-            transition: all 0.3s ease; 
-        }
-    
-        /* Text Color Fixes */
         .text-white, h1, h2, h3, h4 { color: var(--text-bold) !important; }
-        .label-style { text-transform: uppercase; font-size: 10px; font-weight: 700; opacity: 0.4; margin-bottom: 0.25rem; display: block; letter-spacing: 0.1em; color: var(--text-main); }
-    
-        /* Input & Dropdown Fix */
-        .input-field { 
-            width: 100%; 
-            background-color: var(--input-bg) !important; 
-            border: 1px solid var(--border) !important; 
-            color: var(--text-bold) !important;
-            border-radius: 0.75rem; 
-            padding: 0.75rem; 
-            outline: none; 
-            font-size: 0.875rem; 
-            transition: all 0.2s ease; 
-        }
-    
-        /* Dropdown Options Readability */
-        select option {
-            background-color: #ffffff !important;
-            color: #1e293b !important;
-        }
-        /* Dark mode override for options if the browser supports it */
-        @media (prefers-color-scheme: dark) {
-            .dark select option {
-                background-color: #151921 !important;
-                color: #ffffff !important;
-            }
-        }
-    
-        /* List & Dynamic Items */
-        .list-item { 
-            background: var(--input-bg); 
-            border: 1px solid var(--border); 
-            border-radius: 0.75rem; 
-            padding: 0.5rem 0.75rem; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            margin-bottom: 0.5rem; 
-        }
-    
-        /* Blue Readability in Light Mode */
-        .light .text-sky-500, .light .text-sky-400, .light .text-sky-600 {
-            color: #0369a1 !important; 
-        }
-        .light .bg-sky-500\/10, .light .bg-sky-600\/10, .light .bg-sky-500\/20 {
-            background-color: rgba(2, 132, 199, 0.1) !important;
-            border-color: rgba(2, 132, 199, 0.2) !important;
-        }
-    
-        /* UI Elements */
-        #local-loader { display: none; position: fixed; inset: 0; background: rgba(11, 14, 20, 0.9); backdrop-filter: blur(8px); z-index: 100; flex-direction: column; align-items: center; justify-content: center; }
-        input[type=range] { width: 100%; accent-color: var(--accent); cursor: pointer; }
         
-        /* Modal Theme Fix */
-        #attend-modal > div {
-            background-color: var(--panel) !important;
-            border: 1px solid var(--border) !important;
-        }
-    
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-thumb { background: #262c36; border-radius: 10px; }
-        .light ::-webkit-scrollbar-thumb { background: #cbd5e1; }
+        /* Unit Tab Switcher */
+        .unit-nav-wrapper { position: relative; display: flex; align-items: center; gap: 10px; margin-bottom: 2rem; }
+        .unit-nav { display: flex; gap: 0.5rem; padding: 0.5rem; background: rgba(0,0,0,0.2); border-radius: 1.5rem; border: 1px solid var(--border); overflow-x: auto; scroll-behavior: smooth; flex: 1; }
+        .unit-nav::-webkit-scrollbar { display: none; }
+        .unit-tab { padding: 0.75rem 1.5rem; border-radius: 1rem; font-size: 11px; font-weight: 800; white-space: nowrap; transition: 0.3s; color: var(--text-main); border: 1px solid transparent; }
+        .unit-tab.active { background: var(--accent); color: white !important; box-shadow: 0 10px 20px -5px rgba(14, 165, 233, 0.4); }
+        .nav-arrow { background: var(--panel); border: 1px solid var(--border); border-radius: 50%; p: 8px; color: var(--accent); cursor: pointer; transition: 0.2s; }
+        .nav-arrow:hover { background: var(--accent); color: white; }
+
+        .attendance-card { background-color: var(--panel) !important; border: 1px solid var(--border) !important; border-radius: 2.5rem; padding: 2rem; margin-bottom: 2rem; }
+        
+        /* Cockpit Internal Tabs */
+        .card-tabs { display: flex; gap: 0.25rem; background: var(--input-bg); padding: 0.25rem; border-radius: 1rem; margin-bottom: 1.5rem; width: fit-content; }
+        .c-tab { padding: 0.5rem 1rem; border-radius: 0.75rem; font-size: 9px; font-weight: 800; text-transform: uppercase; transition: 0.2s; color: var(--text-main); opacity: 0.5; }
+        .c-tab.active { background: var(--panel); color: var(--accent) !important; opacity: 1; }
+
+        /* Summary Widgets */
+        .widget-grid { display: grid; grid-template-cols: repeat(4, 1fr); gap: 0.75rem; margin-bottom: 2rem; }
+        .widget-card { border-radius: 1.5rem; padding: 1.25rem; border: 1px solid var(--border); text-align: center; background: var(--input-bg); }
+        .widget-val { font-size: 1.5rem; font-weight: 900; line-height: 1; color: var(--text-bold); }
+        .widget-lab { font-size: 8px; font-weight: 800; text-transform: uppercase; opacity: 0.5; margin-top: 4px; display: block; }
+
+        /* Detail Lists */
+        .detail-item { background: var(--input-bg); border: 1px solid var(--border); border-radius: 1rem; padding: 0.75rem 1rem; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center; }
+        
+        .input-field { width: 100%; background: var(--input-bg) !important; border: 1px solid var(--border) !important; color: var(--text-bold) !important; border-radius: 0.75rem; padding: 0.75rem; font-size: 0.875rem; outline: none; }
+        
+        select option { background-color: #ffffff !important; color: #1e293b !important; }
+        :not(.light) select option { background-color: #151921 !important; color: #ffffff !important; }
+
+        #local-loader { display: none; position: fixed; inset: 0; background: rgba(11, 14, 20, 0.9); backdrop-filter: blur(8px); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; }
+        
+        .light .bg-sky-500\/10 { background-color: rgba(2, 132, 199, 0.1); border-color: rgba(2, 132, 199, 0.2); }
+        .light .text-sky-400 { color: #0369a1 !important; }
     </style>
 </head>
 <body class="p-4 md:p-8">
@@ -118,94 +61,72 @@
     <div id="local-loader">
         <div class="flex flex-col items-center gap-3">
             <div class="w-12 h-12 border-4 border-sky-500/10 border-t-sky-500 rounded-full animate-spin"></div>
-            <span class="text-[10px] font-mono uppercase tracking-[0.4em] text-sky-500 animate-pulse font-bold">Syncing_Attendance...</span>
+            <span class="text-[10px] font-mono uppercase tracking-[0.4em] text-sky-500 animate-pulse font-bold">Syncing_Attendance_Vault...</span>
         </div>
     </div>
 
-    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-10">
+    <!-- HEADER -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>
-            <h1 class="text-2xl font-bold text-white tracking-tight uppercase">Attendance Log</h1>
-            <p class="text-xs opacity-50 font-mono mt-1 uppercase tracking-tighter">Manpower distribution & Node status</p>
+            <h1 class="text-2xl font-black text-white tracking-tighter uppercase">Attendance Log</h1>
+            <p class="text-[10px] opacity-40 font-mono mt-1 uppercase tracking-widest">Resource Distribution Cockpit</p>
         </div>
-        <button onclick="openModal()" class="bg-sky-600 hover:bg-sky-500 text-white px-6 py-3 rounded-2xl font-bold text-sm flex items-center gap-2 shadow-lg shadow-sky-600/20 transition-all active:scale-95">
-            <i data-lucide="plus" size="18"></i> LOG ATTENDANCE
+        <button onclick="openModal()" class="bg-sky-600 hover:bg-sky-500 text-white px-6 py-3 rounded-2xl font-bold text-xs flex items-center gap-2 shadow-lg shadow-sky-600/20 transition-all active:scale-95">
+            <i data-lucide="plus" size="16"></i> LOG ENTRY
         </button>
     </div>
 
-    <div id="group-container" class="space-y-12"></div>
+    <!-- UNIT TAB SWITCHER -->
+    <div class="unit-nav-wrapper">
+        <button onclick="scrollNav(-100)" class="nav-arrow"><i data-lucide="chevron-left" size="16"></i></button>
+        <div id="unit-tabs" class="unit-nav"></div>
+        <button onclick="scrollNav(100)" class="nav-arrow"><i data-lucide="chevron-right" size="16"></i></button>
+    </div>
+
+    <!-- MAIN DISPLAY AREA -->
+    <div id="main-content" class="space-y-6"></div>
 
     <!-- MODAL -->
     <div id="attend-modal" class="fixed inset-0 bg-black/90 backdrop-blur-md hidden flex items-center justify-center z-[110] p-4">
         <div class="bg-[#151921] border border-white/10 rounded-[2.5rem] w-full max-w-4xl shadow-2xl flex flex-col max-h-[90vh]">
-            <div class="p-6 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
-                <h3 class="text-xl font-bold text-white uppercase tracking-widest">Attendance Entry</h3>
-                <button onclick="closeModal()" class="p-2 hover:bg-white/5 rounded-full transition text-white/50 hover:text-white"><i data-lucide="x"></i></button>
+            <div class="p-6 border-b border-white/5 flex justify-between items-center">
+                <h3 id="modal-title" class="text-xl font-bold text-white uppercase tracking-widest">Attendance Entry</h3>
+                <button onclick="closeModal()" class="p-2 hover:bg-white/5 rounded-full text-white/30 hover:text-white"><i data-lucide="x"></i></button>
             </div>
             
             <form id="attend-form" class="p-8 overflow-y-auto grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div class="space-y-4">
                     <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="label-style">Unit Code</label>
-                            <select id="UnitCode" name="UnitCode" required class="input-field" onchange="updateShiftDropdown()"></select>
-                        </div>
-                        <div>
-                            <label class="label-style">Shift Category</label>
-                            <select id="ShiftCategory" name="ShiftCategory" required class="input-field" onchange="syncManpowerFromShift()">
-                                <option value="" disabled selected>Select Unit First</option>
-                            </select>
-                        </div>
+                        <div><label class="label-style">Unit Code</label><select id="UnitCode" name="UnitCode" required class="input-field" onchange="updateShiftDropdown()"></select></div>
+                        <div><label class="label-style">Shift Category</label><select id="ShiftCategory" name="ShiftCategory" required class="input-field" onchange="syncManpowerFromShift()"><option value="" disabled selected>Select Unit First</option></select></div>
                     </div>
-
                     <div class="p-4 bg-white/5 rounded-2xl border border-white/5 flex justify-between items-center">
-                        <div>
-                            <span class="label-style">Total Personnel</span>
-                            <span id="total-personnel" class="text-2xl font-bold text-white font-mono">0</span>
-                        </div>
-                        <div class="text-right">
-                            <span class="label-style">Availability</span>
-                            <span id="availability-pct" class="text-2xl font-bold text-emerald-400 font-mono">0%</span>
-                        </div>
+                        <div><span class="label-style">Total Manpower</span><span id="total-personnel" class="text-2xl font-black text-white">0</span></div>
+                        <div class="text-right"><span class="label-style">Availability</span><span id="availability-pct" class="text-2xl font-black text-emerald-400">0%</span></div>
                     </div>
-
                     <div class="grid grid-cols-2 gap-4">
                         <div><label class="label-style">Hadir (Manual)</label><input type="number" id="Hadir" name="Hadir" required value="0" class="input-field text-center text-xl font-bold" oninput="doCalculations()"></div>
                         <div><label class="label-style">Absen (Auto)</label><input type="number" id="Absen" name="Absen" readonly class="input-field text-center text-xl font-bold opacity-40"></div>
                     </div>
-
-                    <div>
-                        <label class="label-style">Utilization (<span id="util-val">50</span>%)</label>
-                        <input type="range" id="Utilization" name="Utilization" min="0" max="100" value="50" oninput="document.getElementById('util-val').innerText = this.value">
-                    </div>
+                    <div><label class="label-style">Utilization (<span id="util-val">50</span>%)</label><input type="range" id="Utilization" name="Utilization" min="0" max="100" value="50" oninput="document.getElementById('util-val').innerText = this.value"></div>
+                    <div><label class="label-style">Highlights Note</label><textarea id="HighlightManpower" name="HighlightManpower" class="input-field h-24 resize-none" placeholder="Enter manpower highlights..."></textarea></div>
                 </div>
 
-                <!-- Special Lists -->
                 <div class="space-y-6">
-                    <div>
-                        <label class="label-style">Absence Detail List</label>
-                        <div class="flex gap-2 mb-3">
-                            <input id="abs-name" class="input-field" placeholder="Name">
-                            <select id="abs-status" class="input-field w-32">
-                                <option>Sick</option><option>Leave</option><option>Other</option><option>End Contract</option>
-                            </select>
-                            <button type="button" onclick="addAbsItem()" class="bg-sky-500 p-3 rounded-xl text-white"><i data-lucide="plus"></i></button>
-                        </div>
-                        <div id="list-abs" class="max-h-24 overflow-y-auto"></div>
+                    <div><label class="label-style">Absence List</label>
+                        <div class="flex gap-2 mb-3"><input id="abs-name" class="input-field" placeholder="Name"><select id="abs-status" class="input-field w-32"><option>Sick</option><option>Leave</option><option>Other</option><option>End Contract</option></select><button type="button" onclick="addItem('abs')" class="bg-sky-500 p-3 rounded-xl text-white"><i data-lucide="plus"></i></button></div>
+                        <div id="list-abs" class="max-h-24 overflow-y-auto space-y-1"></div>
                     </div>
-                    <div>
-                        <label class="label-style">Inspector Detail (<span id="insp-count">0</span>)</label>
-                        <div class="flex gap-2 mb-3"><input id="insp-name" class="input-field" placeholder="Name"><input id="insp-task" class="input-field" placeholder="Task"><button type="button" onclick="addInspItem()" class="bg-sky-500 p-3 rounded-xl text-white"><i data-lucide="plus"></i></button></div>
-                        <div id="list-insp" class="max-h-24 overflow-y-auto"></div>
+                    <div><label class="label-style">Inspector Detail</label>
+                        <div class="flex gap-2 mb-3"><input id="insp-name" class="input-field" placeholder="Name"><input id="insp-task" class="input-field" placeholder="Task"><button type="button" onclick="addItem('insp')" class="bg-sky-500 p-3 rounded-xl text-white"><i data-lucide="plus"></i></button></div>
+                        <div id="list-insp" class="max-h-24 overflow-y-auto space-y-1"></div>
                     </div>
-                    <div>
-                        <label class="label-style">Overtime Request</label>
-                        <div class="flex gap-2 mb-3"><input id="ot-name" class="input-field" placeholder="Name"><input id="ot-hr" type="number" class="input-field w-20" placeholder="Hr"><button type="button" onclick="addOtItem()" class="bg-sky-500 p-3 rounded-xl text-white"><i data-lucide="plus"></i></button></div>
-                        <div id="list-ot" class="max-h-24 overflow-y-auto"></div>
+                    <div><label class="label-style">Overtime Request</label>
+                        <div class="flex gap-2 mb-3"><input id="ot-name" class="input-field" placeholder="Name"><input id="ot-hr" type="number" class="input-field w-20" placeholder="Hr"><button type="button" onclick="addItem('ot')" class="bg-sky-500 p-3 rounded-xl text-white"><i data-lucide="plus"></i></button></div>
+                        <div id="list-ot" class="max-h-24 overflow-y-auto space-y-1"></div>
                     </div>
+                    <button type="submit" id="submit-btn" class="w-full bg-sky-600 py-4 rounded-2xl font-black text-white hover:bg-sky-500 transition-all uppercase tracking-widest text-xs">Execute Data Commit</button>
                 </div>
-
-                <div class="md:col-span-2"><label class="label-style">Highlights Note</label><textarea id="HighlightManpower" name="HighlightManpower" class="input-field h-20 resize-none" placeholder="Enter key manpower highlights..."></textarea></div>
-                <div class="md:col-span-2 flex pt-4"><button type="submit" class="w-full bg-sky-600 py-4 rounded-2xl font-bold text-white hover:bg-sky-500 transition-all uppercase tracking-widest text-xs">Authorize Entry</button></div>
             </form>
         </div>
     </div>
@@ -213,125 +134,219 @@
     <script>
         lucide.createIcons();
         const loader = document.getElementById('local-loader');
-        let allShifts = [], listAbs = [], listInsp = [], listOt = [];
+        let allShifts = [], masterData = [], activeUnit = null, editId = null;
+        let listAbs = [], listInsp = [], listOt = [];
 
         async function init() {
             loader.style.display = 'flex';
             try {
-                // PARALLEL FETCH for speed
-                const [unitRes, shiftRes, attendRes] = await Promise.all([
-                    API.get('UNIT'), API.get('SHIFTS'), API.get('ATTENDANCE')
-                ]);
-
+                const [unitRes, shiftRes, attendRes] = await Promise.all([API.get('UNIT'), API.get('SHIFTS'), API.get('ATTENDANCE')]);
                 allShifts = shiftRes.data;
+                masterData = attendRes.data;
                 
-                document.getElementById('UnitCode').innerHTML = '<option value="" disabled selected>Select Unit</option>' + 
-                    unitRes.data.map(u => `<option value="${u.UnitCode}">${u.UnitCode}</option>`).join('');
-
-                renderData(attendRes.data);
-            } catch (e) {
-                Swal.fire('Node Error', 'Communication with server failed.', 'error');
-            } finally {
-                loader.style.display = 'none';
-            }
+                document.getElementById('UnitCode').innerHTML = unitRes.data.map(u => `<option value="${u.UnitCode}">${u.UnitCode}</option>`).join('');
+                renderTabs(unitRes.data);
+                
+                if(!activeUnit && unitRes.data.length > 0) activeUnit = unitRes.data[0].UnitCode;
+                renderView();
+            } catch (e) { Swal.fire('Error', 'Communication Failure', 'error'); } finally { loader.style.display = 'none'; }
         }
 
-        // --- DYNAMIC DROPDOWN LOGIC ---
+        function renderTabs(units) {
+            const container = document.getElementById('unit-tabs');
+            container.innerHTML = units.map(u => `
+                <button onclick="switchUnit('${u.UnitCode}')" class="unit-tab ${u.UnitCode === activeUnit ? 'active' : ''}">${u.UnitCode}</button>
+            `).join('');
+        }
+
+        function scrollNav(amt) { document.getElementById('unit-tabs').scrollLeft += amt; }
+
+        function switchUnit(uCode) {
+            activeUnit = uCode;
+            document.querySelectorAll('.unit-tab').forEach(t => t.classList.toggle('active', t.innerText === uCode));
+            renderView();
+        }
+
+        function renderView() {
+            const container = document.getElementById('main-content');
+            const items = masterData.filter(i => i.UnitCode === activeUnit).reverse(); // Latest first
+
+            if(!activeUnit) { container.innerHTML = `<div class="py-32 text-center opacity-20 font-mono tracking-[0.5em]">SELECT_NODE_TO_BEGIN</div>`; return; }
+
+            container.innerHTML = items.map((item, idx) => {
+                const id = `item-${idx}`;
+                return `
+                <div class="attendance-card">
+                    <div class="flex justify-between items-start mb-6">
+                        <div>
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="bg-sky-500/10 text-sky-400 px-3 py-1 rounded-lg text-[10px] font-mono font-bold border border-sky-500/20">${item.ShiftCategory}</span>
+                                <span class="opacity-30 font-mono text-[10px]">${item.Timestamp}</span>
+                            </div>
+                            <h2 class="text-2xl font-black text-white uppercase">${activeUnit} Log</h2>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick='editAttend(${JSON.stringify(item).replace(/'/g, "&apos;")})' class="p-3 bg-white/5 rounded-xl text-sky-500/50 hover:text-sky-400 transition"><i data-lucide="edit-3" size="16"></i></button>
+                            <button onclick="deleteAttend('${item.Timestamp}')" class="p-3 bg-white/5 rounded-xl text-red-500/30 hover:text-red-500 transition"><i data-lucide="trash-2" size="16"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="widget-grid">
+                        <div class="widget-card"><span class="widget-val">${item.Hadir}</span><span class="widget-lab">Hadir</span></div>
+                        <div class="widget-card"><span class="widget-val text-red-500">${item.Absen}</span><span class="widget-lab">Absen</span></div>
+                        <div class="widget-card border-emerald-500/30"><span class="widget-val text-emerald-400">${item.Availability}%</span><span class="widget-lab">Avail</span></div>
+                        <div class="widget-card border-sky-500/30"><span class="widget-val text-sky-400">${item.Utilization}%</span><span class="widget-lab">Utilize</span></div>
+                    </div>
+
+                    <div class="card-tabs">
+                        <button onclick="switchCardTab('${id}', 'info')" class="c-tab active" id="tab-${id}-info">Overview</button>
+                        <button onclick="switchCardTab('${id}', 'abs')" class="c-tab" id="tab-${id}-abs">Absence</button>
+                        <button onclick="switchCardTab('${id}', 'insp')" class="c-tab" id="tab-${id}-insp">Inspectors</button>
+                        <button onclick="switchCardTab('${id}', 'ot')" class="c-tab" id="tab-${id}-ot">Overtime</button>
+                    </div>
+
+                    <div id="content-${id}" class="min-h-[100px] animate-in fade-in duration-300">
+                        ${renderCardInfo(item)}
+                    </div>
+                </div>`;
+            }).join('');
+            lucide.createIcons();
+        }
+
+        // --- INTERNAL CARD NAVIGATION ---
+        function renderCardInfo(item) { return `<div class="p-4 bg-white/5 rounded-2xl border border-white/5"><span class="label-style">Shift Highlight</span><p class="text-sm italic opacity-70 leading-relaxed">${item.HighlightManpower || 'No major highlights reported for this cycle.'}</p></div>`; }
+        
+        function renderCardList(jsonStr, type) {
+            try {
+                const data = JSON.parse(jsonStr || '[]');
+                if(!data.length) return `<div class="py-10 text-center opacity-20 text-[10px] font-mono">NO_DATA_BUFFERED</div>`;
+                return data.map(i => `
+                    <div class="detail-item">
+                        <span class="text-xs font-bold text-white">${i.name}</span>
+                        <span class="text-[10px] font-mono opacity-50 uppercase">${i.status || i.job || i.hour+' HR'}</span>
+                    </div>
+                `).join('');
+            } catch(e) { return 'Error parsing data'; }
+        }
+
+        function switchCardTab(cardId, type) {
+            const itemIdx = cardId.split('-')[1];
+            const item = masterData.filter(i => i.UnitCode === activeUnit).reverse()[itemIdx];
+            const content = document.getElementById(`content-${cardId}`);
+            
+            if(type === 'info') content.innerHTML = renderCardInfo(item);
+            else if(type === 'abs') content.innerHTML = renderCardList(item.DetailAbsen, 'abs');
+            else if(type === 'insp') content.innerHTML = renderCardList(item.DetailInspectorName, 'insp');
+            else if(type === 'ot') content.innerHTML = renderCardList(item.PermintaanOvertime, 'ot');
+
+            document.querySelectorAll(`#tab-${cardId}-info, #tab-${cardId}-abs, #tab-${cardId}-insp, #tab-${cardId}-ot`).forEach(b => b.classList.remove('active'));
+            document.getElementById(`tab-${cardId}-${type}`).classList.add('active');
+        }
+
+        // --- FORM ENGINE ---
+        function openModal() {
+            editId = null; document.getElementById('attend-modal').classList.remove('hidden');
+            document.getElementById('modal-title').innerText = "Attendance Log Entry";
+            document.getElementById('attend-form').reset();
+            listAbs=[]; listInsp=[]; listOt=[]; renderAllLists();
+        }
+
+        function editAttend(item) {
+            editId = item.Timestamp; document.getElementById('attend-modal').classList.remove('hidden');
+            document.getElementById('modal-title').innerText = "Edit Log Entry";
+            document.getElementById('UnitCode').value = item.UnitCode; updateShiftDropdown();
+            document.getElementById('ShiftCategory').value = item.ShiftCategory;
+            document.getElementById('Hadir').value = item.Hadir;
+            document.getElementById('HighlightManpower').value = item.HighlightManpower;
+            document.getElementById('Utilization').value = item.Utilization;
+            document.getElementById('util-val').innerText = item.Utilization;
+            listAbs = JSON.parse(item.DetailAbsen || '[]');
+            listInsp = JSON.parse(item.DetailInspectorName || '[]');
+            listOt = JSON.parse(item.PermintaanOvertime || '[]');
+            syncManpowerFromShift(); renderAllLists();
+        }
+
+        function addItem(type) {
+            if(type === 'abs') { const n = document.getElementById('abs-name').value; if(!n) return; listAbs.push({name: n, status: document.getElementById('abs-status').value}); document.getElementById('abs-name').value=''; }
+            if(type === 'insp') { const n = document.getElementById('insp-name').value; if(!n) return; listInsp.push({name: n, job: document.getElementById('insp-task').value}); document.getElementById('insp-name').value=''; }
+            if(type === 'ot') { const n = document.getElementById('ot-name').value; const h = document.getElementById('ot-hr').value; if(!n || !h) return; listOt.push({name: n, hour: h}); document.getElementById('ot-name').value=''; }
+            renderAllLists();
+        }
+
+        function removeItem(type, idx) {
+            if(type === 'abs') listAbs.splice(idx, 1);
+            if(type === 'insp') listInsp.splice(idx, 1);
+            if(type === 'ot') listOt.splice(idx, 1);
+            renderAllLists();
+        }
+
+        function renderAllLists() {
+            renderGenericList('list-abs', listAbs, 'abs');
+            renderGenericList('list-insp', listInsp, 'insp');
+            renderGenericList('list-ot', listOt, 'ot');
+        }
+
+        function renderGenericList(cid, data, type) {
+            document.getElementById(cid).innerHTML = data.map((item, i) => `
+                <div class="detail-item !py-2 !px-3"><span class="text-[10px] font-bold text-white">${item.name} <span class="opacity-30">(${item.status || item.job || item.hour+'h'})</span></span>
+                <button type="button" onclick="removeItem('${type}', ${i})" class="text-red-500/40 hover:text-red-500"><i data-lucide="x" size="12"></i></button></div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        // --- CALCULATIONS ---
         function updateShiftDropdown() {
             const uCode = document.getElementById('UnitCode').value;
-            const shiftSelect = document.getElementById('ShiftCategory');
-            
-            // Filter shift berdasarkan UnitCode yang dipilih
-            const availableShifts = allShifts.filter(s => s.UnitCode === uCode);
-            
-            if (availableShifts.length > 0) {
-                shiftSelect.innerHTML = '<option value="" disabled selected>Select Shift</option>' + 
-                    availableShifts.map(s => `<option value="${s.ShiftCategory}">${s.ShiftCategory}</option>`).join('');
-            } else {
-                shiftSelect.innerHTML = '<option value="" disabled selected>No Shift Found</option>';
-            }
-            
-            document.getElementById('total-personnel').innerText = "0";
-            doCalculations();
+            const available = allShifts.filter(s => s.UnitCode === uCode);
+            document.getElementById('ShiftCategory').innerHTML = available.map(s => `<option value="${s.ShiftCategory}">${s.ShiftCategory}</option>`).join('');
+            syncManpowerFromShift();
         }
 
         function syncManpowerFromShift() {
-            const uCode = document.getElementById('UnitCode').value;
-            const shiftCat = document.getElementById('ShiftCategory').value;
-            
-            const match = allShifts.find(s => s.UnitCode === uCode && s.ShiftCategory === shiftCat);
-            const total = match ? parseInt(match.TotalManpower) : 0;
-            
-            document.getElementById('total-personnel').innerText = total;
+            const match = allShifts.find(s => s.UnitCode === document.getElementById('UnitCode').value && s.ShiftCategory === document.getElementById('ShiftCategory').value);
+            document.getElementById('total-personnel').innerText = match ? match.TotalManpower : '0';
             doCalculations();
         }
 
         function doCalculations() {
             const total = parseInt(document.getElementById('total-personnel').innerText) || 0;
             const hadir = parseInt(document.getElementById('Hadir').value) || 0;
-            const absen = Math.max(0, total - hadir);
             const avail = total > 0 ? ((hadir / total) * 100).toFixed(1) : 0;
-            document.getElementById('Absen').value = absen;
+            document.getElementById('Absen').value = Math.max(0, total - hadir);
             document.getElementById('availability-pct').innerText = avail + '%';
         }
 
-        // --- LIST HANDLERS ---
-        function addAbsItem() { const n = document.getElementById('abs-name').value; const s = document.getElementById('abs-status').value; if(!n) return; listAbs.push({name: n, status: s}); renderList('list-abs', listAbs); document.getElementById('abs-name').value = ''; }
-        function addInspItem() { const n = document.getElementById('insp-name').value; const t = document.getElementById('insp-task').value; if(!n) return; listInsp.push({name: n, job: t}); renderList('list-insp', listInsp); document.getElementById('insp-count').innerText = listInsp.length; document.getElementById('insp-name').value = ''; document.getElementById('insp-task').value = ''; }
-        function addOtItem() { const n = document.getElementById('ot-name').value; const h = document.getElementById('ot-hr').value; if(!n) return; listOt.push({name: n, job: 'Operational', hour: h, status: 'Open Review'}); renderList('list-ot', listOt); document.getElementById('ot-name').value = ''; document.getElementById('ot-hr').value = ''; }
-
-        function renderList(cid, data) {
-            document.getElementById(cid).innerHTML = data.map((item, i) => `
-                <div class="list-item"><span class="text-xs text-white/80">${item.name} <span class="opacity-30">(${item.status || item.job || item.hour+'hr'})</span></span>
-                <button type="button" onclick="removeItem('${cid}', ${i})" class="text-red-500/50 hover:text-red-500"><i data-lucide="x-circle" size="14"></i></button></div>
-            `).join('');
-            lucide.createIcons();
+        async function commitPlans() {
+            // Logic handled by form onsubmit
         }
-
-        function removeItem(cid, idx) {
-            if(cid === 'list-abs') listAbs.splice(idx, 1);
-            if(cid === 'list-insp') { listInsp.splice(idx, 1); document.getElementById('insp-count').innerText = listInsp.length; }
-            if(cid === 'list-ot') listOt.splice(idx, 1);
-            renderList(cid, cid === 'list-abs' ? listAbs : cid === 'list-insp' ? listInsp : listOt);
-        }
-
-        // --- RENDER DATA ---
-        function renderData(data) {
-            const container = document.getElementById('group-container');
-            const grouped = data.reduce((acc, item) => { if(!acc[item.UnitCode]) acc[item.UnitCode] = []; acc[item.UnitCode].push(item); return acc; }, {});
-            container.innerHTML = Object.keys(grouped).map(uCode => `
-                <div><div class="unit-group-header"><h2 class="text-white font-bold text-lg uppercase tracking-widest">${uCode}</h2></div>
-                <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">${grouped[uCode].reverse().map(item => `
-                    <div class="attendance-card"><div class="flex justify-between items-start mb-6"><div class="bg-sky-500/10 px-3 py-1 rounded-lg text-[10px] font-mono text-sky-400 border border-sky-500/20">${item.Timestamp}</div><div class="text-right"><span class="label-style">Availability</span><span class="text-emerald-400 font-bold">${item.Availability}%</span></div></div>
-                    <div class="grid grid-cols-4 gap-2 mb-6 text-center border-y border-white/5 py-4"><div><span class="label-style">Shift</span><span class="text-white font-bold text-xs">${item.ShiftCategory}</span></div><div><span class="label-style">Hadir</span><span class="text-white font-bold text-xs">${item.Hadir}</span></div><div><span class="label-style">Absen</span><span class="text-red-500 font-bold text-xs">${item.Absen}</span></div><div><span class="label-style">Utilize</span><span class="text-sky-400 font-bold text-xs">${item.Utilization}%</span></div></div>
-                    <div class="space-y-2"><span class="label-style">Highlight Note</span><p class="text-xs italic opacity-60 leading-relaxed line-clamp-1">${item.HighlightManpower || 'No highlights recorded.'}</p></div></div>
-                `).join('')}</div></div>`).join('');
-            lucide.createIcons();
-        }
-
-        function openModal() { document.getElementById('attend-modal').classList.remove('hidden'); }
-        function closeModal() { document.getElementById('attend-modal').classList.add('hidden'); document.getElementById('attend-form').reset(); listAbs=[]; listInsp=[]; listOt=[]; renderList('list-abs',[]); renderList('list-insp',[]); renderList('list-ot',[]); document.getElementById('insp-count').innerText="0"; document.getElementById('total-personnel').innerText="0"; document.getElementById('availability-pct').innerText="0%"; }
 
         document.getElementById('attend-form').onsubmit = async (e) => {
             e.preventDefault();
             loader.style.display = 'flex';
             const formData = new FormData(e.target);
             const payload = {
-                tab: 'ATTENDANCE', action: 'add',
+                tab: 'ATTENDANCE', action: editId ? 'update' : 'add',
+                primaryId: editId || formData.get('UnitCode'),
                 DetailAbsen: JSON.stringify(listAbs),
                 DetailInspectorName: JSON.stringify(listInsp),
                 PermintaanOvertime: JSON.stringify(listOt),
                 Availability: document.getElementById('availability-pct').innerText.replace('%',''),
-                InspectorNo: listInsp.length,
-                primaryId: formData.get('UnitCode')
+                InspectorNo: listInsp.length
             };
             formData.forEach((v, k) => payload[k] = v);
             try {
-                const res = await API.post(payload);
-                if(res.status === 'success') { Swal.fire({ icon: 'success', title: 'Committed', toast: true, position: 'top-end', showConfirmButton: false, timer: 2000, background: '#151921', color: '#fff' }); closeModal(); init(); }
-            } catch (err) { Swal.fire('Error', 'Failed to commit record.', 'error'); } finally { loader.style.display = 'none'; }
-        };
+                await API.post(payload);
+                Swal.fire({ icon: 'success', title: 'Data Committed', background: '#151921', color: '#fff', timer: 1500, showConfirmButton: false });
+                closeModal(); init();
+            } catch(e) { Swal.fire('Error', 'Commit Failed', 'error'); } finally { loader.style.display = 'none'; }
+        }
 
+        async function deleteAttend(ts) {
+            const res = await Swal.fire({ title: 'Purge Log?', text: "Permanent removal.", icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', background: '#151921', color: '#fff' });
+            if(res.isConfirmed) { loader.style.display = 'flex'; await API.post({ tab: 'ATTENDANCE', action: 'delete', primaryId: ts }); init(); }
+        }
+
+        function closeModal() { document.getElementById('attend-modal').classList.add('hidden'); }
         init();
     </script>
 </body>
