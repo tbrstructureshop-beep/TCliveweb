@@ -211,8 +211,9 @@
                     </div>
                 </div>
 
-                <!-- Single View -->
+                <!-- Single/Edit View -->
                 <div id="single-container" class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <input type="hidden" id="primaryId">
                     <div><label class="label-style">AC Registration</label><input id="s-ac" class="input-field" placeholder="PK-GMF"></div>
                     <div><label class="label-style">Order Number</label><input id="s-order" class="input-field" placeholder="123456"></div>
                     <div class="md:col-span-2"><label class="label-style">Work Description</label><input id="s-desc" class="input-field" placeholder="Details of the job..."></div>
@@ -226,7 +227,7 @@
             </div>
 
             <div class="p-8 border-t border-white/5">
-                <button onclick="submitData()" class="w-full bg-sky-600 py-4 rounded-2xl font-black text-white hover:bg-sky-500 transition-all uppercase tracking-widest text-xs">Authorize Data Commit</button>
+                <button id="submit-btn" onclick="submitData()" class="w-full bg-sky-600 py-4 rounded-2xl font-black text-white hover:bg-sky-500 transition-all uppercase tracking-widest text-xs">Authorize Data Commit</button>
             </div>
         </div>
     </div>
@@ -235,7 +236,8 @@
         lucide.createIcons();
         const loader = document.getElementById('local-loader');
         const TAB_NAME = 'Operational Detail';
-        let bulkData = [], currentMode = 'single';
+        let bulkData = [], currentMode = 'single', currentAction = 'add';
+        let rawOpData = [];
 
         const PRIORITY = { 'Top Urgent': 0, 'Highlighted': 1, 'Open': 2, 'Progress': 3, 'Closed': 4 };
 
@@ -243,8 +245,9 @@
             loader.style.display = 'flex';
             try {
                 const [unitRes, opRes] = await Promise.all([API.get('UNIT'), API.get(TAB_NAME)]);
+                rawOpData = opRes.data;
                 document.getElementById('UnitCode').innerHTML = unitRes.data.map(u => `<option value="${u.UnitCode}">${u.UnitCode}</option>`).join('');
-                renderCards(opRes.data);
+                renderCards(rawOpData);
             } catch (e) { Swal.fire('Error', 'Communication Failed', 'error'); } finally { loader.style.display = 'none'; }
         }
 
@@ -263,7 +266,6 @@
             }
 
             container.innerHTML = Object.keys(grouped).map(uCode => {
-                // Sort by Priority
                 const items = grouped[uCode].sort((a, b) => PRIORITY[a.Status] - PRIORITY[b.Status]);
                 
                 const stats = {
@@ -319,7 +321,10 @@
                                                 </select>
                                             </td>
                                             <td class="p-3 text-right">
-                                                <button onclick="deleteOrder('${item.OrderNo}')" class="text-white/10 hover:text-red-500 transition"><i data-lucide="trash-2" size="14"></i></button>
+                                                <div class="flex justify-end gap-2">
+                                                    <button onclick="editOrder('${item.OrderNo}')" class="text-sky-500/40 hover:text-sky-400 transition"><i data-lucide="edit-3" size="14"></i></button>
+                                                    <button onclick="deleteOrder('${item.OrderNo}')" class="text-white/10 hover:text-red-500 transition"><i data-lucide="trash-2" size="14"></i></button>
+                                                </div>
                                             </td>
                                         </tr>`;
                                     }).join('')}
@@ -335,14 +340,56 @@
         // --- CORE LOGIC ---
         function openModal(mode) {
             currentMode = mode;
+            currentAction = (mode === 'edit' ? 'update' : 'add');
             document.getElementById('op-modal').classList.remove('hidden');
-            document.getElementById('modal-title').innerText = mode === 'bulk' ? 'Bulk Engine [Grid Processor]' : 'Single Node Entry';
-            document.getElementById('single-container').classList.toggle('hidden', mode === 'bulk');
-            document.getElementById('bulk-container').classList.toggle('hidden', mode === 'single');
-            if(mode === 'bulk') focusBuffer();
+            
+            const title = document.getElementById('modal-title');
+            const submitBtn = document.getElementById('submit-btn');
+            
+            if(mode === 'bulk') {
+                title.innerText = 'Bulk Engine [Grid Processor]';
+                submitBtn.innerText = 'Authorize Data Commit';
+                document.getElementById('single-container').classList.add('hidden');
+                document.getElementById('bulk-container').classList.remove('hidden');
+                focusBuffer();
+            } else if (mode === 'edit') {
+                title.innerText = 'Update Operational Node';
+                submitBtn.innerText = 'Save System Changes';
+                document.getElementById('single-container').classList.remove('hidden');
+                document.getElementById('bulk-container').classList.add('hidden');
+                document.getElementById('s-order').disabled = true; // Primary ID should not change
+            } else {
+                title.innerText = 'Single Node Entry';
+                submitBtn.innerText = 'Authorize Data Commit';
+                document.getElementById('single-container').classList.remove('hidden');
+                document.getElementById('bulk-container').classList.add('hidden');
+                document.getElementById('s-order').disabled = false;
+            }
         }
 
-        function closeModal() { document.getElementById('op-modal').classList.add('hidden'); bulkData = []; renderBulkTable(); }
+        function editOrder(orderNo) {
+            const item = rawOpData.find(d => d.OrderNo === orderNo);
+            if(!item) return;
+
+            openModal('edit');
+            document.getElementById('UnitCode').value = item.UnitCode;
+            document.getElementById('primaryId').value = item.OrderNo;
+            document.getElementById('s-ac').value = item.ACReg;
+            document.getElementById('s-order').value = item.OrderNo;
+            document.getElementById('s-desc').value = item.Description;
+            document.getElementById('s-status').value = item.Status;
+        }
+
+        function closeModal() { 
+            document.getElementById('op-modal').classList.add('hidden'); 
+            bulkData = []; 
+            document.getElementById('primaryId').value = '';
+            document.getElementById('s-ac').value = '';
+            document.getElementById('s-order').value = '';
+            document.getElementById('s-desc').value = '';
+            renderBulkTable(); 
+        }
+
         function focusBuffer() { document.getElementById('paste-buffer').focus(); }
 
         document.getElementById('paste-buffer').addEventListener('paste', (e) => {
@@ -373,14 +420,23 @@
             loader.style.display = 'flex';
             const unit = document.getElementById('UnitCode').value;
             try {
-                if(currentMode === 'single') {
-                    await API.post({ tab: TAB_NAME, action: 'add', UnitCode: unit, ACReg: document.getElementById('s-ac').value, OrderNo: document.getElementById('s-order').value, Description: document.getElementById('s-desc').value, Status: document.getElementById('s-status').value, primaryId: document.getElementById('s-order').value });
+                if(currentMode === 'single' || currentMode === 'edit') {
+                    await API.post({ 
+                        tab: TAB_NAME, 
+                        action: currentAction, 
+                        UnitCode: unit, 
+                        ACReg: document.getElementById('s-ac').value, 
+                        OrderNo: document.getElementById('s-order').value, 
+                        Description: document.getElementById('s-desc').value, 
+                        Status: document.getElementById('s-status').value, 
+                        primaryId: document.getElementById('s-order').value 
+                    });
                 } else {
                     for(let d of bulkData) {
                         await API.post({ tab: TAB_NAME, action: 'add', UnitCode: unit, ACReg: d.ac, OrderNo: d.order, Description: d.desc, Status: 'Open', primaryId: d.order });
                     }
                 }
-                Swal.fire({ icon: 'success', title: 'Data Committed', background: '#151921', color: '#fff', timer: 1500, showConfirmButton: false });
+                Swal.fire({ icon: 'success', title: currentAction === 'add' ? 'Data Committed' : 'Changes Saved', background: '#151921', color: '#fff', timer: 1500, showConfirmButton: false });
                 closeModal(); init();
             } catch(e) { Swal.fire('Error', 'Transaction Failed', 'error'); } finally { loader.style.display = 'none'; }
         }
