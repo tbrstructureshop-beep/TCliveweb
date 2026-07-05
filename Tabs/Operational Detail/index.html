@@ -132,6 +132,73 @@
         const S_URL = 'https://kuzsjdtluabnfkzyffgz.supabase.co';
         const S_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt1enNqZHRsdWFibmZrenlmZmd6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTEyNzI0NTQsImV4cCI6MjA2Njg0ODQ1NH0.D-OhicEqoxnnX8G-mwi2Y4X8_03dgDsy_flNj2YbYVI';
         const supabaseClient = supabase.createClient(S_URL, S_KEY);
+
+        async function syncFromW303() {
+            // Proteksi agar data masuk ke Unit TCR-3
+            if (activeUnit !== 'TCR-3') {
+                Swal.fire('Info', 'Silahkan pilih tab Unit TCR-3 terlebih dahulu', 'info');
+                return;
+            }
+        
+            const { value: confirm } = await Swal.fire({
+                title: 'Sync Data W303 ke TCR-3?',
+                text: "Sistem akan menarik data Machining (W303) dari Supabase.",
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Ya, Jalankan Sync',
+                background: '#151921',
+                color: '#fff'
+            });
+        
+            if (!confirm) return;
+        
+            loader.style.display = 'flex';
+            
+            try {
+                // 1. Ambil data dari Supabase (Filter khusus W303: cek_mw = red)
+                const { data, error } = await supabaseClient
+                    .from('mdr_tracking')
+                    .select('ac_reg, order, description, status_mw')
+                    .eq('archived', false)
+                    .eq('cek_mw', 'red'); // Khusus Machining & Welding
+        
+                if (error) throw error;
+        
+                if (data.length === 0) {
+                    Swal.fire('Info', 'Tidak ada data W303 yang ditemukan.', 'info');
+                    return;
+                }
+        
+                // 2. Kirim data ke Google Apps Script
+                let count = 0;
+                for (let item of data) {
+                    // Mapping Status W303 ke Status Dashboard
+                    let mappedStatus = 'Open';
+                    if (item.status_mw === 'PROGRESS') mappedStatus = 'Progress';
+                    if (item.status_mw === 'CLOSED') mappedStatus = 'Closed';
+        
+                    await API.post({
+                        tab: TAB_NAME,
+                        action: 'add',
+                        UnitCode: 'TCR-3', // Target Unit
+                        ACReg: item.ac_reg || '-',
+                        OrderNo: item.order || '-',
+                        Description: item.description || '-',
+                        Status: mappedStatus,
+                        primaryId: item.order
+                    });
+                    count++;
+                }
+        
+                await init(); // Refresh tabel setelah sync selesai
+                Swal.fire('Success', `${count} data Machining berhasil disinkronkan ke TCR-3`, 'success');
+            } catch (e) {
+                console.error(e);
+                Swal.fire('Error', 'Sync Gagal: ' + e.message, 'error');
+            } finally {
+                loader.style.display = 'none';
+            }
+        }
         
         async function syncFromW301() {
             // Pastikan user sedang di Unit TCR-1 agar tidak salah masuk
