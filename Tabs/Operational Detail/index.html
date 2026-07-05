@@ -6,6 +6,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="../../api.js"></script>
     <style>
         :root { 
@@ -65,6 +66,9 @@
             <p class="text-[10px] opacity-40 font-mono uppercase tracking-widest">Task Queue Command Center</p>
         </div>
         <div class="flex gap-3">
+            <button onclick="syncFromW301()" class="bg-teal-600 hover:bg-teal-500 text-white px-5 py-2.5 rounded-xl font-bold text-[10px] uppercase transition-all shadow-lg shadow-teal-600/20">
+                <i data-lucide="refresh-cw" class="inline-block mr-1" size="14"></i> Sync W301
+            </button>
             <button onclick="openModal('bulk')" class="bg-white/5 border border-white/10 hover:bg-white/10 text-white px-5 py-2.5 rounded-xl font-bold text-[10px] uppercase transition-all">
                 <i data-lucide="layout-grid" class="inline-block mr-1" size="14"></i> Bulk Table
             </button>
@@ -123,6 +127,73 @@
         let rawOpData = [], activeUnit = null, bulkData = [], currentMode = 'single';
 
         const PRIORITY = { 'Top Urgent': 0, 'Highlighted': 1, 'Open': 2, 'Progress': 3, 'Closed': 4 };
+
+        // Konfigurasi Supabase (Sama dengan yang Anda miliki sebelumnya)
+        const S_URL = 'https://kuzsjdtluabnfkzyffgz.supabase.co';
+        const S_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt1enNqZHRsdWFibmZrenlmZmd6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTEyNzI0NTQsImV4cCI6MjA2Njg0ODQ1NH0.D-OhicEqoxnnX8G-mwi2Y4X8_03dgDsy_flNj2YbYVI';
+        const supabaseClient = supabase.createClient(S_URL, S_KEY);
+        
+        async function syncFromW301() {
+            // Pastikan user sedang di Unit TCR-1 agar tidak salah masuk
+            if (activeUnit !== 'TCR-1') {
+                Swal.fire('Info', 'Silahkan pilih tab Unit TCR-1 terlebih dahulu', 'info');
+                return;
+            }
+        
+            const { value: confirm } = await Swal.fire({
+                title: 'Sync Data W301?',
+                text: "Data dari Supabase akan di-copy ke TCR-1. Data yang sudah ada (Order No sama) tidak akan menduplikasi jika API Anda disetting Update.",
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Ya, Sync Sekarang',
+                background: '#151921',
+                color: '#fff'
+            });
+        
+            if (!confirm) return;
+        
+            loader.style.display = 'flex';
+            
+            try {
+                // 1. Ambil data dari Supabase
+                const { data, error } = await supabaseClient
+                    .from('mdr_tracking')
+                    .select('ac_reg, order, description, status_sm1')
+                    .eq('archived', false)
+                    .eq('cek_sm1', 'red');
+        
+                if (error) throw error;
+        
+                // 2. Mapping & Kirim ke Google Apps Script via API.post
+                let count = 0;
+                for (let item of data) {
+                    // Mapping Status Supabase ke Status TC WEB LIVE
+                    let mappedStatus = 'Open';
+                    if (item.status_sm1 === 'PROGRESS') mappedStatus = 'Progress';
+                    if (item.status_sm1 === 'CLOSED') mappedStatus = 'Closed';
+        
+                    await API.post({
+                        tab: TAB_NAME,
+                        action: 'add', // Gunakan 'add' atau 'update' sesuai kemampuan api.js Anda
+                        UnitCode: 'TCR-1',
+                        ACReg: item.ac_reg || '-',
+                        OrderNo: item.order || '-',
+                        Description: item.description || '-',
+                        Status: mappedStatus,
+                        primaryId: item.order // Kunci utama agar tidak duplikat
+                    });
+                    count++;
+                }
+        
+                await init(); // Refresh tampilan
+                Swal.fire('Success', `${count} data berhasil di-sync ke TCR-1`, 'success');
+            } catch (e) {
+                console.error(e);
+                Swal.fire('Error', 'Gagal mengambil data Supabase: ' + e.message, 'error');
+            } finally {
+                loader.style.display = 'none';
+            }
+        }
 
         async function init() {
             loader.style.display = 'flex';
