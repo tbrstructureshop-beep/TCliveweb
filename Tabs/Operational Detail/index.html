@@ -66,12 +66,34 @@
             <p class="text-[10px] opacity-40 font-mono uppercase tracking-widest">Task Queue Command Center</p>
         </div>
         <div class="flex gap-3">
-            <button onclick="syncFromW301()" class="bg-teal-600 hover:bg-teal-500 text-white px-5 py-2.5 rounded-xl font-bold text-[10px] uppercase transition-all shadow-lg shadow-teal-600/20">
-                <i data-lucide="refresh-cw" class="inline-block mr-1" size="14"></i> Sync W301
-            </button>
+            <!-- DROPDOWN SYNC START -->
+            <div class="relative inline-block text-left" id="sync-dropdown-wrapper">
+                <button onclick="toggleSyncDropdown()" class="bg-teal-600 hover:bg-teal-500 text-white px-5 py-2.5 rounded-xl font-bold text-[10px] uppercase transition-all shadow-lg shadow-teal-600/20 flex items-center gap-2">
+                    <i data-lucide="refresh-cw" size="14"></i>
+                    Sync Supabase
+                    <i data-lucide="chevron-down" size="14" id="sync-chevron"></i>
+                </button>
+        
+                <!-- Dropdown Menu Content -->
+                <div id="sync-menu" class="hidden absolute right-0 mt-2 w-56 origin-top-right rounded-2xl bg-[#151921] border border-white/10 shadow-2xl z-[120] overflow-hidden animate-in fade-in zoom-in duration-200">
+                    <div class="py-1">
+                        <button onclick="handleSync('W301')" class="w-full text-left px-4 py-3 text-[10px] font-bold uppercase text-white hover:bg-white/5 flex items-center gap-3 border-b border-white/5 transition-colors">
+                            <div class="w-2 h-2 rounded-full bg-teal-500"></div>
+                            <span>W301 - Sheetmetal (TCR-1)</span>
+                        </button>
+                        <button onclick="handleSync('W303')" class="w-full text-left px-4 py-3 text-[10px] font-bold uppercase text-white hover:bg-white/5 flex items-center gap-3 transition-colors">
+                            <div class="w-2 h-2 rounded-full bg-orange-500"></div>
+                            <span>W303 - Machining (TCR-3)</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <!-- DROPDOWN SYNC END -->
+        
             <button onclick="openModal('bulk')" class="bg-white/5 border border-white/10 hover:bg-white/10 text-white px-5 py-2.5 rounded-xl font-bold text-[10px] uppercase transition-all">
                 <i data-lucide="layout-grid" class="inline-block mr-1" size="14"></i> Bulk Table
             </button>
+            
             <button onclick="openModal('single')" class="bg-sky-600 hover:bg-sky-500 text-white px-5 py-2.5 rounded-xl font-bold text-[10px] uppercase transition-all shadow-lg shadow-sky-600/20">
                 <i data-lucide="plus" class="inline-block mr-1" size="14"></i> Add Single
             </button>
@@ -403,6 +425,44 @@
             const res = await Swal.fire({ title: 'Purge Entry?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', background: '#151921', color: '#fff' });
             if(res.isConfirmed) { loader.style.display = 'flex'; try { await API.post({ tab: TAB_NAME, action: 'delete', primaryId: orderNo }); await init(); } catch(e) { loader.style.display = 'none'; } }
         }
+
+        // Fungsi untuk buka/tutup dropdown
+        function toggleSyncDropdown() {
+            const menu = document.getElementById('sync-menu');
+            const chevron = document.getElementById('sync-chevron');
+            
+            const isHidden = menu.classList.contains('hidden');
+            
+            if (isHidden) {
+                menu.classList.remove('hidden');
+                chevron.style.transform = 'rotate(180deg)';
+            } else {
+                menu.classList.add('hidden');
+                chevron.style.transform = 'rotate(0deg)';
+            }
+        }
+        
+        // Fungsi helper agar saat klik menu, dropdown langsung tertutup
+        function handleSync(type) {
+            toggleSyncDropdown(); // Tutup menu
+            if (type === 'W301') {
+                syncFromW301();
+            } else if (type === 'W303') {
+                syncFromW303();
+            }
+        }
+        
+        // Event Listener untuk menutup dropdown jika klik di luar area menu
+        window.addEventListener('click', function(e) {
+            const wrapper = document.getElementById('sync-dropdown-wrapper');
+            const menu = document.getElementById('sync-menu');
+            const chevron = document.getElementById('sync-chevron');
+            
+            if (!wrapper.contains(e.target)) {
+                menu.classList.add('hidden');
+                chevron.style.transform = 'rotate(0deg)';
+            }
+        });
 
         init();
     </script>
