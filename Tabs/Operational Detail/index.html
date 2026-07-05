@@ -20,29 +20,27 @@
         body { background: transparent; color: var(--text-main); font-family: 'Inter', sans-serif; overflow-x: hidden; transition: all 0.3s ease; }
         .text-white, h1, h2, h3, h4 { color: var(--text-bold) !important; }
         
-        /* Tab Navigation */
-        .unit-nav { display: flex; gap: 0.5rem; padding: 0.5rem; background: rgba(0,0,0,0.2); border-radius: 1.25rem; border: 1px solid var(--border); overflow-x: auto; flex: 1; }
+        .unit-nav { display: flex; gap: 0.5rem; padding: 0.5rem; background: rgba(0,0,0,0.2); border-radius: 1.25rem; border: 1px solid var(--border); overflow-x: auto; }
         .unit-nav::-webkit-scrollbar { display: none; }
         .unit-tab { padding: 0.75rem 1.5rem; border-radius: 1rem; font-size: 11px; font-weight: 800; white-space: nowrap; transition: 0.3s; color: var(--text-main); cursor: pointer; border: 1px solid transparent; }
-        .unit-tab:hover { background: rgba(255,255,255,0.05); }
         .unit-tab.active { background: var(--accent); color: white !important; box-shadow: 0 10px 20px -5px rgba(14, 165, 233, 0.4); border-color: rgba(255,255,255,0.2); }
         
-        .op-card { background-color: var(--panel) !important; border: 1px solid var(--border) !important; border-radius: 2rem; padding: 1.5rem; margin-bottom: 2rem; box-shadow: 0 15px 35px -10px rgba(0,0,0,0.3); }
+        .op-card { background-color: var(--panel) !important; border: 1px solid var(--border) !important; border-radius: 2.5rem; padding: 2rem; margin-bottom: 2rem; box-shadow: 0 20px 50px -12px rgba(0,0,0,0.5); }
         
-        .stat-box { flex: 1; min-width: 90px; padding: 10px; border-radius: 1rem; border: 1px solid var(--border); text-align: center; background: var(--input-bg); }
-        .stat-val { display: block; font-size: 1.1rem; font-weight: 900; line-height: 1; margin-bottom: 4px; }
-        .stat-lab { font-size: 7px; font-weight: 800; text-transform: uppercase; opacity: 0.5; }
+        .stat-box { flex: 1; min-width: 100px; padding: 12px; border-radius: 1.25rem; border: 1px solid var(--border); text-align: center; background: var(--input-bg); }
+        .stat-val { display: block; font-size: 1.25rem; font-weight: 900; line-height: 1; margin-bottom: 4px; }
+        .stat-lab { font-size: 8px; font-weight: 800; text-transform: uppercase; opacity: 0.5; letter-spacing: 1px; }
 
         .master-table { width: 100%; font-size: 11px; border-spacing: 0 8px; border-collapse: separate; }
         .master-table th { padding: 12px; text-align: left; opacity: 0.4; text-transform: uppercase; font-size: 10px; }
-        .master-table td { padding: 12px; background: rgba(255,255,255,0.01); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
-        .master-table td:first-child { border-left: 1px solid var(--border); border-top-left-radius: 12px; border-bottom-left-radius: 12px; }
-        .master-table td:last-child { border-right: 1px solid var(--border); border-top-right-radius: 12px; border-bottom-right-radius: 12px; }
+        .master-table td { padding: 14px 12px; background: rgba(255,255,255,0.01); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+        .master-table td:first-child { border-left: 1px solid var(--border); border-top-left-radius: 16px; border-bottom-left-radius: 16px; }
+        .master-table td:last-child { border-right: 1px solid var(--border); border-top-right-radius: 16px; border-bottom-right-radius: 16px; }
 
-        .input-field { background: var(--input-bg) !important; border: 1px solid var(--border) !important; color: var(--text-bold) !important; border-radius: 0.75rem; padding: 0.5rem; outline: none; font-size: 0.75rem; }
+        .input-field { background: var(--input-bg) !important; border: 1px solid var(--border) !important; color: var(--text-bold) !important; border-radius: 0.75rem; padding: 0.6rem; outline: none; font-size: 0.75rem; }
         
-        #local-loader { display: none; position: fixed; inset: 0; background: rgba(11, 14, 20, 0.9); backdrop-filter: blur(8px); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; }
-        .page-btn { padding: 0.5rem 1rem; border-radius: 0.75rem; background: var(--input-bg); border: 1px solid var(--border); font-size: 11px; font-weight: bold; transition: 0.2s; color: var(--text-bold); }
+        #local-loader { display: none; position: fixed; inset: 0; background: rgba(11, 14, 20, 0.95); backdrop-filter: blur(10px); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; }
+        .page-btn { padding: 0.6rem 1.2rem; border-radius: 0.75rem; background: var(--input-bg); border: 1px solid var(--border); font-size: 11px; font-weight: bold; transition: 0.2s; color: var(--text-bold); }
         .page-btn:hover:not(:disabled) { background: var(--accent); color: white; }
         .page-btn:disabled { opacity: 0.2; cursor: not-allowed; }
     </style>
@@ -51,28 +49,23 @@
 
     <div id="local-loader">
         <div class="w-12 h-12 border-4 border-sky-500/10 border-t-sky-500 rounded-full animate-spin mb-3"></div>
-        <span class="text-[10px] font-mono text-sky-500 font-bold uppercase tracking-widest">Processing_Data...</span>
+        <span class="text-[10px] font-mono text-sky-500 font-bold uppercase tracking-widest">Live_Database_Link...</span>
     </div>
 
     <!-- HEADER -->
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>
             <h1 class="text-2xl font-black text-white uppercase tracking-tighter">Operational Detail</h1>
-            <p class="text-[10px] opacity-40 font-mono uppercase tracking-widest">Hybrid Command Center (Supabase + Sheets)</p>
+            <p class="text-[10px] opacity-40 font-mono uppercase tracking-widest">Hybrid Fleet Command (Supabase Live + Sheet Engine)</p>
         </div>
-        <!-- KODE UNTUK BAGIAN HEADER BUTTONS -->
         <div class="flex gap-3">
-            <!-- Tombol Sync hanya muncul/aktif untuk unit non-Supabase jika dibutuhkan, 
-                 tapi untuk TCR-1,2,5 data sudah otomatis LIVE -->
-            <button onclick="init()" class="bg-white/5 border border-white/10 hover:bg-white/10 text-white px-5 py-2.5 rounded-xl font-bold text-[10px] uppercase transition-all">
-                <i data-lucide="refresh-cw" class="inline-block mr-1" size="14"></i> Refresh Live Data
+            <button onclick="init()" class="bg-white/5 border border-white/10 hover:bg-white/10 text-white px-5 py-2.5 rounded-xl font-bold text-[10px] uppercase transition-all flex items-center gap-2">
+                <i data-lucide="refresh-cw" size="14"></i> Sync All
             </button>
-            
             <button onclick="openModal('bulk')" class="bg-white/5 border border-white/10 hover:bg-white/10 text-white px-5 py-2.5 rounded-xl font-bold text-[10px] uppercase transition-all">
                 <i data-lucide="layout-grid" class="inline-block mr-1" size="14"></i> Bulk Table
             </button>
-            
-            <button onclick="openModal('single')" class="bg-sky-600 hover:bg-sky-500 text-white px-5 py-2.5 rounded-xl font-bold text-[10px] uppercase transition-all shadow-lg shadow-sky-600/20">
+            <button onclick="openModal('single')" class="bg-sky-600 hover:bg-sky-500 text-white px-5 py-2.5 rounded-xl font-bold text-[10px] uppercase transition-all">
                 <i data-lucide="plus" class="inline-block mr-1" size="14"></i> Add Single
             </button>
         </div>
@@ -87,21 +80,21 @@
 
     <!-- MODAL -->
     <div id="op-modal" class="fixed inset-0 bg-black/95 backdrop-blur-md hidden flex items-center justify-center z-[110] p-4">
-        <div class="bg-[#151921] border border-white/10 rounded-[2.5rem] w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col">
+        <div class="bg-[#151921] border border-white/10 rounded-[3rem] w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col">
             <div class="p-6 border-b border-white/5 flex justify-between items-center text-white">
-                <h3 id="modal-title" class="text-lg font-bold uppercase tracking-widest">Entry Engine</h3>
+                <h3 id="modal-title" class="text-lg font-bold uppercase tracking-widest">Data Forge</h3>
                 <button onclick="closeModal()" class="opacity-30 hover:opacity-100"><i data-lucide="x"></i></button>
             </div>
             <div class="p-8 space-y-4">
-                <div><label class="text-[10px] font-bold uppercase mb-2 block">Unit Node</label><select id="UnitCode" class="input-field w-full"></select></div>
+                <div><label class="text-[10px] font-bold uppercase mb-2 block">Assigned Node</label><select id="UnitCode" class="input-field w-full"></select></div>
                 <div id="bulk-container" class="hidden">
-                    <textarea id="paste-buffer" onpaste="handlePaste(event)" class="w-full h-32 bg-white/5 border border-white/10 rounded-xl p-4 text-xs text-white outline-none focus:border-sky-500" placeholder="Paste data from Excel here..."></textarea>
+                    <textarea id="paste-buffer" onpaste="handlePaste(event)" class="w-full h-40 bg-white/5 border border-white/10 rounded-xl p-4 text-xs text-white outline-none focus:border-sky-500" placeholder="AC REG [TAB] ORDER [TAB] DESC"></textarea>
                 </div>
                 <div id="single-container" class="grid grid-cols-2 gap-4">
                     <input type="hidden" id="primaryId">
-                    <div><label class="text-[10px] font-bold uppercase mb-1 block">AC Reg</label><input id="s-ac" class="input-field w-full"></div>
-                    <div><label class="text-[10px] font-bold uppercase mb-1 block">Order No</label><input id="s-order" class="input-field w-full"></div>
-                    <div class="col-span-2"><label class="text-[10px] font-bold uppercase mb-1 block">Description</label><input id="s-desc" class="input-field w-full"></div>
+                    <div><label class="text-[10px] font-bold uppercase mb-1 block">AC Registration</label><input id="s-ac" class="input-field w-full"></div>
+                    <div><label class="text-[10px] font-bold uppercase mb-1 block">Order Number</label><input id="s-order" class="input-field w-full"></div>
+                    <div class="col-span-2"><label class="text-[10px] font-bold uppercase mb-1 block">Work Description</label><input id="s-desc" class="input-field w-full"></div>
                     <div class="col-span-2"><label class="text-[10px] font-bold uppercase mb-1 block">Status</label>
                         <select id="s-status" class="input-field w-full">
                             <option>Top Urgent</option><option>Highlighted</option><option>Open</option><option>Progress</option><option>Closed</option>
@@ -110,7 +103,7 @@
                 </div>
             </div>
             <div class="p-6 border-t border-white/5">
-                <button onclick="submitData()" class="w-full bg-sky-600 py-3 rounded-xl font-bold text-white text-[11px] uppercase tracking-widest">Execute Data authorization</button>
+                <button onclick="submitData()" class="w-full bg-sky-600 py-4 rounded-2xl font-black text-white text-[11px] uppercase tracking-widest">Authorize Data Entry</button>
             </div>
         </div>
     </div>
@@ -120,72 +113,61 @@
         const loader = document.getElementById('local-loader');
         const TAB_NAME = 'Operational Detail';
         
-        // Pagination & Data State
-        let currentPage = 1;
-        let rowsPerPage = 10;
-        let rawOpData = [];    // Data Spreadsheet
-        let supabaseData = []; // Data Supabase
-        let activeUnit = null;
-        let currentMode = 'single';
-        let bulkData = [];
-    
+        let currentPage = 1, rowsPerPage = 10;
+        let rawOpData = [], supabaseData = [], unitList = [], activeUnit = null, currentMode = 'single', bulkData = [];
+
         const PRIORITY = { 'Top Urgent': 0, 'Highlighted': 1, 'Open': 2, 'Progress': 3, 'Closed': 4 };
-    
-        // Supabase Configuration
+
         const S_URL = 'https://kuzsjdtluabnfkzyffgz.supabase.co';
         const S_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt1enNqZHRsdWFibmZrenlmZmd6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTEyNzI0NTQsImV4cCI6MjA2Njg0ODQ1NH0.D-OhicEqoxnnX8G-mwi2Y4X8_03dgDsy_flNj2YbYVI';
         const supabaseClient = supabase.createClient(S_URL, S_KEY);
-    
-        // Mapping Unit ke Database Supabase
+
+        // MAP SESUAI FILE W301, W302, W303
         const SUPABASE_UNITS = {
-            'TCR-1': { colStatus: 'status_sm1', colDate: 'date_closed_sm1', colReport: 'report_sm1', filterCek: 'cek_sm1', label: 'W301 Sheetmetal' },
-            'TCR-2': { colStatus: 'status_cs1', colDate: 'date_closed_cs1', colReport: 'report_cs1', filterCek: 'cek_cs1', label: 'W302 Composite' },
-            'TCR-5': { colStatus: 'status_mw',  colDate: 'date_closed_mw',  colReport: 'report_mw',  filterCek: 'cek_mw',  label: 'W303 Machining' }
+            'TCR-1': { colStatus: 'status_sm1', colDate: 'date_closed_sm1', filterCek: 'cek_sm1' },
+            'TCR-2': { colStatus: 'status_cs1', colDate: 'date_closed_cs1', filterCek: 'cek_cs1' },
+            'TCR-5': { colStatus: 'status_mw',  colDate: 'date_closed_mw',  filterCek: 'cek_mw' }
         };
-    
-        // --- INITIALIZATION ---
+
         async function init() {
             loader.style.display = 'flex';
             try {
-                // Ambil data Spreadsheet & Supabase secara paralel agar cepat
                 const [unitRes, opRes, { data: sData, error: sErr }] = await Promise.all([
                     API.get('UNIT'),
                     API.get(TAB_NAME),
                     supabaseClient.from('mdr_tracking').select('*').eq('archived', false)
                 ]);
-    
+
                 if (sErr) throw sErr;
-                
+                unitList = unitRes.data || [];
                 rawOpData = opRes.data || [];
                 supabaseData = sData || [];
-    
-                // Render Tabs
-                renderTabs(unitRes.data);
+
+                document.getElementById('UnitCode').innerHTML = unitList.map(u => `<option value="${u.UnitCode}">${u.UnitCode}</option>`).join('');
+                if(!activeUnit && unitList.length > 0) activeUnit = unitList[0].UnitCode;
                 
-                // Set Default Unit if not set
-                if(!activeUnit && unitRes.data.length > 0) activeUnit = unitRes.data[0].UnitCode;
-                
-                // Populate Unit Dropdown di Modal
-                document.getElementById('UnitCode').innerHTML = unitRes.data.map(u => `<option value="${u.UnitCode}">${u.UnitCode}</option>`).join('');
-                
+                renderTabs();
                 renderCards();
-            } catch (e) { 
-                Swal.fire('Error', 'Sync Failed: ' + e.message, 'error'); 
-            } finally { 
-                loader.style.display = 'none'; 
-            }
+            } catch (e) { Swal.fire('Sync Error', e.message, 'error'); } 
+            finally { loader.style.display = 'none'; }
         }
-    
-        // --- RENDER TABEL & SUMMARY ---
+
+        function renderTabs() {
+            document.getElementById('unit-tabs').innerHTML = unitList.map(u => 
+                `<button onclick="switchUnit('${u.UnitCode}')" class="unit-tab ${u.UnitCode === activeUnit ? 'active' : ''}">
+                    ${u.UnitCode}
+                </button>`).join('');
+        }
+
         function renderCards() {
             const container = document.getElementById('op-container');
             let fullData = [];
             const sMap = SUPABASE_UNITS[activeUnit];
-    
-            // 1. Logic Filtering (Supabase vs Spreadsheet)
+
+            // LOGIC: AMBIL DATA BERDASARKAN FILTER "RED" (Sama dengan Workshop)
             if (sMap) {
                 fullData = supabaseData
-                    .filter(item => item[sMap.filterCek] === 'red' && (item[sMap.colReport] === 'checked' || item[sMap.colReport] === true))
+                    .filter(item => item[sMap.filterCek] === 'red') // Ambil semua data workshop terkait
                     .map(item => ({
                         ACReg: item.ac_reg || '-',
                         OrderNo: item.order || '-',
@@ -197,48 +179,50 @@
             } else {
                 fullData = rawOpData.filter(i => i.UnitCode === activeUnit);
             }
-    
+
             fullData.sort((a, b) => PRIORITY[a.Status] - PRIORITY[b.Status]);
-    
-            // 2. Summary Stats
+
+            // Summary Stats Lengkap
             const stats = {
                 total: fullData.length,
                 urgent: fullData.filter(i => i.Status === 'Top Urgent').length,
+                high: fullData.filter(i => i.Status === 'Highlighted').length,
                 open: fullData.filter(i => i.Status === 'Open').length,
                 prog: fullData.filter(i => i.Status === 'Progress').length,
                 done: fullData.filter(i => i.Status === 'Closed').length
             };
-    
-            // 3. Pagination Logic
+
+            // Pagination Logic
             const limit = rowsPerPage === 'All' ? stats.total : parseInt(rowsPerPage);
             const totalPages = Math.ceil(stats.total / limit) || 1;
             if (currentPage > totalPages) currentPage = 1;
             const start = (currentPage - 1) * limit;
             const paginatedItems = fullData.slice(start, start + limit);
-    
-            // 4. Build HTML
+
             container.innerHTML = `
                 <div class="op-card animate-in fade-in duration-500">
-                    <div class="flex flex-col xl:flex-row justify-between items-start gap-6 mb-8">
+                    <div class="flex flex-col xl:flex-row justify-between items-start gap-6 mb-10">
                         <div>
                             <span class="text-[10px] font-bold uppercase text-sky-500 tracking-[0.2em] mb-1 block">
-                                ${sMap ? 'LIVE SUPABASE DATABASE' : 'INTERNAL SPREADSHEET'}
+                                ${sMap ? 'Live Database (Syncing with Workshop)' : 'Cloud Spreadsheet Storage'}
                             </span>
-                            <h2 class="text-4xl font-black text-white tracking-tighter">${activeUnit}</h2>
+                            <h2 class="text-4xl font-black text-white tracking-tighter uppercase">${activeUnit}</h2>
                         </div>
-                        <!-- Stats Grid -->
-                        <div class="flex flex-wrap gap-2 flex-1 max-w-3xl">
-                            <div class="stat-box"><span class="stat-val">${stats.total}</span><span class="stat-lab">Total Task</span></div>
+                        <!-- Stats Grid Lengkap -->
+                        <div class="grid grid-cols-3 md:grid-cols-6 gap-2 flex-1 w-full max-w-4xl">
+                            <div class="stat-box"><span class="stat-val">${stats.total}</span><span class="stat-lab">Total</span></div>
                             <div class="stat-box border-red-500/30 text-red-500"><span class="stat-val">${stats.urgent}</span><span class="stat-lab">Urgent</span></div>
+                            <div class="stat-box border-purple-500/20 text-purple-400"><span class="stat-val">${stats.high}</span><span class="stat-lab">High</span></div>
                             <div class="stat-box border-blue-500/20 text-blue-400"><span class="stat-val">${stats.open}</span><span class="stat-lab">Open</span></div>
+                            <div class="stat-box border-yellow-500/20 text-yellow-400"><span class="stat-val">${stats.prog}</span><span class="stat-lab">Prog</span></div>
                             <div class="stat-box border-emerald-500/20 text-emerald-400"><span class="stat-val">${stats.done}</span><span class="stat-lab">Done</span></div>
                         </div>
                     </div>
-    
-                    <!-- Control Bar -->
+
+                    <!-- Pagination Controls -->
                     <div class="flex flex-wrap justify-between items-center gap-4 py-4 border-t border-white/5 mb-4">
-                        <div class="flex items-center gap-2">
-                            <span class="text-[10px] font-bold uppercase opacity-40">Showing</span>
+                        <div class="flex items-center gap-3">
+                            <span class="text-[10px] font-bold uppercase opacity-30">Rows per page</span>
                             <select onchange="updateRowsPerPage(this.value)" class="input-field py-1">
                                 <option value="10" ${rowsPerPage == 10 ? 'selected' : ''}>10</option>
                                 <option value="25" ${rowsPerPage == 25 ? 'selected' : ''}>25</option>
@@ -248,17 +232,17 @@
                         </div>
                         <div class="flex items-center gap-4">
                             <button onclick="changePage(-1)" ${currentPage === 1 ? 'disabled' : ''} class="page-btn"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
-                            <span class="text-[10px] font-bold uppercase tracking-widest">Page ${currentPage} <span class="opacity-30">of</span> ${totalPages}</span>
+                            <span class="text-[10px] font-bold uppercase tracking-widest">Page ${currentPage} <span class="opacity-20">/</span> ${totalPages}</span>
                             <button onclick="changePage(1)" ${currentPage === totalPages ? 'disabled' : ''} class="page-btn"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
                         </div>
                     </div>
-    
+
                     <div class="overflow-x-auto">
                         <table class="master-table">
-                            <thead><tr><th>AC Reg</th><th>Order No</th><th>Description</th><th class="w-32">Status</th><th class="text-right">Action</th></tr></thead>
+                            <thead><tr><th>AC Reg</th><th>Order No</th><th>Description</th><th class="w-32">Live Status</th><th class="text-right">Action</th></tr></thead>
                             <tbody>
                                 ${paginatedItems.map(item => `
-                                    <tr class="group hover:bg-white/[0.02] transition-colors">
+                                    <tr class="group hover:bg-white/[0.02] transition-all">
                                         <td class="font-black text-white uppercase">${item.ACReg}</td>
                                         <td class="font-mono text-sky-400">${item.OrderNo}</td>
                                         <td class="text-white/60 leading-tight pr-4">${item.Description}</td>
@@ -274,21 +258,19 @@
                                             </div>
                                         </td>
                                     </tr>`).join('')}
-                                ${paginatedItems.length === 0 ? '<tr><td colspan="5" class="text-center py-20 opacity-20 italic">No operational task in this queue</td></tr>' : ''}
+                                ${paginatedItems.length === 0 ? '<tr><td colspan="5" class="text-center py-20 opacity-20 italic tracking-widest font-mono">NODE_EMPTY // NO_ACTIVE_TASKS</td></tr>' : ''}
                             </tbody>
                         </table>
                     </div>
                 </div>`;
             lucide.createIcons();
         }
-    
-        // --- LOGIKA UPDATE STATUS (DUAL MODE) ---
+
         async function handleUpdateStatus(uCode, oNo, status) {
             loader.style.display = 'flex';
             const sMap = SUPABASE_UNITS[uCode];
             try {
                 if (sMap) {
-                    // UPDATE SUPABASE LANGSUNG
                     const payload = {};
                     payload[sMap.colStatus] = status.toUpperCase();
                     if (status === 'Closed') {
@@ -298,54 +280,41 @@
                     }
                     await supabaseClient.from('mdr_tracking').update(payload).eq('order', oNo);
                 } else {
-                    // UPDATE SPREADSHEET
                     await API.post({ tab: TAB_NAME, action: 'update', primaryId: oNo, Status: status });
                 }
-                await init(); // Refresh data
+                await init();
             } catch (e) { loader.style.display = 'none'; }
         }
-    
-        // --- LOGIKA SUBMIT DATA (ADD / EDIT) ---
+
         async function submitData() {
             loader.style.display = 'flex';
-            const unit = document.getElementById('UnitCode').value;
-            const sMap = SUPABASE_UNITS[unit];
-            const orderNo = document.getElementById('s-order').value;
-            const status = document.getElementById('s-status').value;
-    
+            const unit = document.getElementById('UnitCode').value, sMap = SUPABASE_UNITS[unit], orderNo = document.getElementById('s-order').value, status = document.getElementById('s-status').value;
             try {
                 if (sMap && currentMode === 'edit') {
-                    // UPDATE LIVE KE SUPABASE
                     const payload = {}; payload[sMap.colStatus] = status.toUpperCase();
                     await supabaseClient.from('mdr_tracking').update(payload).eq('order', orderNo);
+                } else if (currentMode === 'bulk') {
+                    for(let d of bulkData) await API.post({ tab: TAB_NAME, action: 'add', UnitCode: unit, ACReg: d.ac, OrderNo: d.order, Description: d.desc, Status: 'Open', primaryId: d.order });
                 } else {
-                    // PROSES SPREADSHEET SEPERTI BIASA
                     const action = (currentMode === 'edit' ? 'update' : 'add');
-                    await API.post({ 
-                        tab: TAB_NAME, action: action, UnitCode: unit, 
-                        ACReg: document.getElementById('s-ac').value, OrderNo: orderNo, 
-                        Description: document.getElementById('s-desc').value, Status: status, primaryId: orderNo 
-                    });
+                    await API.post({ tab: TAB_NAME, action: action, UnitCode: unit, ACReg: document.getElementById('s-ac').value, OrderNo: orderNo, Description: document.getElementById('s-desc').value, Status: status, primaryId: orderNo });
                 }
                 closeModal(); await init();
-                Swal.fire({ icon: 'success', title: 'Data Authorization Success', timer: 1000, showConfirmButton: false, background: '#151921', color: '#fff' });
+                Swal.fire({ icon: 'success', title: 'Authorization Success', timer: 1000, showConfirmButton: false, background: '#151921', color: '#fff' });
             } catch (e) { loader.style.display = 'none'; }
         }
-    
-        // --- LOGIKA DELETE (UN-REPORT) ---
+
         async function deleteOrder(orderNo) {
             const sMap = SUPABASE_UNITS[activeUnit];
             const res = await Swal.fire({ 
-                title: 'Confirm Purge?', 
-                text: sMap ? 'This will remove the report tag from Supabase LIVE database.' : 'This data will be deleted from spreadsheet.',
+                title: 'Purge Item?', text: sMap ? 'Remove assigned tag? (This item will return to unassigned list)' : 'Delete from storage?',
                 icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', background: '#151921', color: '#fff' 
             });
-    
             if(res.isConfirmed) {
                 loader.style.display = 'flex';
                 try {
                     if (sMap) {
-                        const payload = {}; payload[sMap.colReport] = ''; // Un-report
+                        const payload = {}; payload[sMap.filterCek] = ''; // Kembalikan ke unassigned
                         await supabaseClient.from('mdr_tracking').update(payload).eq('order', orderNo);
                     } else {
                         await API.post({ tab: TAB_NAME, action: 'delete', primaryId: orderNo });
@@ -354,42 +323,26 @@
                 } catch (e) { loader.style.display = 'none'; }
             }
         }
-    
-        // --- UI HELPERS ---
-        function formatStatus(s) {
-            if (!s) return 'Open';
-            return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
-        }
-    
-        function renderTabs(units) {
-            document.getElementById('unit-tabs').innerHTML = units.map(u => 
-                `<button onclick="switchUnit('${u.UnitCode}')" class="unit-tab ${u.UnitCode === activeUnit ? 'active' : ''}">
-                    ${u.UnitCode}
-                </button>`).join('');
-        }
-    
-        function switchUnit(uCode) {
-            activeUnit = uCode;
-            currentPage = 1; // Reset page saat pindah tab
-            renderTabs(rawOpData); // Re-highlight tabs (rawOpData used for unit list)
-            init(); // Refresh data untuk memastikan live
-        }
-    
+
+        function switchUnit(uCode) { activeUnit = uCode; currentPage = 1; renderTabs(); renderCards(); }
         function updateRowsPerPage(val) { rowsPerPage = val; currentPage = 1; renderCards(); }
         function changePage(dir) { currentPage += dir; renderCards(); }
-    
+        function formatStatus(s) { if (!s) return 'Open'; return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase(); }
+        
         function openModal(mode) {
             currentMode = mode; 
             document.getElementById('op-modal').classList.remove('hidden');
-            document.getElementById('modal-title').innerText = mode === 'edit' ? 'Update Entry' : (mode === 'bulk' ? 'Bulk Processor' : 'New Entry');
             document.getElementById('bulk-container').classList.toggle('hidden', mode !== 'bulk');
             document.getElementById('single-container').classList.toggle('hidden', mode === 'bulk');
-            if(mode === 'edit') document.getElementById('s-order').disabled = true;
-            else document.getElementById('s-order').disabled = false;
+            document.getElementById('s-order').disabled = (mode === 'edit');
         }
-        
-        function closeModal() { document.getElementById('op-modal').classList.add('hidden'); document.getElementById('primaryId').value = ''; }
-    
+        function closeModal() { document.getElementById('op-modal').classList.add('hidden'); bulkData = []; }
+        function handlePaste(e) {
+            const raw = (e.clipboardData || window.clipboardData).getData('text');
+            const rows = raw.split(/\r\n|\n/).filter(r => r.trim() !== "");
+            bulkData = rows.map(r => { const cols = r.split('\t'); return { ac: cols[0] || '', order: cols[1] || '', desc: cols[2] || '' }; });
+            Swal.fire('Buffer Full', `${bulkData.length} entries parsed`, 'info');
+        }
         function editOrder(orderNo) {
             const sMap = SUPABASE_UNITS[activeUnit];
             let item;
@@ -407,18 +360,7 @@
             document.getElementById('s-desc').value = item.Description;
             document.getElementById('s-status').value = item.Status;
         }
-    
-        // Modal Paste Logic
-        function handlePaste(e) {
-            const raw = (e.clipboardData || window.clipboardData).getData('text');
-            const rows = raw.split(/\r\n|\n/).filter(r => r.trim() !== "");
-            bulkData = rows.map(r => {
-                const cols = r.split('\t');
-                return { ac: cols[0] || '', order: cols[1] || '', desc: cols[2] || '' };
-            });
-            Swal.fire('Data Captured', `${bulkData.length} records parsed from clipboard`, 'success');
-        }
-    
+
         init();
     </script>
 </body>
