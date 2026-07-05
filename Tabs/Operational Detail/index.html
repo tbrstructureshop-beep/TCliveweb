@@ -60,10 +60,18 @@
             <h1 class="text-2xl font-black text-white uppercase tracking-tighter">Operational Detail</h1>
             <p class="text-[10px] opacity-40 font-mono uppercase tracking-widest">Hybrid Command Center (Supabase + Sheets)</p>
         </div>
+        <!-- KODE UNTUK BAGIAN HEADER BUTTONS -->
         <div class="flex gap-3">
+            <!-- Tombol Sync hanya muncul/aktif untuk unit non-Supabase jika dibutuhkan, 
+                 tapi untuk TCR-1,2,5 data sudah otomatis LIVE -->
+            <button onclick="init()" class="bg-white/5 border border-white/10 hover:bg-white/10 text-white px-5 py-2.5 rounded-xl font-bold text-[10px] uppercase transition-all">
+                <i data-lucide="refresh-cw" class="inline-block mr-1" size="14"></i> Refresh Live Data
+            </button>
+            
             <button onclick="openModal('bulk')" class="bg-white/5 border border-white/10 hover:bg-white/10 text-white px-5 py-2.5 rounded-xl font-bold text-[10px] uppercase transition-all">
                 <i data-lucide="layout-grid" class="inline-block mr-1" size="14"></i> Bulk Table
             </button>
+            
             <button onclick="openModal('single')" class="bg-sky-600 hover:bg-sky-500 text-white px-5 py-2.5 rounded-xl font-bold text-[10px] uppercase transition-all shadow-lg shadow-sky-600/20">
                 <i data-lucide="plus" class="inline-block mr-1" size="14"></i> Add Single
             </button>
@@ -112,67 +120,87 @@
         const loader = document.getElementById('local-loader');
         const TAB_NAME = 'Operational Detail';
         
-        // Configuration
-        let currentPage = 1, rowsPerPage = 10;
-        let rawOpData = [], supabaseData = [], activeUnit = null, currentMode = 'single', bulkData = [];
+        // Pagination & Data State
+        let currentPage = 1;
+        let rowsPerPage = 10;
+        let rawOpData = [];    // Data Spreadsheet
+        let supabaseData = []; // Data Supabase
+        let activeUnit = null;
+        let currentMode = 'single';
+        let bulkData = [];
+    
         const PRIORITY = { 'Top Urgent': 0, 'Highlighted': 1, 'Open': 2, 'Progress': 3, 'Closed': 4 };
-
-        // Supabase Init
+    
+        // Supabase Configuration
         const S_URL = 'https://kuzsjdtluabnfkzyffgz.supabase.co';
         const S_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt1enNqZHRsdWFibmZrenlmZmd6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTEyNzI0NTQsImV4cCI6MjA2Njg0ODQ1NH0.D-OhicEqoxnnX8G-mwi2Y4X8_03dgDsy_flNj2YbYVI';
         const supabaseClient = supabase.createClient(S_URL, S_KEY);
-
-        // Map Supabase Units
+    
+        // Mapping Unit ke Database Supabase
         const SUPABASE_UNITS = {
-            'TCR-1': { colStatus: 'status_sm1', colDate: 'date_closed_sm1', colReport: 'report_sm1', filterCek: 'cek_sm1' },
-            'TCR-2': { colStatus: 'status_cs1', colDate: 'date_closed_cs1', colReport: 'report_cs1', filterCek: 'cek_cs1' },
-            'TCR-5': { colStatus: 'status_mw',  colDate: 'date_closed_mw',  colReport: 'report_mw',  filterCek: 'cek_mw' }
+            'TCR-1': { colStatus: 'status_sm1', colDate: 'date_closed_sm1', colReport: 'report_sm1', filterCek: 'cek_sm1', label: 'W301 Sheetmetal' },
+            'TCR-2': { colStatus: 'status_cs1', colDate: 'date_closed_cs1', colReport: 'report_cs1', filterCek: 'cek_cs1', label: 'W302 Composite' },
+            'TCR-5': { colStatus: 'status_mw',  colDate: 'date_closed_mw',  colReport: 'report_mw',  filterCek: 'cek_mw',  label: 'W303 Machining' }
         };
-
+    
+        // --- INITIALIZATION ---
         async function init() {
             loader.style.display = 'flex';
             try {
-                const [unitRes, opRes] = await Promise.all([API.get('UNIT'), API.get(TAB_NAME)]);
-                rawOpData = opRes.data || [];
+                // Ambil data Spreadsheet & Supabase secara paralel agar cepat
+                const [unitRes, opRes, { data: sData, error: sErr }] = await Promise.all([
+                    API.get('UNIT'),
+                    API.get(TAB_NAME),
+                    supabaseClient.from('mdr_tracking').select('*').eq('archived', false)
+                ]);
+    
+                if (sErr) throw sErr;
                 
-                // Fetch Supabase Data
-                const { data: sData, error } = await supabaseClient.from('mdr_tracking').select('*').eq('archived', false);
-                if (error) throw error;
-                supabaseData = sData;
-
-                document.getElementById('UnitCode').innerHTML = unitRes.data.map(u => `<option value="${u.UnitCode}">${u.UnitCode}</option>`).join('');
+                rawOpData = opRes.data || [];
+                supabaseData = sData || [];
+    
+                // Render Tabs
                 renderTabs(unitRes.data);
+                
+                // Set Default Unit if not set
                 if(!activeUnit && unitRes.data.length > 0) activeUnit = unitRes.data[0].UnitCode;
+                
+                // Populate Unit Dropdown di Modal
+                document.getElementById('UnitCode').innerHTML = unitRes.data.map(u => `<option value="${u.UnitCode}">${u.UnitCode}</option>`).join('');
+                
                 renderCards();
-            } catch (e) { Swal.fire('Error', e.message, 'error'); } 
-            finally { loader.style.display = 'none'; }
+            } catch (e) { 
+                Swal.fire('Error', 'Sync Failed: ' + e.message, 'error'); 
+            } finally { 
+                loader.style.display = 'none'; 
+            }
         }
-
-        function renderTabs(units) {
-            document.getElementById('unit-tabs').innerHTML = units.map(u => 
-                `<button onclick="switchUnit('${u.UnitCode}')" class="unit-tab ${u.UnitCode === activeUnit ? 'active' : ''}">${u.UnitCode}</button>`
-            ).join('');
-        }
-
+    
+        // --- RENDER TABEL & SUMMARY ---
         function renderCards() {
             const container = document.getElementById('op-container');
-            const sMap = SUPABASE_UNITS[activeUnit];
             let fullData = [];
-
-            // Switch source based on unit
+            const sMap = SUPABASE_UNITS[activeUnit];
+    
+            // 1. Logic Filtering (Supabase vs Spreadsheet)
             if (sMap) {
                 fullData = supabaseData
                     .filter(item => item[sMap.filterCek] === 'red' && (item[sMap.colReport] === 'checked' || item[sMap.colReport] === true))
                     .map(item => ({
-                        ACReg: item.ac_reg, OrderNo: item.order, Description: item.description,
-                        Status: formatStatus(item[sMap.colStatus]), isSupabase: true
+                        ACReg: item.ac_reg || '-',
+                        OrderNo: item.order || '-',
+                        Description: item.description || '-',
+                        Status: formatStatus(item[sMap.colStatus]),
+                        UnitCode: activeUnit,
+                        isLive: true
                     }));
             } else {
-                fullData = rawOpData.filter(i => i.UnitCode === activeUnit).map(i => ({...i, isSupabase: false}));
+                fullData = rawOpData.filter(i => i.UnitCode === activeUnit);
             }
+    
             fullData.sort((a, b) => PRIORITY[a.Status] - PRIORITY[b.Status]);
-
-            // Stats
+    
+            // 2. Summary Stats
             const stats = {
                 total: fullData.length,
                 urgent: fullData.filter(i => i.Status === 'Top Urgent').length,
@@ -180,34 +208,38 @@
                 prog: fullData.filter(i => i.Status === 'Progress').length,
                 done: fullData.filter(i => i.Status === 'Closed').length
             };
-
-            // Pagination Logic
+    
+            // 3. Pagination Logic
             const limit = rowsPerPage === 'All' ? stats.total : parseInt(rowsPerPage);
             const totalPages = Math.ceil(stats.total / limit) || 1;
+            if (currentPage > totalPages) currentPage = 1;
             const start = (currentPage - 1) * limit;
-            const items = fullData.slice(start, start + limit);
-
+            const paginatedItems = fullData.slice(start, start + limit);
+    
+            // 4. Build HTML
             container.innerHTML = `
                 <div class="op-card animate-in fade-in duration-500">
-                    <div class="flex flex-col xl:flex-row justify-between gap-6 mb-8">
+                    <div class="flex flex-col xl:flex-row justify-between items-start gap-6 mb-8">
                         <div>
-                            <span class="text-[9px] font-bold uppercase text-sky-500 tracking-[0.2em] mb-1 block">${sMap ? 'Live Database Mode' : 'Static Sheet Mode'}</span>
-                            <h2 class="text-4xl font-black text-white tracking-tighter uppercase">${activeUnit}</h2>
+                            <span class="text-[10px] font-bold uppercase text-sky-500 tracking-[0.2em] mb-1 block">
+                                ${sMap ? 'LIVE SUPABASE DATABASE' : 'INTERNAL SPREADSHEET'}
+                            </span>
+                            <h2 class="text-4xl font-black text-white tracking-tighter">${activeUnit}</h2>
                         </div>
-                        <div class="flex flex-wrap gap-2">
-                            <div class="stat-box"><span class="stat-val text-white">${stats.total}</span><span class="stat-lab">Total</span></div>
+                        <!-- Stats Grid -->
+                        <div class="flex flex-wrap gap-2 flex-1 max-w-3xl">
+                            <div class="stat-box"><span class="stat-val">${stats.total}</span><span class="stat-lab">Total Task</span></div>
                             <div class="stat-box border-red-500/30 text-red-500"><span class="stat-val">${stats.urgent}</span><span class="stat-lab">Urgent</span></div>
                             <div class="stat-box border-blue-500/20 text-blue-400"><span class="stat-val">${stats.open}</span><span class="stat-lab">Open</span></div>
-                            <div class="stat-box border-yellow-500/20 text-yellow-400"><span class="stat-val">${stats.prog}</span><span class="stat-lab">Progress</span></div>
-                            <div class="stat-box border-emerald-500/20 text-emerald-400"><span class="stat-val">${stats.done}</span><span class="stat-lab">Closed</span></div>
+                            <div class="stat-box border-emerald-500/20 text-emerald-400"><span class="stat-val">${stats.done}</span><span class="stat-lab">Done</span></div>
                         </div>
                     </div>
-
-                    <!-- Pagination Header -->
-                    <div class="flex justify-between items-center bg-white/5 p-4 rounded-2xl mb-6 border border-white/5">
-                        <div class="flex items-center gap-3">
-                            <span class="text-[10px] font-bold uppercase opacity-40">Display</span>
-                            <select onchange="changeRowsPerPage(this.value)" class="input-field py-1">
+    
+                    <!-- Control Bar -->
+                    <div class="flex flex-wrap justify-between items-center gap-4 py-4 border-t border-white/5 mb-4">
+                        <div class="flex items-center gap-2">
+                            <span class="text-[10px] font-bold uppercase opacity-40">Showing</span>
+                            <select onchange="updateRowsPerPage(this.value)" class="input-field py-1">
                                 <option value="10" ${rowsPerPage == 10 ? 'selected' : ''}>10</option>
                                 <option value="25" ${rowsPerPage == 25 ? 'selected' : ''}>25</option>
                                 <option value="50" ${rowsPerPage == 50 ? 'selected' : ''}>50</option>
@@ -216,20 +248,20 @@
                         </div>
                         <div class="flex items-center gap-4">
                             <button onclick="changePage(-1)" ${currentPage === 1 ? 'disabled' : ''} class="page-btn"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
-                            <span class="text-[10px] font-bold text-white uppercase tracking-widest">Page ${currentPage} of ${totalPages}</span>
+                            <span class="text-[10px] font-bold uppercase tracking-widest">Page ${currentPage} <span class="opacity-30">of</span> ${totalPages}</span>
                             <button onclick="changePage(1)" ${currentPage === totalPages ? 'disabled' : ''} class="page-btn"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
                         </div>
                     </div>
-
+    
                     <div class="overflow-x-auto">
                         <table class="master-table">
                             <thead><tr><th>AC Reg</th><th>Order No</th><th>Description</th><th class="w-32">Status</th><th class="text-right">Action</th></tr></thead>
                             <tbody>
-                                ${items.map(item => `
-                                    <tr class="group">
+                                ${paginatedItems.map(item => `
+                                    <tr class="group hover:bg-white/[0.02] transition-colors">
                                         <td class="font-black text-white uppercase">${item.ACReg}</td>
-                                        <td class="font-mono text-sky-400 font-bold">${item.OrderNo}</td>
-                                        <td class="text-white/60 leading-tight text-xs">${item.Description}</td>
+                                        <td class="font-mono text-sky-400">${item.OrderNo}</td>
+                                        <td class="text-white/60 leading-tight pr-4">${item.Description}</td>
                                         <td>
                                             <select onchange="handleUpdateStatus('${activeUnit}', '${item.OrderNo}', this.value)" class="bg-transparent border-none text-[10px] font-bold outline-none cursor-pointer text-sky-500">
                                                 ${['Top Urgent', 'Highlighted', 'Open', 'Progress', 'Closed'].map(s => `<option ${item.Status === s ? 'selected' : ''}>${s}</option>`).join('')}
@@ -242,25 +274,23 @@
                                             </div>
                                         </td>
                                     </tr>`).join('')}
-                                ${items.length === 0 ? '<tr><td colspan="5" class="text-center py-20 opacity-20 italic">No queue found in this node</td></tr>' : ''}
+                                ${paginatedItems.length === 0 ? '<tr><td colspan="5" class="text-center py-20 opacity-20 italic">No operational task in this queue</td></tr>' : ''}
                             </tbody>
                         </table>
                     </div>
                 </div>`;
             lucide.createIcons();
         }
-
-        // Logic Functions
-        function switchUnit(uCode) { activeUnit = uCode; currentPage = 1; renderCards(); renderTabs(rawOpData); }
-        function changePage(dir) { currentPage += dir; renderCards(); }
-        function changeRowsPerPage(val) { rowsPerPage = val; currentPage = 1; renderCards(); }
-
+    
+        // --- LOGIKA UPDATE STATUS (DUAL MODE) ---
         async function handleUpdateStatus(uCode, oNo, status) {
             loader.style.display = 'flex';
             const sMap = SUPABASE_UNITS[uCode];
             try {
                 if (sMap) {
-                    const payload = {}; payload[sMap.colStatus] = status.toUpperCase();
+                    // UPDATE SUPABASE LANGSUNG
+                    const payload = {};
+                    payload[sMap.colStatus] = status.toUpperCase();
                     if (status === 'Closed') {
                         const now = new Date();
                         const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -268,24 +298,28 @@
                     }
                     await supabaseClient.from('mdr_tracking').update(payload).eq('order', oNo);
                 } else {
+                    // UPDATE SPREADSHEET
                     await API.post({ tab: TAB_NAME, action: 'update', primaryId: oNo, Status: status });
                 }
-                await init();
+                await init(); // Refresh data
             } catch (e) { loader.style.display = 'none'; }
         }
-
+    
+        // --- LOGIKA SUBMIT DATA (ADD / EDIT) ---
         async function submitData() {
             loader.style.display = 'flex';
             const unit = document.getElementById('UnitCode').value;
             const sMap = SUPABASE_UNITS[unit];
             const orderNo = document.getElementById('s-order').value;
             const status = document.getElementById('s-status').value;
-
+    
             try {
                 if (sMap && currentMode === 'edit') {
+                    // UPDATE LIVE KE SUPABASE
                     const payload = {}; payload[sMap.colStatus] = status.toUpperCase();
                     await supabaseClient.from('mdr_tracking').update(payload).eq('order', orderNo);
                 } else {
+                    // PROSES SPREADSHEET SEPERTI BIASA
                     const action = (currentMode === 'edit' ? 'update' : 'add');
                     await API.post({ 
                         tab: TAB_NAME, action: action, UnitCode: unit, 
@@ -294,20 +328,24 @@
                     });
                 }
                 closeModal(); await init();
+                Swal.fire({ icon: 'success', title: 'Data Authorization Success', timer: 1000, showConfirmButton: false, background: '#151921', color: '#fff' });
             } catch (e) { loader.style.display = 'none'; }
         }
-
+    
+        // --- LOGIKA DELETE (UN-REPORT) ---
         async function deleteOrder(orderNo) {
             const sMap = SUPABASE_UNITS[activeUnit];
             const res = await Swal.fire({ 
-                title: 'Confirm deletion?', text: sMap ? 'This will un-report the item from LIVE Supabase.' : 'Delete from spreadsheet permanently?',
+                title: 'Confirm Purge?', 
+                text: sMap ? 'This will remove the report tag from Supabase LIVE database.' : 'This data will be deleted from spreadsheet.',
                 icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', background: '#151921', color: '#fff' 
             });
+    
             if(res.isConfirmed) {
                 loader.style.display = 'flex';
                 try {
                     if (sMap) {
-                        const payload = {}; payload[sMap.colReport] = '';
+                        const payload = {}; payload[sMap.colReport] = ''; // Un-report
                         await supabaseClient.from('mdr_tracking').update(payload).eq('order', orderNo);
                     } else {
                         await API.post({ tab: TAB_NAME, action: 'delete', primaryId: orderNo });
@@ -316,7 +354,42 @@
                 } catch (e) { loader.style.display = 'none'; }
             }
         }
-
+    
+        // --- UI HELPERS ---
+        function formatStatus(s) {
+            if (!s) return 'Open';
+            return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+        }
+    
+        function renderTabs(units) {
+            document.getElementById('unit-tabs').innerHTML = units.map(u => 
+                `<button onclick="switchUnit('${u.UnitCode}')" class="unit-tab ${u.UnitCode === activeUnit ? 'active' : ''}">
+                    ${u.UnitCode}
+                </button>`).join('');
+        }
+    
+        function switchUnit(uCode) {
+            activeUnit = uCode;
+            currentPage = 1; // Reset page saat pindah tab
+            renderTabs(rawOpData); // Re-highlight tabs (rawOpData used for unit list)
+            init(); // Refresh data untuk memastikan live
+        }
+    
+        function updateRowsPerPage(val) { rowsPerPage = val; currentPage = 1; renderCards(); }
+        function changePage(dir) { currentPage += dir; renderCards(); }
+    
+        function openModal(mode) {
+            currentMode = mode; 
+            document.getElementById('op-modal').classList.remove('hidden');
+            document.getElementById('modal-title').innerText = mode === 'edit' ? 'Update Entry' : (mode === 'bulk' ? 'Bulk Processor' : 'New Entry');
+            document.getElementById('bulk-container').classList.toggle('hidden', mode !== 'bulk');
+            document.getElementById('single-container').classList.toggle('hidden', mode === 'bulk');
+            if(mode === 'edit') document.getElementById('s-order').disabled = true;
+            else document.getElementById('s-order').disabled = false;
+        }
+        
+        function closeModal() { document.getElementById('op-modal').classList.add('hidden'); document.getElementById('primaryId').value = ''; }
+    
         function editOrder(orderNo) {
             const sMap = SUPABASE_UNITS[activeUnit];
             let item;
@@ -326,22 +399,26 @@
             } else {
                 item = rawOpData.find(d => d.OrderNo === orderNo);
             }
-            if(!item) return; 
+            if(!item) return;
             openModal('edit');
             document.getElementById('UnitCode').value = item.UnitCode;
-            document.getElementById('primaryId').value = item.OrderNo;
             document.getElementById('s-ac').value = item.ACReg;
             document.getElementById('s-order').value = item.OrderNo;
             document.getElementById('s-desc').value = item.Description;
             document.getElementById('s-status').value = item.Status;
         }
-
-        // Helpers
-        function formatStatus(s) { if (!s) return 'Open'; return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase(); }
-        function handlePaste(e) { /* existing paste logic */ }
-        function openModal(mode) { currentMode = mode; document.getElementById('op-modal').classList.remove('hidden'); document.getElementById('bulk-container').classList.toggle('hidden', mode !== 'bulk'); document.getElementById('single-container').classList.toggle('hidden', mode === 'bulk'); }
-        function closeModal() { document.getElementById('op-modal').classList.add('hidden'); }
-
+    
+        // Modal Paste Logic
+        function handlePaste(e) {
+            const raw = (e.clipboardData || window.clipboardData).getData('text');
+            const rows = raw.split(/\r\n|\n/).filter(r => r.trim() !== "");
+            bulkData = rows.map(r => {
+                const cols = r.split('\t');
+                return { ac: cols[0] || '', order: cols[1] || '', desc: cols[2] || '' };
+            });
+            Swal.fire('Data Captured', `${bulkData.length} records parsed from clipboard`, 'success');
+        }
+    
         init();
     </script>
 </body>
