@@ -83,7 +83,7 @@
                         </button>
                         <button onclick="handleSync('W303')" class="w-full text-left px-4 py-3 text-[10px] font-bold uppercase text-white hover:bg-white/5 flex items-center gap-3 transition-colors">
                             <div class="w-2 h-2 rounded-full bg-orange-500"></div>
-                            <span>W303 - Machining (TCR-3)</span>
+                            <span>W303 - Machining (TCR-5)</span>
                         </button>
                     </div>
                 </div>
@@ -156,15 +156,15 @@
         const supabaseClient = supabase.createClient(S_URL, S_KEY);
 
         async function syncFromW303() {
-            // Proteksi agar data masuk ke Unit TCR-3
-            if (activeUnit !== 'TCR-3') {
-                Swal.fire('Info', 'Silahkan pilih tab Unit TCR-3 terlebih dahulu', 'info');
+            // REVISI: Proteksi agar data masuk ke Unit TCR-5
+            if (activeUnit !== 'TCR-5') {
+                Swal.fire('Info', 'Silahkan pilih tab Unit TCR-5 terlebih dahulu', 'info');
                 return;
             }
         
             const { value: confirm } = await Swal.fire({
-                title: 'Sync Data W303 ke TCR-3?',
-                text: "Sistem akan menarik data Machining (W303) dari Supabase.",
+                title: 'Sync Data W303 ke TCR-5?',
+                text: "Sistem akan menarik data Machining (W303) dari Supabase ke TCR-5.",
                 icon: 'question',
                 showCancelButton: true,
                 confirmButtonText: 'Ya, Jalankan Sync',
@@ -182,7 +182,7 @@
                     .from('mdr_tracking')
                     .select('ac_reg, order, description, status_mw')
                     .eq('archived', false)
-                    .eq('cek_mw', 'red'); // Khusus Machining & Welding
+                    .eq('cek_mw', 'red'); 
         
                 if (error) throw error;
         
@@ -194,7 +194,6 @@
                 // 2. Kirim data ke Google Apps Script
                 let count = 0;
                 for (let item of data) {
-                    // Mapping Status W303 ke Status Dashboard
                     let mappedStatus = 'Open';
                     if (item.status_mw === 'PROGRESS') mappedStatus = 'Progress';
                     if (item.status_mw === 'CLOSED') mappedStatus = 'Closed';
@@ -202,7 +201,7 @@
                     await API.post({
                         tab: TAB_NAME,
                         action: 'add',
-                        UnitCode: 'TCR-3', // Target Unit
+                        UnitCode: 'TCR-5', // REVISI: Target Unit sekarang TCR-5
                         ACReg: item.ac_reg || '-',
                         OrderNo: item.order || '-',
                         Description: item.description || '-',
@@ -212,8 +211,8 @@
                     count++;
                 }
         
-                await init(); // Refresh tabel setelah sync selesai
-                Swal.fire('Success', `${count} data Machining berhasil disinkronkan ke TCR-3`, 'success');
+                await init(); 
+                Swal.fire('Success', `${count} data Machining berhasil disinkronkan ke TCR-5`, 'success');
             } catch (e) {
                 console.error(e);
                 Swal.fire('Error', 'Sync Gagal: ' + e.message, 'error');
