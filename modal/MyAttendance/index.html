@@ -14,13 +14,14 @@
             --bg: #151921; --panel: #1c222c; --border: rgba(255, 255, 255, 0.05); 
             --accent: #0ea5e9; --text-main: #94a3b8; --text-bold: #ffffff;
         }
-        body { background: transparent; color: var(--text-main); font-family: 'Inter', sans-serif; margin: 0; padding: 0; overflow: hidden; }
+        body { background: transparent; color: var(--text-main); font-family: 'Inter', sans-serif; margin: 0; padding: 0; overflow-x: hidden; }
         .font-mono { font-family: 'JetBrains Mono', monospace; }
         
         .glass-panel { background: var(--panel); border: 1px solid var(--border); border-radius: 1.5rem; }
         .input-field {
             width: 100%; background: rgba(0,0,0,0.2); border: 1px solid var(--border);
             border-radius: 0.75rem; padding: 0.75rem 1rem; color: white; outline: none; transition: all 0.2s;
+            font-size: 0.875rem;
         }
         .input-field:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.1); }
         
@@ -29,7 +30,7 @@
             letter-spacing: 0.05em; padding: 0.8rem; border-radius: 0.75rem; transition: all 0.2s;
         }
         .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
-        .btn-primary:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
+        .btn-primary:disabled { opacity: 0.3; cursor: not-allowed; }
 
         .hidden { display: none !important; }
         
@@ -45,7 +46,6 @@
             display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
 
-        /* Access Restricted Overlay */
         #wifi-error {
             position: fixed; inset: 0; background: #0b0e14; z-index: 200;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -55,7 +55,7 @@
 </head>
 <body class="p-4">
 
-    <!-- ACCESS RESTRICTED OVERLAY (Hidden by default) -->
+    <!-- ACCESS RESTRICTED OVERLAY -->
     <div id="wifi-error" class="hidden">
         <div class="text-6xl mb-6">📡</div>
         <h2 class="text-white font-bold text-xl uppercase tracking-widest mb-2">Access Restricted</h2>
@@ -72,11 +72,19 @@
         <p class="text-[10px] font-mono uppercase tracking-widest text-sky-500">Securing_Connection...</p>
     </div>
 
+    <!-- NAVIGATION HEADER -->
+    <div class="max-w-md mx-auto mb-4 flex justify-between items-center">
+        <button onclick="window.location.href='../option/index.html'" class="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-sky-500 hover:text-white transition-colors">
+            <i data-lucide="arrow-left" class="w-3 h-3"></i> Back to Menu
+        </button>
+        <span class="text-[9px] font-mono opacity-30 uppercase">Node_Auth_v2.1</span>
+    </div>
+
     <!-- AUTH SECTION -->
     <div id="auth-section" class="max-w-md mx-auto space-y-6 hidden">
         <div class="text-center mb-8">
             <h2 id="auth-title" class="text-2xl font-bold text-white uppercase tracking-tight">Access Control</h2>
-            <p id="auth-desc" class="text-[10px] text-sky-500/50 uppercase tracking-[0.2em] font-mono mt-1">Device_Locked: Active</p>
+            <p class="text-[10px] text-sky-500/50 uppercase tracking-[0.2em] font-mono mt-1">Device_Locked: Active</p>
         </div>
 
         <form id="login-form" class="space-y-4">
@@ -84,7 +92,7 @@
             <input type="password" id="loginPass" required class="input-field" placeholder="PASSWORD">
             <button type="submit" class="w-full btn-primary">Identify Technician</button>
             <p class="text-center text-[10px] uppercase font-bold tracking-widest">
-                New Technician? <button type="button" onclick="showRegister()" class="text-sky-500">Register This Device</button>
+                New Technician? <button type="button" onclick="showRegister()" class="text-sky-500">Register Device</button>
             </p>
         </form>
 
@@ -94,6 +102,12 @@
                 <select id="regUnit" required class="input-field text-xs"></select>
                 <select id="regShift" required class="input-field text-xs"></select>
             </div>
+            <select id="regClass" required class="input-field text-xs">
+                <option value="" disabled selected>SELECT CLASS</option>
+                <option value="Employee">Employee</option>
+                <option value="Additional Employee">Additional Employee</option>
+                <option value="OJT">OJT</option>
+            </select>
             <input type="text" id="regName" required class="input-field" placeholder="FULL NAME">
             <div class="relative">
                 <input type="text" id="regJob" required class="input-field" placeholder="JOB TITLE" oninput="handleJobSearch(this.value)">
@@ -103,7 +117,7 @@
                 <input type="text" id="regId" required class="input-field font-mono" placeholder="EMPLOYEE ID">
                 <input type="password" id="regPass" required class="input-field" placeholder="PASSWORD">
             </div>
-            <button type="submit" class="w-full btn-primary">Lock Account to This Phone</button>
+            <button type="submit" class="w-full btn-primary">Initialize & Lock Phone</button>
             <button type="button" onclick="showLogin()" class="w-full text-[10px] opacity-50 uppercase font-bold">Back to Login</button>
         </form>
     </div>
@@ -119,7 +133,9 @@
                     <p id="user-name" class="text-white font-bold leading-none"></p>
                     <p id="user-job" class="text-[10px] opacity-50 uppercase"></p>
                 </div>
-                <button onclick="logout()" class="p-2 bg-white/5 rounded-lg text-red-400"><i data-lucide="log-out" size="16"></i></button>
+                <button onclick="logout()" class="p-2 bg-white/5 rounded-lg text-red-400 hover:bg-red-400/10 transition-colors">
+                    <i data-lucide="log-out" size="16"></i>
+                </button>
             </div>
         </div>
 
@@ -128,17 +144,16 @@
                 <div class="p-3 rounded-2xl bg-sky-500/10 text-sky-500 group-hover:bg-sky-500 group-hover:text-white transition-colors">
                     <i data-lucide="play" size="24"></i>
                 </div>
-                <span class="text-[10px] font-bold uppercase tracking-widest">Clock In</span>
+                <span class="text-[10px] font-bold uppercase tracking-widest">Clock In (F1)</span>
             </button>
             <button id="btn-f4" onclick="recordAttendance('F4')" class="glass-panel p-6 flex flex-col items-center gap-3 hover:border-red-500 transition-all group">
                 <div class="p-3 rounded-2xl bg-red-500/10 text-red-500 group-hover:bg-red-500 group-hover:text-white transition-colors">
                     <i data-lucide="square" size="24"></i>
                 </div>
-                <span class="text-[10px] font-bold uppercase tracking-widest">Clock Out</span>
+                <span class="text-[10px] font-bold uppercase tracking-widest">Clock Out (F4)</span>
             </button>
         </div>
 
-        <!-- LEAVE SECTION -->
         <div class="glass-panel p-6">
             <label class="text-[10px] font-bold uppercase mb-3 block opacity-50">Attendance Status</label>
             <div class="flex gap-2">
@@ -146,9 +161,11 @@
                     <option value="">-- PRESENT --</option>
                     <option value="Sick">Sick</option>
                     <option value="Training">Training</option>
+                    <option value="Work Outside">Work Outside</option>
                     <option value="Annual Leave">Annual Leave</option>
+                    <option value="Other">Other</option>
                 </select>
-                <button onclick="recordLeave()" class="btn-primary px-6 text-[10px] whitespace-nowrap">Update</button>
+                <button onclick="recordLeave()" class="btn-primary px-6 text-[10px] whitespace-nowrap">Apply</button>
             </div>
         </div>
     </div>
@@ -156,33 +173,26 @@
     <script>
         lucide.createIcons();
         const loader = document.getElementById('local-loader');
-        const ALLOWED_IPS = ["118.97.115.66", "118.97.70.226"]; // Add your office IPs here
+        const ALLOWED_IPS = ["118.97.115.66", "118.97.70.226"]; 
         let currentUser = null;
         let masterData = { units: [], shifts: [], users: [] };
 
-        // 1. GENERATE DEVICE FINGERPRINT
         function getDeviceFingerprint() {
-            // Combines UserAgent and Screen Size to distinguish between different phones
             return `${navigator.userAgent}-${screen.width}x${screen.height}`;
         }
 
-        // 2. IP VERIFICATION
         async function verifyIP() {
             try {
                 const resp = await fetch('https://api.ipify.org?format=json');
                 const data = await resp.json();
                 const userIP = data.ip;
-                
                 if (!ALLOWED_IPS.includes(userIP)) {
                     document.getElementById('wifi-error').classList.remove('hidden');
                     document.getElementById('detected-ip').innerText = userIP;
                     return false;
                 }
                 return true;
-            } catch (e) {
-                Swal.fire({ icon: 'warning', title: 'Offline', text: 'Connection required for attendance.' });
-                return false;
-            }
+            } catch (e) { return false; }
         }
 
         async function init() {
@@ -213,17 +223,15 @@
             const saved = localStorage.getItem('tc_user');
             if (saved) {
                 currentUser = JSON.parse(saved);
-                // Secondary check: Does current device fingerprint still match?
                 if (currentUser.DeviceId !== getDeviceFingerprint()) {
                     logout();
-                    Swal.fire({ icon: 'warning', title: 'Device Changed', text: 'Please login again on your registered device.' });
+                    Swal.fire({ icon: 'warning', title: 'Device Changed', text: 'Access locked to original device.', background: '#151921', color: '#fff' });
                 } else {
                     showMainInterface();
                 }
             } else { showLogin(); }
         }
 
-        // LOGIN LOGIC WITH DEVICE CHECK
         document.getElementById('login-form').onsubmit = (e) => {
             e.preventDefault();
             const id = document.getElementById('loginId').value;
@@ -233,45 +241,40 @@
             const user = masterData.users.find(u => u.EmployeeId === id && u.Password === pass);
             
             if (user) {
-                // IMPORTANT: Prevent borrowing friend's phone
                 if (user.DeviceId && user.DeviceId !== currentFingerprint) {
-                    Swal.fire({ 
-                        icon: 'error', 
-                        title: 'Unauthorized Device', 
-                        text: 'This account is locked to another smartphone profile.',
-                        background: '#151921', color: '#fff' 
-                    });
+                    Swal.fire({ icon: 'error', title: 'Unauthorized Device', text: 'This account is locked to another phone profile.', background: '#151921', color: '#fff' });
                     return;
                 }
                 currentUser = user;
                 localStorage.setItem('tc_user', JSON.stringify(user));
                 showMainInterface();
             } else {
-                Swal.fire({ icon: 'error', title: 'Access Denied', text: 'Invalid ID or Password.' });
+                Swal.fire({ icon: 'error', title: 'Access Denied', text: 'ID or Password incorrect.', background: '#151921', color: '#fff' });
             }
         };
 
-        // REGISTER LOGIC (STORES FINGERPRINT)
         document.getElementById('register-form').onsubmit = async (e) => {
             e.preventDefault();
             loader.style.display = 'flex';
             
+            // Sending to USER tab
             const payload = {
                 tab: 'USER',
                 action: 'add',
                 UnitCode: document.getElementById('regUnit').value,
                 Shift: document.getElementById('regShift').value,
+                Class: document.getElementById('regClass').value,
                 EmployeeId: document.getElementById('regId').value,
                 Name: document.getElementById('regName').value,
                 JobTitle: document.getElementById('regJob').value,
                 Password: document.getElementById('regPass').value,
-                DeviceId: getDeviceFingerprint() // Capture fingerprint here
+                DeviceId: getDeviceFingerprint() 
             };
 
             try {
                 const res = await API.post(payload);
                 if (res.status === 'success') {
-                    Swal.fire({ icon: 'success', title: 'Device Registered!', text: 'Account locked to this phone.', background: '#151921', color: '#fff' });
+                    Swal.fire({ icon: 'success', title: 'Account Created', text: 'Account locked to this device.', background: '#151921', color: '#fff' });
                     const usr = await API.get('USER');
                     masterData.users = usr.data;
                     showLogin();
@@ -281,15 +284,15 @@
         };
 
         async function recordAttendance(type) {
-            // Re-verify IP before every action
             const isAuthorizedIP = await verifyIP();
             if (!isAuthorizedIP) return;
 
             loader.style.display = 'flex';
             const now = new Date();
-            const timeStr = now.toTimeString().split(' ')[0].substring(0, 5);
+            const timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
             const dateStr = now.toISOString().split('T')[0];
 
+            // Sending to ATTENDANCE RECORD tab
             const payload = {
                 tab: 'ATTENDANCE_RECORD',
                 action: 'add',
@@ -305,18 +308,49 @@
                 
                 if (todayRecord) {
                     payload.action = 'update';
-                    payload.primaryId = todayRecord.Timestamp;
+                    payload.primaryId = todayRecord.Timestamp; // GAS uses Timestamp for ID in this tab
                 }
 
                 const res = await API.post(payload);
                 if (res.status === 'success') {
-                    Swal.fire({ icon: 'success', title: `${type} SUCCESS`, text: `Time Logged: ${timeStr}` });
+                    Swal.fire({ icon: 'success', title: `${type} SUCCESS`, text: `Logged at ${timeStr}`, background: '#151921', color: '#fff' });
                 }
             } catch (e) { Swal.fire({ icon: 'error', title: 'Sync Error', text: e.message }); } 
             finally { loader.style.display = 'none'; }
         }
 
-        // Helper functions
+        async function recordLeave() {
+            const leave = document.getElementById('leaveType').value;
+            if (!leave) return;
+            
+            loader.style.display = 'flex';
+            const now = new Date();
+            const dateStr = now.toISOString().split('T')[0];
+
+            const payload = {
+                tab: 'ATTENDANCE_RECORD',
+                action: 'add',
+                EmployeeId: currentUser.EmployeeId,
+                Date: dateStr,
+                Leave: leave,
+                StatusApproval: 'Pending'
+            };
+
+            try {
+                const existing = await API.get('ATTENDANCE_RECORD');
+                const todayRecord = existing.data.find(r => r.Date === dateStr && r.EmployeeId === currentUser.EmployeeId);
+                
+                if (todayRecord) {
+                    payload.action = 'update';
+                    payload.primaryId = todayRecord.Timestamp;
+                }
+
+                await API.post(payload);
+                Swal.fire({ icon: 'success', title: 'Status Updated', text: `Status: ${leave}`, background: '#151921', color: '#fff' });
+            } catch (e) { Swal.fire({ icon: 'error', title: 'Error', text: e.message }); } 
+            finally { loader.style.display = 'none'; }
+        }
+
         function populateShifts(unitCode) {
             const filtered = masterData.shifts.filter(s => s.UnitCode === unitCode);
             document.getElementById('regShift').innerHTML = filtered.map(s => 
@@ -327,7 +361,7 @@
             const suggestions = document.getElementById('job-suggestions');
             if (query.length < 2) { suggestions.classList.add('hidden'); return; }
             const titles = [...new Set(masterData.users.map(u => u.JobTitle))];
-            const matches = titles.filter(t => t.toLowerCase().includes(query.toLowerCase()));
+            const matches = titles.filter(t => t && t.toLowerCase().includes(query.toLowerCase()));
             if (matches.length > 0) {
                 suggestions.innerHTML = matches.map(m => `<div class="suggestion-item" onclick="selectJob('${m}')">${m}</div>`).join('');
                 suggestions.classList.remove('hidden');
@@ -354,7 +388,7 @@
         function startClock() {
             const update = () => {
                 const now = new Date();
-                document.getElementById('display-clock').innerText = now.toTimeString().split(' ')[0];
+                document.getElementById('display-clock').innerText = now.toLocaleTimeString('en-GB');
                 document.getElementById('display-date').innerText = now.toDateString();
             };
             setInterval(update, 1000); update();
