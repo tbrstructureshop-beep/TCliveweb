@@ -1,1 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="../../api.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    
+    <style>
+        :root { 
+            --bg: #151921; --panel: #1c222c; --border: rgba(255, 255, 255, 0.05); 
+            --accent: #0ea5e9; --text-main: #94a3b8; --text-bold: #ffffff;
+        }
+        body { background: transparent; color: var(--text-main); font-family: 'Inter', sans-serif; margin: 0; padding: 0; overflow: hidden; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        
+        .glass-panel { background: var(--panel); border: 1px solid var(--border); border-radius: 1.5rem; }
+        .input-field {
+            width: 100%; background: rgba(0,0,0,0.2); border: 1px solid var(--border);
+            border-radius: 0.75rem; padding: 0.75rem 1rem; color: white; outline: none; transition: all 0.2s;
+        }
+        .input-field:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.1); }
+        
+        .btn-primary { 
+            background: var(--accent); color: white; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.05em; padding: 0.8rem; border-radius: 0.75rem; transition: all 0.2s;
+        }
+        .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn-primary:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
 
+        .hidden { display: none !important; }
+        
+        #job-suggestions {
+            position: absolute; width: 100%; background: #1c222c; border: 1px solid var(--border);
+            border-radius: 0.5rem; z-index: 50; max-height: 150px; overflow-y: auto;
+        }
+        .suggestion-item { padding: 0.5rem 1rem; cursor: pointer; color: white; font-size: 0.8rem; }
+        .suggestion-item:hover { background: var(--accent); }
+
+        #local-loader {
+            position: fixed; inset: 0; background: var(--bg); z-index: 100;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+
+        /* Access Restricted Overlay */
+        #wifi-error {
+            position: fixed; inset: 0; background: #0b0e14; z-index: 200;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            text-align: center; padding: 2rem;
+        }
+    </style>
+</head>
+<body class="p-4">
+
+    <!-- ACCESS RESTRICTED OVERLAY (Hidden by default) -->
+    <div id="wifi-error" class="hidden">
+        <div class="text-6xl mb-6">📡</div>
+        <h2 class="text-white font-bold text-xl uppercase tracking-widest mb-2">Access Restricted</h2>
+        <p class="text-sm text-slate-500 max-w-xs mb-8">Attendance system only accessible via <b>GMF-AeroAsia Office WiFi</b>.</p>
+        <div class="bg-white/5 border border-white/10 p-3 rounded-xl mb-8 font-mono text-[10px]">
+            DETECTED IP: <span id="detected-ip" class="text-sky-500">0.0.0.0</span>
+        </div>
+        <button onclick="location.reload()" class="btn-primary px-8">Retry Connection</button>
+    </div>
+
+    <!-- LOADER -->
+    <div id="local-loader">
+        <div class="w-8 h-8 border-4 border-sky-500/20 border-t-sky-500 rounded-full animate-spin mb-4"></div>
+        <p class="text-[10px] font-mono uppercase tracking-widest text-sky-500">Securing_Connection...</p>
+    </div>
+
+    <!-- AUTH SECTION -->
+    <div id="auth-section" class="max-w-md mx-auto space-y-6 hidden">
+        <div class="text-center mb-8">
+            <h2 id="auth-title" class="text-2xl font-bold text-white uppercase tracking-tight">Access Control</h2>
+            <p id="auth-desc" class="text-[10px] text-sky-500/50 uppercase tracking-[0.2em] font-mono mt-1">Device_Locked: Active</p>
+        </div>
+
+        <form id="login-form" class="space-y-4">
+            <input type="text" id="loginId" required class="input-field font-mono" placeholder="EMPLOYEE ID">
+            <input type="password" id="loginPass" required class="input-field" placeholder="PASSWORD">
+            <button type="submit" class="w-full btn-primary">Identify Technician</button>
+            <p class="text-center text-[10px] uppercase font-bold tracking-widest">
+                New Technician? <button type="button" onclick="showRegister()" class="text-sky-500">Register This Device</button>
+            </p>
+        </form>
+
+        <!-- REGISTER FORM -->
+        <form id="register-form" class="space-y-4 hidden">
+            <div class="grid grid-cols-2 gap-3">
+                <select id="regUnit" required class="input-field text-xs"></select>
+                <select id="regShift" required class="input-field text-xs"></select>
+            </div>
+            <input type="text" id="regName" required class="input-field" placeholder="FULL NAME">
+            <div class="relative">
+                <input type="text" id="regJob" required class="input-field" placeholder="JOB TITLE" oninput="handleJobSearch(this.value)">
+                <div id="job-suggestions" class="hidden"></div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <input type="text" id="regId" required class="input-field font-mono" placeholder="EMPLOYEE ID">
+                <input type="password" id="regPass" required class="input-field" placeholder="PASSWORD">
+            </div>
+            <button type="submit" class="w-full btn-primary">Lock Account to This Phone</button>
+            <button type="button" onclick="showLogin()" class="w-full text-[10px] opacity-50 uppercase font-bold">Back to Login</button>
+        </form>
+    </div>
+
+    <!-- MAIN INTERFACE -->
+    <div id="main-interface" class="max-w-md mx-auto hidden space-y-6">
+        <div class="glass-panel p-6 flex flex-col items-center text-center">
+            <p id="display-date" class="text-[10px] font-mono text-sky-500 uppercase mb-1"></p>
+            <h1 id="display-clock" class="text-4xl font-bold text-white font-mono tracking-widest mb-4">00:00:00</h1>
+            
+            <div class="w-full pt-4 border-t border-white/5 flex items-center justify-between">
+                <div class="text-left">
+                    <p id="user-name" class="text-white font-bold leading-none"></p>
+                    <p id="user-job" class="text-[10px] opacity-50 uppercase"></p>
+                </div>
+                <button onclick="logout()" class="p-2 bg-white/5 rounded-lg text-red-400"><i data-lucide="log-out" size="16"></i></button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+            <button id="btn-f1" onclick="recordAttendance('F1')" class="glass-panel p-6 flex flex-col items-center gap-3 hover:border-sky-500 transition-all group">
+                <div class="p-3 rounded-2xl bg-sky-500/10 text-sky-500 group-hover:bg-sky-500 group-hover:text-white transition-colors">
+                    <i data-lucide="play" size="24"></i>
+                </div>
+                <span class="text-[10px] font-bold uppercase tracking-widest">Clock In</span>
+            </button>
+            <button id="btn-f4" onclick="recordAttendance('F4')" class="glass-panel p-6 flex flex-col items-center gap-3 hover:border-red-500 transition-all group">
+                <div class="p-3 rounded-2xl bg-red-500/10 text-red-500 group-hover:bg-red-500 group-hover:text-white transition-colors">
+                    <i data-lucide="square" size="24"></i>
+                </div>
+                <span class="text-[10px] font-bold uppercase tracking-widest">Clock Out</span>
+            </button>
+        </div>
+
+        <!-- LEAVE SECTION -->
+        <div class="glass-panel p-6">
+            <label class="text-[10px] font-bold uppercase mb-3 block opacity-50">Attendance Status</label>
+            <div class="flex gap-2">
+                <select id="leaveType" class="input-field text-xs">
+                    <option value="">-- PRESENT --</option>
+                    <option value="Sick">Sick</option>
+                    <option value="Training">Training</option>
+                    <option value="Annual Leave">Annual Leave</option>
+                </select>
+                <button onclick="recordLeave()" class="btn-primary px-6 text-[10px] whitespace-nowrap">Update</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+        const loader = document.getElementById('local-loader');
+        const ALLOWED_IPS = ["118.97.115.66", "118.97.70.226"]; // Add your office IPs here
+        let currentUser = null;
+        let masterData = { units: [], shifts: [], users: [] };
+
+        // 1. GENERATE DEVICE FINGERPRINT
+        function getDeviceFingerprint() {
+            // Combines UserAgent and Screen Size to distinguish between different phones
+            return `${navigator.userAgent}-${screen.width}x${screen.height}`;
+        }
+
+        // 2. IP VERIFICATION
+        async function verifyIP() {
+            try {
+                const resp = await fetch('https://api.ipify.org?format=json');
+                const data = await resp.json();
+                const userIP = data.ip;
+                
+                if (!ALLOWED_IPS.includes(userIP)) {
+                    document.getElementById('wifi-error').classList.remove('hidden');
+                    document.getElementById('detected-ip').innerText = userIP;
+                    return false;
+                }
+                return true;
+            } catch (e) {
+                Swal.fire({ icon: 'warning', title: 'Offline', text: 'Connection required for attendance.' });
+                return false;
+            }
+        }
+
+        async function init() {
+            const isAuthorizedIP = await verifyIP();
+            if (!isAuthorizedIP) { loader.style.display = 'none'; return; }
+
+            try {
+                const [u, s, usr] = await Promise.all([
+                    API.get('UNIT'), 
+                    API.get('SHIFTS'),
+                    API.get('USER')
+                ]);
+                masterData = { units: u.data, shifts: s.data, users: usr.data };
+                
+                document.getElementById('regUnit').innerHTML = masterData.units.map(unit => 
+                    `<option value="${unit.UnitCode}">${unit.UnitCode}</option>`
+                ).join('');
+
+                document.getElementById('regUnit').onchange = (e) => populateShifts(e.target.value);
+                populateShifts(masterData.units[0]?.UnitCode);
+
+                checkSession();
+            } catch (e) { console.error(e); } 
+            finally { loader.style.display = 'none'; }
+        }
+
+        function checkSession() {
+            const saved = localStorage.getItem('tc_user');
+            if (saved) {
+                currentUser = JSON.parse(saved);
+                // Secondary check: Does current device fingerprint still match?
+                if (currentUser.DeviceId !== getDeviceFingerprint()) {
+                    logout();
+                    Swal.fire({ icon: 'warning', title: 'Device Changed', text: 'Please login again on your registered device.' });
+                } else {
+                    showMainInterface();
+                }
+            } else { showLogin(); }
+        }
+
+        // LOGIN LOGIC WITH DEVICE CHECK
+        document.getElementById('login-form').onsubmit = (e) => {
+            e.preventDefault();
+            const id = document.getElementById('loginId').value;
+            const pass = document.getElementById('loginPass').value;
+            const currentFingerprint = getDeviceFingerprint();
+            
+            const user = masterData.users.find(u => u.EmployeeId === id && u.Password === pass);
+            
+            if (user) {
+                // IMPORTANT: Prevent borrowing friend's phone
+                if (user.DeviceId && user.DeviceId !== currentFingerprint) {
+                    Swal.fire({ 
+                        icon: 'error', 
+                        title: 'Unauthorized Device', 
+                        text: 'This account is locked to another smartphone profile.',
+                        background: '#151921', color: '#fff' 
+                    });
+                    return;
+                }
+                currentUser = user;
+                localStorage.setItem('tc_user', JSON.stringify(user));
+                showMainInterface();
+            } else {
+                Swal.fire({ icon: 'error', title: 'Access Denied', text: 'Invalid ID or Password.' });
+            }
+        };
+
+        // REGISTER LOGIC (STORES FINGERPRINT)
+        document.getElementById('register-form').onsubmit = async (e) => {
+            e.preventDefault();
+            loader.style.display = 'flex';
+            
+            const payload = {
+                tab: 'USER',
+                action: 'add',
+                UnitCode: document.getElementById('regUnit').value,
+                Shift: document.getElementById('regShift').value,
+                EmployeeId: document.getElementById('regId').value,
+                Name: document.getElementById('regName').value,
+                JobTitle: document.getElementById('regJob').value,
+                Password: document.getElementById('regPass').value,
+                DeviceId: getDeviceFingerprint() // Capture fingerprint here
+            };
+
+            try {
+                const res = await API.post(payload);
+                if (res.status === 'success') {
+                    Swal.fire({ icon: 'success', title: 'Device Registered!', text: 'Account locked to this phone.', background: '#151921', color: '#fff' });
+                    const usr = await API.get('USER');
+                    masterData.users = usr.data;
+                    showLogin();
+                }
+            } catch (err) { Swal.fire({ icon: 'error', title: 'Failed', text: err.message }); } 
+            finally { loader.style.display = 'none'; }
+        };
+
+        async function recordAttendance(type) {
+            // Re-verify IP before every action
+            const isAuthorizedIP = await verifyIP();
+            if (!isAuthorizedIP) return;
+
+            loader.style.display = 'flex';
+            const now = new Date();
+            const timeStr = now.toTimeString().split(' ')[0].substring(0, 5);
+            const dateStr = now.toISOString().split('T')[0];
+
+            const payload = {
+                tab: 'ATTENDANCE_RECORD',
+                action: 'add',
+                EmployeeId: currentUser.EmployeeId,
+                Date: dateStr,
+                [type]: timeStr,
+                StatusApproval: 'Pending'
+            };
+
+            try {
+                const existing = await API.get('ATTENDANCE_RECORD');
+                const todayRecord = existing.data.find(r => r.Date === dateStr && r.EmployeeId === currentUser.EmployeeId);
+                
+                if (todayRecord) {
+                    payload.action = 'update';
+                    payload.primaryId = todayRecord.Timestamp;
+                }
+
+                const res = await API.post(payload);
+                if (res.status === 'success') {
+                    Swal.fire({ icon: 'success', title: `${type} SUCCESS`, text: `Time Logged: ${timeStr}` });
+                }
+            } catch (e) { Swal.fire({ icon: 'error', title: 'Sync Error', text: e.message }); } 
+            finally { loader.style.display = 'none'; }
+        }
+
+        // Helper functions
+        function populateShifts(unitCode) {
+            const filtered = masterData.shifts.filter(s => s.UnitCode === unitCode);
+            document.getElementById('regShift').innerHTML = filtered.map(s => 
+                `<option value="${s.ShiftCategory}">${s.ShiftCategory}</option>`
+            ).join('');
+        }
+        function handleJobSearch(query) {
+            const suggestions = document.getElementById('job-suggestions');
+            if (query.length < 2) { suggestions.classList.add('hidden'); return; }
+            const titles = [...new Set(masterData.users.map(u => u.JobTitle))];
+            const matches = titles.filter(t => t.toLowerCase().includes(query.toLowerCase()));
+            if (matches.length > 0) {
+                suggestions.innerHTML = matches.map(m => `<div class="suggestion-item" onclick="selectJob('${m}')">${m}</div>`).join('');
+                suggestions.classList.remove('hidden');
+            } else { suggestions.classList.add('hidden'); }
+        }
+        function selectJob(val) { document.getElementById('regJob').value = val; document.getElementById('job-suggestions').classList.add('hidden'); }
+        function showLogin() { 
+            document.getElementById('auth-section').classList.remove('hidden'); 
+            document.getElementById('main-interface').classList.add('hidden'); 
+            document.getElementById('login-form').classList.remove('hidden'); 
+            document.getElementById('register-form').classList.add('hidden'); 
+        }
+        function showRegister() { 
+            document.getElementById('login-form').classList.add('hidden'); 
+            document.getElementById('register-form').classList.remove('hidden'); 
+        }
+        function showMainInterface() { 
+            document.getElementById('auth-section').classList.add('hidden'); 
+            document.getElementById('main-interface').classList.remove('hidden'); 
+            document.getElementById('user-name').innerText = currentUser.Name; 
+            document.getElementById('user-job').innerText = currentUser.JobTitle; 
+            startClock(); 
+        }
+        function startClock() {
+            const update = () => {
+                const now = new Date();
+                document.getElementById('display-clock').innerText = now.toTimeString().split(' ')[0];
+                document.getElementById('display-date').innerText = now.toDateString();
+            };
+            setInterval(update, 1000); update();
+        }
+        function logout() { localStorage.removeItem('tc_user'); currentUser = null; showLogin(); }
+
+        init();
+    </script>
+</body>
+</html>
