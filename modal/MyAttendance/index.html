@@ -14,7 +14,7 @@
             --bg: #151921; --panel: #1c222c; --border: rgba(255, 255, 255, 0.05); 
             --accent: #0ea5e9; --text-main: #94a3b8; --text-bold: #ffffff;
         }
-        body { background: transparent; color: var(--text-main); font-family: 'Inter', sans-serif; margin: 0; padding: 0; }
+        body { background: transparent; color: var(--text-main); font-family: 'Inter', sans-serif; margin: 0; padding: 0; overflow-x: hidden; }
         .font-mono { font-family: 'JetBrains Mono', monospace; }
         
         .glass-panel { background: var(--panel); border: 1px solid var(--border); border-radius: 1.5rem; overflow: hidden; }
@@ -23,14 +23,13 @@
             border-radius: 0.75rem; padding: 0.75rem 1rem; color: white; outline: none; transition: all 0.2s;
             font-size: 0.875rem;
         }
-        .input-field:focus { border-color: var(--accent); }
         
         .btn-primary { 
             background: var(--accent); color: white; font-weight: 700; text-transform: uppercase;
             letter-spacing: 0.05em; padding: 0.8rem; border-radius: 0.75rem; transition: all 0.2s;
         }
         .btn-primary:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); }
-        .btn-primary:disabled { opacity: 0.2; cursor: not-allowed; grayscale: 1; }
+        .btn-primary:disabled { opacity: 0.1; cursor: not-allowed; filter: grayscale(1); }
 
         .hidden { display: none !important; }
         
@@ -38,41 +37,37 @@
             position: fixed; inset: 0; background: var(--bg); z-index: 100;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
-
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
         
         .history-card { background: rgba(255,255,255,0.02); border: 1px solid var(--border); transition: all 0.3s; }
-        .history-card:hover { background: rgba(255,255,255,0.05); border-color: var(--accent); }
     </style>
 </head>
 <body class="p-4 bg-[#151921] min-h-screen">
 
     <div id="local-loader">
         <div class="w-8 h-8 border-4 border-sky-500/20 border-t-sky-500 rounded-full animate-spin mb-4"></div>
-        <p class="text-[10px] font-mono uppercase tracking-widest text-sky-500">Syncing_Nodes...</p>
+        <p class="text-[10px] font-mono uppercase tracking-widest text-sky-500">Node_Syncing...</p>
     </div>
 
     <!-- HEADER -->
     <div class="max-w-md mx-auto mb-4 flex justify-between items-center">
-        <button onclick="window.location.href='../option/index.html'" class="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-sky-500 hover:text-white transition-colors">
+        <button onclick="window.location.href='../option/index.html'" class="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-sky-500">
             <i data-lucide="arrow-left" class="w-3 h-3"></i> Back
         </button>
         <div class="flex items-center gap-2">
             <div id="ip-status-dot" class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
-            <span id="ip-label" class="text-[9px] font-mono opacity-50 uppercase">Checking_Network...</span>
+            <span id="ip-label" class="text-[9px] font-mono opacity-50 uppercase">Network_Check...</span>
         </div>
     </div>
 
     <!-- AUTH SECTION -->
     <div id="auth-section" class="max-w-md mx-auto space-y-6 hidden">
         <form id="login-form" class="glass-panel p-8 space-y-4">
-            <h2 class="text-xl font-bold text-white uppercase tracking-tight text-center mb-6">Technician Login</h2>
+            <h2 class="text-xl font-bold text-white uppercase text-center mb-6">Technician Login</h2>
             <input type="text" id="loginId" required class="input-field font-mono" placeholder="EMPLOYEE ID">
             <input type="password" id="loginPass" required class="input-field" placeholder="PASSWORD">
-            <button type="submit" class="w-full btn-primary">Identify</button>
+            <button type="submit" class="w-full btn-primary">Login</button>
             <p class="text-center text-[10px] uppercase font-bold tracking-widest opacity-50 pt-4">
-                Not Registered? <button type="button" onclick="showRegister()" class="text-sky-500">Register Phone</button>
+                New User? <button type="button" onclick="showRegister()" class="text-sky-500">Register Phone</button>
             </p>
         </form>
 
@@ -93,14 +88,13 @@
                 <input type="text" id="regId" required class="input-field font-mono" placeholder="ID">
                 <input type="password" id="regPass" required class="input-field" placeholder="PASS">
             </div>
-            <button type="submit" class="w-full btn-primary">Lock Device & Create</button>
-            <button type="button" onclick="showLogin()" class="w-full text-[10px] opacity-50 uppercase font-bold">Back</button>
+            <button type="submit" class="w-full btn-primary">Initialize Device Link</button>
+            <button type="button" onclick="showLogin()" class="w-full text-[10px] opacity-50 uppercase">Cancel</button>
         </form>
     </div>
 
     <!-- MAIN INTERFACE -->
     <div id="main-interface" class="max-w-md mx-auto hidden space-y-4">
-        <!-- USER INFO -->
         <div class="glass-panel p-6 flex flex-col items-center text-center">
             <p id="display-date" class="text-[10px] font-mono text-sky-500 uppercase mb-1"></p>
             <h1 id="display-clock" class="text-4xl font-bold text-white font-mono tracking-widest mb-4">00:00:00</h1>
@@ -113,27 +107,26 @@
             </div>
         </div>
 
-        <!-- CLOCK BUTTONS (Inside Office Only) -->
+        <!-- OFFICE ONLY ACTION -->
         <div id="office-actions" class="grid grid-cols-2 gap-4 hidden">
             <button id="btn-f1" onclick="recordAttendance('F1')" class="glass-panel p-6 flex flex-col items-center gap-3 hover:border-sky-500 transition-all group">
-                <div class="p-3 rounded-2xl bg-sky-500/10 text-sky-500 group-hover:bg-sky-500 group-hover:text-white transition-colors">
+                <div class="p-3 rounded-2xl bg-sky-500/10 text-sky-500 group-hover:bg-sky-500 group-hover:text-white">
                     <i data-lucide="play" size="24"></i>
                 </div>
-                <span class="text-[10px] font-bold uppercase tracking-widest">Clock In</span>
+                <span class="text-[10px] font-bold uppercase">Clock In</span>
             </button>
             <button id="btn-f4" onclick="recordAttendance('F4')" class="glass-panel p-6 flex flex-col items-center gap-3 hover:border-red-500 transition-all group">
-                <div class="p-3 rounded-2xl bg-red-500/10 text-red-500 group-hover:bg-red-500 group-hover:text-white transition-colors">
+                <div class="p-3 rounded-2xl bg-red-500/10 text-red-500 group-hover:bg-red-500 group-hover:text-white">
                     <i data-lucide="square" size="24"></i>
                 </div>
-                <span class="text-[10px] font-bold uppercase tracking-widest">Clock Out</span>
+                <span class="text-[10px] font-bold uppercase">Clock Out</span>
             </button>
         </div>
 
-        <!-- LEAVE FORM (Outside Office or After Clock In) -->
-        <div id="remote-actions" class="glass-panel p-6">
-            <div id="remote-label" class="flex items-center gap-2 mb-4 text-amber-500">
-                <i data-lucide="map-pin-off" size="14"></i>
-                <span class="text-[10px] font-bold uppercase tracking-widest">Remote / Leave Portal</span>
+        <!-- REMOTE ONLY ACTION -->
+        <div id="remote-actions" class="glass-panel p-6 hidden">
+            <div class="flex items-center gap-2 mb-4 text-amber-500 font-bold text-[10px] uppercase">
+                <i data-lucide="map-pin-off" size="14"></i> Status Proposal (Outside IP)
             </div>
             <div class="flex gap-2">
                 <select id="leaveType" class="input-field text-xs">
@@ -143,16 +136,14 @@
                     <option value="Annual Leave">Annual Leave</option>
                     <option value="Work Outside">Work Outside</option>
                 </select>
-                <button onclick="recordLeave()" class="btn-primary px-6 text-[10px] whitespace-nowrap">Apply</button>
+                <button onclick="recordLeave()" class="btn-primary px-6 text-[10px] whitespace-nowrap">Send</button>
             </div>
         </div>
 
-        <!-- 7 DAY HISTORY -->
+        <!-- HISTORY -->
         <div class="space-y-2 pb-10">
-            <h3 class="text-[10px] font-bold uppercase tracking-widest opacity-30 ml-2">Past 7 Days History</h3>
-            <div id="history-container" class="space-y-2">
-                <!-- Cards injected here -->
-            </div>
+            <h3 class="text-[10px] font-bold uppercase opacity-30 ml-2">Recent Logs (Past 7 Days)</h3>
+            <div id="history-container" class="space-y-2"></div>
         </div>
     </div>
 
@@ -174,12 +165,8 @@
                 const data = await resp.json();
                 isInsideOffice = ALLOWED_IPS.includes(data.ip);
                 
-                const dot = document.getElementById('ip-status-dot');
-                const label = document.getElementById('ip-label');
-                
-                dot.className = `w-2 h-2 rounded-full ${isInsideOffice ? 'bg-green-500' : 'bg-amber-500'}`;
-                label.innerText = isInsideOffice ? `Network_Secure: ${data.ip}` : `Remote_Access: ${data.ip}`;
-                
+                document.getElementById('ip-status-dot').className = `w-2 h-2 rounded-full ${isInsideOffice ? 'bg-green-500' : 'bg-amber-500 animate-pulse'}`;
+                document.getElementById('ip-label').innerText = isInsideOffice ? 'OFFICE_NETWORK' : 'REMOTE_NETWORK';
                 return true;
             } catch (e) { return false; }
         }
@@ -209,8 +196,10 @@
             const saved = localStorage.getItem('tc_user');
             if (saved) {
                 currentUser = JSON.parse(saved);
-                if (currentUser.DeviceId && currentUser.DeviceId !== getFingerprint()) {
+                // The key in getDisplayValues is "DeviceId(phone)" due to header cleaning
+                if (currentUser["DeviceId(phone)"] && currentUser["DeviceId(phone)"] !== getFingerprint()) {
                     logout();
+                    Swal.fire({ icon: 'error', title: 'Device Mismatch', text: 'Account locked to another device.' });
                 } else {
                     showMainInterface();
                 }
@@ -223,20 +212,18 @@
             document.getElementById('user-name').innerText = currentUser.Name;
             document.getElementById('user-job').innerText = currentUser.JobTitle;
             
-            // Logic for Buttons visibility
             const today = new Date().toISOString().split('T')[0];
             const todayRecord = masterData.attendance.find(r => r.Date === today && r.EmployeeId === currentUser.EmployeeId);
 
+            // UI Logic based on IP
             if (isInsideOffice) {
                 document.getElementById('office-actions').classList.remove('hidden');
+                document.getElementById('remote-actions').classList.add('hidden'); // Hide status proposal if in office
                 document.getElementById('btn-f1').disabled = !!todayRecord?.F1;
                 document.getElementById('btn-f4').disabled = !!todayRecord?.F4;
-                // If already clocked in today, allow Remote portal for status updates
-                document.getElementById('remote-actions').classList.toggle('hidden', !todayRecord?.F1);
-                if(todayRecord?.F1) document.getElementById('remote-label').innerHTML = '<i data-lucide="check-circle" size="14"></i><span class="text-[10px] font-bold ml-2">Update Activity Status</span>';
             } else {
                 document.getElementById('office-actions').classList.add('hidden');
-                document.getElementById('remote-actions').classList.remove('hidden');
+                document.getElementById('remote-actions').classList.remove('hidden'); // Show only for remote
             }
 
             renderHistory();
@@ -252,28 +239,28 @@
                 .slice(0, 7);
 
             if (userRecords.length === 0) {
-                container.innerHTML = '<div class="p-8 text-center text-[10px] opacity-20 uppercase">No history detected</div>';
+                container.innerHTML = '<div class="p-8 text-center text-[10px] opacity-20 uppercase">No history found</div>';
                 return;
             }
 
             container.innerHTML = userRecords.map(r => `
                 <div class="history-card p-4 rounded-2xl">
                     <div class="flex justify-between items-center mb-3">
-                        <span class="text-[10px] font-mono text-sky-500 font-bold uppercase">${new Date(r.Date).toLocaleDateString('en-GB', {weekday:'short', day:'2-digit', month:'short'})}</span>
-                        <span class="text-[9px] px-2 py-0.5 rounded-full bg-white/5 border border-white/5 font-bold uppercase tracking-tighter ${r.StatusApproval === 'Approved' ? 'text-green-500' : 'text-amber-500'}">${r.StatusApproval || 'Pending'}</span>
+                        <span class="text-[10px] font-mono text-sky-500 font-bold">${r.Date}</span>
+                        <span class="text-[9px] px-2 py-0.5 rounded bg-white/5 border border-white/5 font-bold uppercase ${r.StatusApproval === 'Approved' ? 'text-green-500' : 'text-amber-500'}">${r.StatusApproval || 'Pending'}</span>
                     </div>
                     <div class="grid grid-cols-3 gap-2">
                         <div class="bg-black/20 p-2 rounded-xl text-center">
-                            <span class="text-[8px] uppercase block opacity-40 mb-1">In</span>
+                            <span class="text-[8px] uppercase opacity-40 block">In</span>
                             <span class="text-xs font-mono text-white">${r.F1 || '--:--'}</span>
                         </div>
                         <div class="bg-black/20 p-2 rounded-xl text-center">
-                            <span class="text-[8px] uppercase block opacity-40 mb-1">Out</span>
+                            <span class="text-[8px] uppercase opacity-40 block">Out</span>
                             <span class="text-xs font-mono text-white">${r.F4 || '--:--'}</span>
                         </div>
-                        <div class="bg-black/20 p-2 rounded-xl text-center">
-                            <span class="text-[8px] uppercase block opacity-40 mb-1">Status</span>
-                            <span class="text-[9px] font-bold text-sky-400 truncate uppercase">${r.Leave || 'Present'}</span>
+                        <div class="bg-black/20 p-2 rounded-xl text-center overflow-hidden">
+                            <span class="text-[8px] uppercase opacity-40 block">Log</span>
+                            <span class="text-[9px] font-bold text-sky-400 uppercase truncate block">${r.Leave || 'Present'}</span>
                         </div>
                     </div>
                 </div>
@@ -295,17 +282,19 @@
                 StatusApproval: 'Pending'
             };
 
+            const todayRec = masterData.attendance.find(r => r.Date === dateStr && r.EmployeeId === currentUser.EmployeeId);
+            if (todayRec) {
+                payload.action = 'update';
+                payload.primaryId = todayRec.Timestamp;
+            }
+
             try {
-                const existing = await API.get('ATTENDANCE_RECORD');
-                const todayRecord = existing.data.find(r => r.Date === dateStr && r.EmployeeId === currentUser.EmployeeId);
-                if (todayRecord) {
-                    payload.action = 'update';
-                    payload.primaryId = todayRecord.Timestamp;
-                }
                 const res = await API.post(payload);
                 if (res.status === 'success') {
-                    await init();
-                    Swal.fire({ icon: 'success', title: 'Data Committed', text: `${type} at ${timeStr}`, background: '#151921', color: '#fff' });
+                    const att = await API.get('ATTENDANCE_RECORD');
+                    masterData.attendance = att.data;
+                    showMainInterface();
+                    Swal.fire({ icon: 'success', title: 'Committed', text: `${type} at ${timeStr}`, background: '#151921', color: '#fff' });
                 }
             } catch (e) { Swal.fire({ icon: 'error', title: 'Error', text: e.message }); } 
             finally { loader.style.display = 'none'; }
@@ -326,15 +315,16 @@
                 StatusApproval: 'Pending'
             };
 
+            const todayRec = masterData.attendance.find(r => r.Date === dateStr && r.EmployeeId === currentUser.EmployeeId);
+            if (todayRec) {
+                payload.action = 'update';
+                payload.primaryId = todayRec.Timestamp;
+            }
             try {
-                const existing = await API.get('ATTENDANCE_RECORD');
-                const todayRecord = existing.data.find(r => r.Date === dateStr && r.EmployeeId === currentUser.EmployeeId);
-                if (todayRecord) {
-                    payload.action = 'update';
-                    payload.primaryId = todayRecord.Timestamp;
-                }
                 await API.post(payload);
-                await init();
+                const att = await API.get('ATTENDANCE_RECORD');
+                masterData.attendance = att.data;
+                showMainInterface();
                 Swal.fire({ icon: 'success', title: 'Proposal Sent', background: '#151921', color: '#fff' });
             } catch (e) { Swal.fire({ icon: 'error', title: 'Error', text: e.message }); }
             finally { loader.style.display = 'none'; }
@@ -342,16 +332,20 @@
 
         document.getElementById('login-form').onsubmit = (e) => {
             e.preventDefault();
-            const user = masterData.users.find(u => u.EmployeeId === document.getElementById('loginId').value && u.Password === document.getElementById('loginPass').value);
+            const id = document.getElementById('loginId').value;
+            const pass = document.getElementById('loginPass').value;
+            const user = masterData.users.find(u => u.EmployeeId === id && u.Password === pass);
+            
             if (user) {
-                if (user.DeviceId && user.DeviceId !== getFingerprint()) {
-                    Swal.fire({ icon: 'error', title: 'Unauthorized Device', background: '#151921', color: '#fff' });
+                const devKey = "DeviceId(phone)";
+                if (user[devKey] && user[devKey] !== getFingerprint()) {
+                    Swal.fire({ icon: 'error', title: 'Locked', text: 'This account belongs to another phone.' });
                     return;
                 }
                 currentUser = user;
                 localStorage.setItem('tc_user', JSON.stringify(user));
                 showMainInterface();
-            } else { Swal.fire({ icon: 'error', title: 'Invalid Access' }); }
+            } else { Swal.fire({ icon: 'error', title: 'Failed', text: 'Check Credentials' }); }
         };
 
         document.getElementById('register-form').onsubmit = async (e) => {
@@ -366,12 +360,17 @@
                 Name: document.getElementById('regName').value,
                 JobTitle: document.getElementById('regJob').value,
                 Password: document.getElementById('regPass').value,
-                DeviceId: getFingerprint()
+                // Match the GAS cleaned header key: DeviceId(phone)
+                "DeviceId(phone)": getFingerprint()
             };
             try {
                 await API.post(payload);
-                init();
+                const usr = await API.get('USER');
+                masterData.users = usr.data;
+                showLogin();
+                Swal.fire({ icon: 'success', title: 'Success', text: 'Device Linked' });
             } catch (err) { Swal.fire({ icon: 'error', title: 'Failed', text: err.message }); }
+            finally { loader.style.display = 'none'; }
         };
 
         function showLogin() { document.getElementById('auth-section').classList.remove('hidden'); document.getElementById('main-interface').classList.add('hidden'); document.getElementById('login-form').classList.remove('hidden'); document.getElementById('register-form').classList.add('hidden'); }
