@@ -207,6 +207,16 @@
         </div>
     </div>
 
+    <!-- GLOBAL COMING SOON OVERLAY -->
+    <div id="global-coming-soon" class="fixed inset-0 bg-[#0b0e14]/90 backdrop-blur-xl hidden flex flex-col items-center justify-center z-[300] p-6 text-center animate-in fade-in zoom-in duration-300">
+        <img src="Assets/Comingsoon.png" alt="Coming Soon" class="w-4/5 max-w-[350px] rounded-[3rem] shadow-2xl border-4 border-sky-500/20 mb-8">
+        <h2 class="text-white font-bold text-2xl mb-2 uppercase tracking-widest">Under Development</h2>
+        <p class="text-sky-500/60 mb-8 font-mono text-sm uppercase">Feature is currently being optimized</p>
+        <button onclick="hideGlobalComingSoon()" class="px-10 py-3 bg-white/5 hover:bg-white/10 text-white rounded-full text-xs font-bold uppercase tracking-widest transition border border-white/10 active:scale-95">
+            Return to Dashboard
+        </button>
+    </div>
+
     <script>
 
         window.GLOBAL_CACHE = {}; 
@@ -300,6 +310,22 @@
                 setTimeout(() => modal.classList.add('hidden'), 200);
             }
         }
+
+        function showGlobalComingSoon() {
+            // 1. Close the small user modal
+            const modal = document.getElementById('user-modal');
+            const content = document.getElementById('modal-content');
+            content.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => modal.classList.add('hidden'), 200);
+        
+            // 2. Show the big global overlay
+            document.getElementById('global-coming-soon').classList.remove('hidden');
+        }
+        
+        function hideGlobalComingSoon() {
+            document.getElementById('global-coming-soon').classList.add('hidden');
+        }
+        
         setInterval(() => {
             const now = new Date();
             const dateStr = now.toISOString().split('T')[0];
