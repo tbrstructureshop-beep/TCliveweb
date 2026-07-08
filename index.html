@@ -170,7 +170,7 @@
                     <p id="clock" class="text-xs font-mono text-white leading-none mb-1">2024-06-30 16:50</p>
                     <p class="text-[9px] uppercase font-bold opacity-30 tracking-widest">Global Server Time</p>
                 </div>
-                <div class="h-10 w-10 rounded-xl bg-sky-500/10 flex items-center justify-center border border-sky-500/20 shadow-lg shadow-sky-500/5">
+                <div onclick="toggleUserModal()" class="h-10 w-10 rounded-xl bg-sky-500/10 flex items-center justify-center border border-sky-500/20 shadow-lg shadow-sky-500/5 cursor-pointer hover:bg-sky-500/20 transition-all active:scale-95">
                     <i data-lucide="user" class="w-4 h-4 text-sky-400"></i>
                 </div>
             </div>
@@ -187,6 +187,18 @@
                 <iframe id="content-frame" src="Tabs/Unit/index.html" class="w-full h-full border-none"></iframe>
             </div>
         </main>
+    </div>
+
+    <!-- USER MODAL OVERLAY -->
+    <div id="user-modal" class="fixed inset-0 z-[200] hidden flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-md" onclick="toggleUserModal()"></div>
+        <div class="relative w-full max-w-lg bg-[#151921] border border-white/10 rounded-3xl overflow-hidden shadow-2xl transition-all transform scale-95 opacity-0" id="modal-content">
+            <div class="p-4 border-b border-white/5 flex justify-between items-center bg-[#0b0e14]/50">
+                <h3 class="text-xs font-bold uppercase tracking-[0.2em] text-sky-500">Technician Command</h3>
+                <button onclick="toggleUserModal()" class="text-white/30 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <iframe src="option/index.html" class="w-full h-[400px] border-none"></iframe>
+        </div>
     </div>
 
     <script>
@@ -262,6 +274,23 @@
                 if (iframe.contentWindow.applyTheme) {
                     iframe.contentWindow.applyTheme(isLight);
                 }
+            }
+        }
+
+        function toggleUserModal() {
+            const modal = document.getElementById('user-modal');
+            const content = document.getElementById('modal-content');
+            
+            if (modal.classList.contains('hidden')) {
+                modal.classList.remove('hidden');
+                setTimeout(() => {
+                    content.classList.remove('scale-95', 'opacity-0');
+                    content.classList.add('scale-100', 'opacity-100');
+                }, 10);
+            } else {
+                content.classList.add('scale-95', 'opacity-0');
+                content.classList.remove('scale-100', 'opacity-100');
+                setTimeout(() => modal.classList.add('hidden'), 200);
             }
         }
 
