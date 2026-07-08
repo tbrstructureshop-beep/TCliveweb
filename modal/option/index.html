@@ -22,8 +22,8 @@
 <body class="p-6">
     
     <div id="main-options" class="space-y-4">
-        <!-- We use window.parent to call the function in index.html -->
-        <div onclick="window.parent.showGlobalComingSoon()" class="option-card p-5 rounded-2xl cursor-pointer flex items-center gap-5 group">
+        <!-- FIXED: Redirects to the Attendance Module inside this same iframe -->
+        <div onclick="window.location.href='../MyAttendance/index.html'" class="option-card p-5 rounded-2xl cursor-pointer flex items-center gap-5 group">
             <div class="bg-sky-500/10 p-4 rounded-xl text-sky-500 group-hover:bg-sky-500 group-hover:text-white transition-colors">
                 <i data-lucide="map-pin" class="w-6 h-6"></i>
             </div>
@@ -33,6 +33,7 @@
             </div>
         </div>
 
+        <!-- KEEPING AS COMING SOON: Since Job Tracking isn't built yet -->
         <div onclick="window.parent.showGlobalComingSoon()" class="option-card p-5 rounded-2xl cursor-pointer flex items-center gap-5 group">
             <div class="bg-sky-500/10 p-4 rounded-xl text-sky-500 group-hover:bg-sky-500 group-hover:text-white transition-colors">
                 <i data-lucide="timer" class="w-6 h-6"></i>
