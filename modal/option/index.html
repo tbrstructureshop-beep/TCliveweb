@@ -2,11 +2,18 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        body { background-color: #151921; font-family: 'Inter', sans-serif; overflow: hidden; }
+        /* Changed background to transparent to blend with the main index modal container */
+        body { 
+            background-color: transparent; 
+            font-family: 'Inter', sans-serif; 
+            margin: 0;
+            padding: 0;
+        }
         .option-card {
             background: linear-gradient(145deg, #1c222c, #151921);
             border: 1px solid rgba(255,255,255,0.05);
@@ -17,9 +24,12 @@
             transform: translateY(-2px);
             box-shadow: 0 10px 30px -10px rgba(14, 165, 233, 0.3);
         }
+        /* Custom scrollbar for iframe if content exceeds height */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
     </style>
 </head>
-<body class="p-6">
+<body class="p-4 md:p-6">
     
     <!-- MAIN INTERFACE -->
     <div id="main-options" class="space-y-4">
@@ -28,7 +38,7 @@
             <div class="bg-sky-500/10 p-4 rounded-xl text-sky-500 group-hover:bg-sky-500 group-hover:text-white transition-colors">
                 <i data-lucide="map-pin" class="w-6 h-6"></i>
             </div>
-            <div>
+            <div class="flex-1">
                 <h4 class="text-white font-bold text-lg">Record My Attendance</h4>
                 <p class="text-slate-500 text-sm">IP-Locked Office Check-in</p>
             </div>
@@ -39,7 +49,7 @@
             <div class="bg-sky-500/10 p-4 rounded-xl text-sky-500 group-hover:bg-sky-500 group-hover:text-white transition-colors">
                 <i data-lucide="timer" class="w-6 h-6"></i>
             </div>
-            <div>
+            <div class="flex-1">
                 <h4 class="text-white font-bold text-lg">Record My Job</h4>
                 <p class="text-slate-500 text-sm">Live Time-Consumption Tracking</p>
             </div>
@@ -47,14 +57,16 @@
     </div>
 
     <!-- COMING SOON OVERLAY -->
-    <div id="coming-soon" class="fixed inset-0 bg-[#151921] hidden flex flex-col items-center justify-center p-6 text-center animate-in fade-in zoom-in duration-300">
-        <img src="../Assets/Comingsoon.png" alt="Coming Soon" class="w-4/5 max-w-[300px] rounded-[2rem] shadow-2xl border-4 border-sky-500/20 mb-6">
+    <div id="coming-soon" class="fixed inset-0 bg-[#151921] hidden flex flex-col items-center justify-center p-6 text-center animate-in fade-in zoom-in duration-300 z-50">
+        <!-- FIXED PATH: added ../ to reach root Assets -->
+        <img src="../../Assets/Comingsoon.png" alt="Coming Soon" class="w-4/5 max-w-[250px] rounded-[2rem] shadow-2xl border-4 border-sky-500/20 mb-6">
         <button onclick="hideComingSoon()" class="px-6 py-2 bg-white/5 hover:bg-white/10 text-white rounded-full text-xs font-bold uppercase tracking-widest transition border border-white/10">
             Go Back
         </button>
     </div>
 
     <script>
+        // Ensure icons render
         lucide.createIcons();
 
         function showComingSoon() {
