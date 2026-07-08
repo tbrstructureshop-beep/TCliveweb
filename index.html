@@ -191,13 +191,19 @@
 
     <!-- USER MODAL OVERLAY -->
     <div id="user-modal" class="fixed inset-0 z-[200] hidden flex items-center justify-center p-4">
+        <!-- Dark Backdrop -->
         <div class="absolute inset-0 bg-black/60 backdrop-blur-md" onclick="toggleUserModal()"></div>
+        
+        <!-- Modal Container -->
         <div class="relative w-full max-w-lg bg-[#151921] border border-white/10 rounded-3xl overflow-hidden shadow-2xl transition-all transform scale-95 opacity-0" id="modal-content">
             <div class="p-4 border-b border-white/5 flex justify-between items-center bg-[#0b0e14]/50">
                 <h3 class="text-xs font-bold uppercase tracking-[0.2em] text-sky-500">Technician Command</h3>
-                <button onclick="toggleUserModal()" class="text-white/30 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+                <button onclick="toggleUserModal()" class="text-white/30 hover:text-white transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
             </div>
-            <iframe src="option/index.html" class="w-full h-[400px] border-none"></iframe>
+            <!-- IMPORTANT: src must match your folder structure -->
+            <iframe src="modal/option/index.html" class="w-full h-[400px] border-none"></iframe>
         </div>
     </div>
 
@@ -283,6 +289,7 @@
             
             if (modal.classList.contains('hidden')) {
                 modal.classList.remove('hidden');
+                // Small delay to allow CSS transitions to trigger
                 setTimeout(() => {
                     content.classList.remove('scale-95', 'opacity-0');
                     content.classList.add('scale-100', 'opacity-100');
@@ -293,7 +300,6 @@
                 setTimeout(() => modal.classList.add('hidden'), 200);
             }
         }
-
         setInterval(() => {
             const now = new Date();
             const dateStr = now.toISOString().split('T')[0];
