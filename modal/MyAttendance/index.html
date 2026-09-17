@@ -297,7 +297,8 @@
             const todayRec = masterData.attendance.find(r => r.Date === dateStr && r.EmployeeId === currentUser.EmployeeId);
             if (todayRec) {
                 payload.action = 'update';
-                payload.primaryId = todayRec.Timestamp;
+                // ✅ GANTI DARI: payload.primaryId = todayRec.Timestamp;
+                payload.primaryId = `${currentUser.EmployeeId}|${dateStr}`;
             }
 
             try {
@@ -330,8 +331,10 @@
             const todayRec = masterData.attendance.find(r => r.Date === dateStr && r.EmployeeId === currentUser.EmployeeId);
             if (todayRec) {
                 payload.action = 'update';
-                payload.primaryId = todayRec.Timestamp;
+                // ✅ GANTI DARI: payload.primaryId = todayRec.Timestamp;
+                payload.primaryId = `${currentUser.EmployeeId}|${dateStr}`;
             }
+            
             try {
                 await API.post(payload);
                 const att = await API.get('ATTENDANCE_RECORD');
