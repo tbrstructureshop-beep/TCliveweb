@@ -189,6 +189,10 @@
         async function init() {
             await verifyNetwork();
             try {
+                // ✅ TAMBAHKAN DUA BARIS INI: Paksa hapus cache absensi agar PC selalu sinkron dengan HP
+                try { if (window.parent && window.parent.clearCache) window.parent.clearCache('ATTENDANCE_RECORD'); } catch(e) {}
+                await API._dbOp("delete", "ATTENDANCE_RECORD");
+
                 const [u, s, usr, att] = await Promise.all([
                     API.get('UNIT'), API.get('SHIFTS'), API.get('USER'), API.get('ATTENDANCE_RECORD')
                 ]);
@@ -196,12 +200,8 @@
                 masterData.attendance = att.data;
                 
                 document.getElementById('regUnit').innerHTML = u.data.map(u => `<option value="${u.UnitCode}">${u.UnitCode}</option>`).join('');
-                // Cari baris ini di dalam fungsi init():
                 document.getElementById('regUnit').onchange = (e) => {
-                    // Filter shift berdasarkan unit yang dipilih dan pastikan kolom Crew tidak kosong
                     const filtered = s.data.filter(sh => sh.UnitCode === e.target.value && sh.Crew);
-                    
-                    // Ambil daftar crew unik (menghindari duplikasi jika ada beberapa shift dengan crew yang sama)
                     const uniqueCrews = [...new Set(filtered.map(sh => sh.Crew.trim()))];
                 
                     if (uniqueCrews.length > 0) {
