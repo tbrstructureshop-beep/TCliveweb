@@ -128,7 +128,8 @@
         const SUPABASE_UNITS = {
             'TCR-1': { colStatus: 'status_sm1', colDate: 'date_closed_sm1', filterCek: 'cek_sm1' },
             'TCR-2': { colStatus: 'status_cs1', colDate: 'date_closed_cs1', filterCek: 'cek_cs1' },
-            'TCR-5': { colStatus: 'status_mw',  colDate: 'date_closed_mw',  filterCek: 'cek_mw' }
+            'TCR-5': { colStatus: 'status_mw',  colDate: 'date_closed_mw',  filterCek: 'cek_mw' },
+            'TCR-3': { colStatus: 'status_sm4', colDate: 'date_closed_sm4', filterCek: 'cek_sm4' } // Tambahkan ini
         };
 
         async function init() {
@@ -168,23 +169,32 @@
 
             // Di dalam renderCards(), ganti logika fullData menjadi:
             if (sMap) {
-                let reportKey = (activeUnit === 'TCR-2') ? 'report_cs1' : (activeUnit === 'TCR-5') ? 'report_mw' : 'report_sm1';
-                let remarkKey = (activeUnit === 'TCR-2') ? 'remark_cs1' : (activeUnit === 'TCR-5') ? 'remark_mw' : 'remark_sm1';
+                // Tentukan key report dan remark yang dinamis
+                let reportKey = 'report_sm1';
+                let remarkKey = 'remark_sm1';
+            
+                if (activeUnit === 'TCR-2') {
+                    reportKey = 'report_cs1';
+                    remarkKey = 'remark_cs1';
+                } else if (activeUnit === 'TCR-5') {
+                    reportKey = 'report_mw';
+                    remarkKey = 'remark_mw';
+                } else if (activeUnit === 'TCR-3') { // Tambahkan kondisi ini
+                    reportKey = 'report_sm4';
+                    remarkKey = 'remark_sm4';
+                }
             
                 fullData = supabaseData
                     .filter(item => {
-                        // Filter 1: Reported (True/1/checked)
                         const isReported = (item[reportKey] === true || item[reportKey] === '1' || item[reportKey] === 'checked');
                         const matchReport = showOnlyReported ? isReported : true;
                         
-                        // Filter 2: Search Query
                         const matchSearch = (
                             (item.ac_reg || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
                             (String(item.order) || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
                             (item.description || '').toLowerCase().includes(searchQuery.toLowerCase())
                         );
             
-                        // Filter 3: Harus 'red'
                         return item[sMap.filterCek] === 'red' && matchReport && matchSearch;
                     })
                     .map(item => ({
@@ -308,21 +318,23 @@
             try {
                 if (sMap) {
                     const payload = {};
-                    payload['status_sm1'] = status.toUpperCase();
+                    // Gunakan key dinamis berdasarkan unit
+                    const statusKey = (uCode === 'TCR-3') ? 'status_sm4' : (uCode === 'TCR-5' ? 'status_mw' : (uCode === 'TCR-2' ? 'status_cs1' : 'status_sm1'));
+                    const dateKey = (uCode === 'TCR-3') ? 'date_closed_sm4' : (uCode === 'TCR-5' ? 'date_closed_mw' : (uCode === 'TCR-2' ? 'date_closed_cs1' : 'date_closed_sm1'));
+                    
+                    payload[statusKey] = status.toUpperCase();
                     
                     if (status.toUpperCase() === 'CLOSED') {
                         const now = new Date();
                         const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-                        payload['date_closed_sm1'] = `${now.getDate().toString().padStart(2,'0')}-${months[now.getMonth()]}-${now.getFullYear()}`;
+                        payload[dateKey] = `${now.getDate().toString().padStart(2,'0')}-${months[now.getMonth()]}-${now.getFullYear()}`;
                     } else {
-                        payload['date_closed_sm1'] = null;
+                        payload[dateKey] = null;
                     }
-
-                    // Cari 'id' baris berdasarkan order-nya terlebih dahulu dari data yang sudah disync
+        
                     const targetRow = supabaseData.find(d => String(d.order) === String(oNo));
                     if (!targetRow || !targetRow.id) throw new Error("Row ID not found for order: " + oNo);
-
-                    // Update menggunakan kolom 'id' (Primary Key) untuk menghindari masalah reserved word 'order'
+        
                     const { error } = await supabaseClient.from('mntp_tcr').update(payload).eq('id', targetRow.id);
                     if (error) throw error;
                 } else {
