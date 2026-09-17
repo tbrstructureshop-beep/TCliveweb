@@ -114,6 +114,10 @@
             <form id="shift-form" class="p-8 grid grid-cols-1 sm:grid-cols-2 gap-5 overflow-y-auto">
                 <input type="hidden" id="primaryId" name="primaryId">
                 <div class="sm:col-span-2"><label class="label-style">Target Node</label><select id="UnitCode" name="UnitCode" required class="input-field"></select></div>
+                <div>
+                    <label class="label-style">Crew</label>
+                    <input id="Crew" name="Crew" placeholder="e.g. Crew A" class="input-field">
+                </div>
                 <div><label class="label-style">Shift Category</label><input id="ShiftCategory" name="ShiftCategory" required class="input-field"></div>
                 <div><label class="label-style">Manpower (Pax)</label><input type="number" id="TotalManpower" name="TotalManpower" required class="input-field"></div>
                 <div><label class="label-style">Start (24H)</label><input type="time" id="TimeStart" name="TimeStart" required class="input-field"></div>
@@ -177,7 +181,10 @@
                                 ${unitShifts.map(s => `
                                     <div class="shift-item group/item">
                                         <div class="flex justify-between items-center mb-3">
-                                            <span class="text-xs font-bold text-white/80 uppercase">${s.ShiftCategory}</span>
+                                            <div class="flex items-center gap-2">
+                                                <span class="text-xs font-bold text-white/80 uppercase">${s.ShiftCategory}</span>
+                                                ${s.Crew ? `<span class="bg-sky-500/10 border border-sky-500/20 text-sky-400 text-[9px] font-mono px-2 py-0.5 rounded-md font-bold">${s.Crew}</span>` : ''}
+                                            </div>
                                             <div class="flex gap-2 opacity-0 group-hover/item:opacity-100 transition-all">
                                                 <button onclick="editData('${s.UnitCode}', '${s.ShiftCategory}')" class="text-sky-500/40 hover:text-sky-400"><i data-lucide="edit-3" size="14"></i></button>
                                                 <button onclick="deleteData('${s.UnitCode}', '${s.ShiftCategory}')" class="text-red-500/40 hover:text-red-400"><i data-lucide="trash-2" size="14"></i></button>
@@ -217,8 +224,9 @@
             document.getElementById('UnitCode').value = data.UnitCode;
             document.getElementById('ShiftCategory').value = data.ShiftCategory;
             document.getElementById('TotalManpower').value = data.TotalManpower;
-            document.getElementById('TimeStart').value = data.TimeStart;
-            document.getElementById('TimeEnd').value = data.TimeEnd;
+            document.getElementById('TimeStart').value = formatTime24(data.TimeStart);
+            document.getElementById('TimeEnd').value = formatTime24(data.TimeEnd);
+            document.getElementById('Crew').value = data.Crew || '';
             document.getElementById('EffectiveFrom').value = data.EffectiveFrom;
             document.getElementById('EffectiveUntil').value = data.EffectiveUntil;
             document.getElementById('LeaderName').value = data.LeaderName;
@@ -244,6 +252,15 @@
                 }
             } catch (err) { loader.style.display = 'none'; Swal.fire({ title: 'Error', text: err.message, icon: 'error' }); }
         };
+
+        function formatTime24(t) {
+            if (!t) return '';
+            const parts = t.toString().trim().split(':');
+            if (parts.length >= 2) {
+                return `${parts[0].padStart(2, '0')}:${parts[1].padStart(2, '0')}`;
+            }
+            return t;
+        }
 
         async function deleteData(unitCode, shiftCategory) {
             const res = await Swal.fire({ 
