@@ -283,7 +283,12 @@
             loader.style.display = 'flex';
             const now = new Date();
             const timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-            const dateStr = now.toISOString().split('T')[0];
+            
+            // Format tanggal lokal (YYYY-MM-DD)
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const dateStr = `${year}-${month}-${day}`;
 
             const payload = {
                 tab: 'ATTENDANCE_RECORD',
@@ -297,7 +302,7 @@
             const todayRec = masterData.attendance.find(r => r.Date === dateStr && r.EmployeeId === currentUser.EmployeeId);
             if (todayRec) {
                 payload.action = 'update';
-                // ✅ GANTI DARI: payload.primaryId = todayRec.Timestamp;
+                // ✅ WAJIB INI (Jangan pakai todayRec.Timestamp):
                 payload.primaryId = `${currentUser.EmployeeId}|${dateStr}`;
             }
 
@@ -308,11 +313,17 @@
                     masterData.attendance = att.data;
                     showMainInterface();
                     Swal.fire({ icon: 'success', title: 'Committed', text: `${type} at ${timeStr}`, background: '#151921', color: '#fff' });
+                } else {
+                    // Agar jika gagal, ada pesan error muncul (bukan diam saja)
+                    throw new Error(res.message || 'Failed to update attendance');
                 }
-            } catch (e) { Swal.fire({ icon: 'error', title: 'Error', text: e.message }); } 
-            finally { loader.style.display = 'none'; }
+            } catch (e) { 
+                Swal.fire({ icon: 'error', title: 'Error', text: e.message, background: '#151921', color: '#fff' }); 
+            } finally { 
+                loader.style.display = 'none'; 
+            }
         }
-
+        
         async function recordLeave() {
             const leave = document.getElementById('leaveType').value;
             if (!leave) return;
@@ -331,7 +342,7 @@
             const todayRec = masterData.attendance.find(r => r.Date === dateStr && r.EmployeeId === currentUser.EmployeeId);
             if (todayRec) {
                 payload.action = 'update';
-                // ✅ GANTI DARI: payload.primaryId = todayRec.Timestamp;
+                // ✅ Ganti menjadi gabungan ID dan Tanggal:
                 payload.primaryId = `${currentUser.EmployeeId}|${dateStr}`;
             }
             
