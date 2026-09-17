@@ -388,15 +388,33 @@
         function switchUnit(uCode) { activeUnit = uCode; currentPage = 1; renderTabs(); renderCards(); }
         function updateRowsPerPage(val) { rowsPerPage = val; currentPage = 1; renderCards(); }
         function changePage(dir) { currentPage += dir; renderCards(); }
-        function formatStatus(s) { if (!s) return 'Open'; return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase(); }
+        function formatStatus(s) {
+            if (!s) return 'Open';
+            const clean = s.trim().toLowerCase();
+            if (clean === 'top urgent' || clean === 'top_urgent') return 'Top Urgent';
+            if (clean === 'highlighted') return 'Highlighted';
+            if (clean === 'open') return 'Open';
+            if (clean === 'progress') return 'Progress';
+            if (clean === 'closed') return 'Closed';
+            return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+        }
+
         function getStatusBadgeClass(status) {
-            switch(status) {
-                case 'Top Urgent': return 'bg-red-500/15 text-red-500 border-red-500/30';
-                case 'Highlighted': return 'bg-purple-500/15 text-purple-400 border-purple-500/30';
-                case 'Open': return 'bg-blue-500/15 text-blue-400 border-blue-500/30';
-                case 'Progress': return 'bg-yellow-500/15 text-yellow-400 border-yellow-500/30';
-                case 'Closed': return 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30';
-                default: return 'bg-white/5 text-white border-white/10';
+            const normalized = (status || '').trim().toLowerCase();
+            switch(normalized) {
+                case 'top urgent': 
+                case 'top_urgent': 
+                    return 'bg-red-500/15 text-red-500 border-red-500/30';
+                case 'highlighted': 
+                    return 'bg-purple-500/15 text-purple-400 border-purple-500/30';
+                case 'open': 
+                    return 'bg-blue-500/15 text-blue-400 border-blue-500/30';
+                case 'progress': 
+                    return 'bg-yellow-500/15 text-yellow-400 border-yellow-500/30';
+                case 'closed': 
+                    return 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30';
+                default: 
+                    return 'bg-white/5 text-white border-white/10';
             }
         }
         
