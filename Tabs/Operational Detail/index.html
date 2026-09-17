@@ -274,17 +274,21 @@
                 if (sMap) {
                     const payload = {};
                     payload[sMap.colStatus] = status.toUpperCase();
-                    if (status === 'Closed') {
+                    if (status.toUpperCase() === 'CLOSED') {
                         const now = new Date();
                         const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
                         payload[sMap.colDate] = `${now.getDate().toString().padStart(2,'0')}-${months[now.getMonth()]}-${now.getFullYear()}`;
                     }
-                    await supabaseClient.from('mdr_tracking').update(payload).eq('order', oNo);
+                    const { error } = await supabaseClient.from('mntp_tcr').update(payload).eq('order', oNo);
+                    if (error) throw error;
                 } else {
                     await API.post({ tab: TAB_NAME, action: 'update', primaryId: oNo, Status: status });
                 }
                 await init();
-            } catch (e) { loader.style.display = 'none'; }
+            } catch (e) { 
+                loader.style.display = 'none'; 
+                Swal.fire('Update Error', e.message, 'error');
+            }
         }
 
         async function submitData() {
