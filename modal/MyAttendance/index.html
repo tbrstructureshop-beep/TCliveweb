@@ -224,18 +224,26 @@
             document.getElementById('user-name').innerText = currentUser.Name;
             document.getElementById('user-job').innerText = currentUser.JobTitle;
             
-            const today = new Date().toISOString().split('T')[0];
-            const todayRecord = masterData.attendance.find(r => r.Date === today && r.EmployeeId === currentUser.EmployeeId);
+            // Format tanggal lokal YYYY-MM-DD
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const today = `${year}-${month}-${day}`;
+
+            const todayRecord = masterData.attendance.find(r => 
+                r.Date === today && String(r.EmployeeId).trim() === String(currentUser.EmployeeId).trim()
+            );
 
             // UI Logic based on IP
             if (isInsideOffice) {
                 document.getElementById('office-actions').classList.remove('hidden');
-                document.getElementById('remote-actions').classList.add('hidden'); // Hide status proposal if in office
+                document.getElementById('remote-actions').classList.add('hidden');
                 document.getElementById('btn-f1').disabled = !!todayRecord?.F1;
-                document.getElementById('btn-f4').disabled = !!todayRecord?.F4;
+                document.getElementById('btn-f4').disabled = !todayRecord?.F1 || !!todayRecord?.F4;
             } else {
                 document.getElementById('office-actions').classList.add('hidden');
-                document.getElementById('remote-actions').classList.remove('hidden'); // Show only for remote
+                document.getElementById('remote-actions').classList.remove('hidden');
             }
 
             renderHistory();
@@ -244,9 +252,16 @@
         }
 
         function renderHistory() {
+            // ✅ Deklarasikan tanggal hari ini (YYYY-MM-DD) agar tidak error ReferenceError
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const today = `${year}-${month}-${day}`;
+
             const container = document.getElementById('history-container');
             const userRecords = masterData.attendance
-                .filter(r => r.EmployeeId === currentUser.EmployeeId)
+                .filter(r => String(r.EmployeeId).trim() === String(currentUser.EmployeeId).trim())
                 .sort((a, b) => new Date(b.Date) - new Date(a.Date))
                 .slice(0, 7);
 
@@ -255,7 +270,11 @@
                 return;
             }
 
-            container.innerHTML = userRecords.map(r => `
+            container.innerHTML = userRecords.map(r => {
+                // Jika hari sudah lewat dan F4 kosong, tampilkan '-', jika hari ini tampilkan '--:--'
+                const outDisplay = r.F4 || (r.Date < today ? '-' : '--:--');
+
+                return `
                 <div class="history-card p-4 rounded-2xl">
                     <div class="flex justify-between items-center mb-3">
                         <span class="text-[10px] font-mono text-sky-500 font-bold">${r.Date}</span>
@@ -268,7 +287,7 @@
                         </div>
                         <div class="bg-black/20 p-2 rounded-xl text-center">
                             <span class="text-[8px] uppercase opacity-40 block">Out</span>
-                            <span class="text-xs font-mono text-white">${r.F4 || (r.Date < today ? '-' : '--:--')}</span>
+                            <span class="text-xs font-mono text-white">${outDisplay}</span>
                         </div>
                         <div class="bg-black/20 p-2 rounded-xl text-center overflow-hidden">
                             <span class="text-[8px] uppercase opacity-40 block">Log</span>
@@ -276,7 +295,8 @@
                         </div>
                     </div>
                 </div>
-            `).join('');
+            `;
+            }).join('');
         }
 
         async function recordAttendance(type) {
