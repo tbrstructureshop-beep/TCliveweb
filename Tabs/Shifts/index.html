@@ -220,7 +220,7 @@
             const data = rawShifts.find(s => s.UnitCode === unitCode && s.ShiftCategory === shiftCat);
             if (!data) return;
             openModal('update');
-            document.getElementById('primaryId').value = data.Timestamp; // Menggunakan Timestamp sebagai ID unik
+            document.getElementById('primaryId').value = `${data.UnitCode}|${data.ShiftCategory}`;
             document.getElementById('UnitCode').value = data.UnitCode;
             document.getElementById('ShiftCategory').value = data.ShiftCategory;
             document.getElementById('TotalManpower').value = data.TotalManpower;
