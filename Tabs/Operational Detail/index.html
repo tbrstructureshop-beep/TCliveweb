@@ -135,7 +135,7 @@
                 const [unitRes, opRes, { data: sData, error: sErr }] = await Promise.all([
                     API.get('UNIT'),
                     API.get(TAB_NAME),
-                    supabaseClient.from('mdr_tracking').select('*').eq('archived', false)
+                    supabaseClient.from('mntp_tcr').select('*').eq('archived', false) // <-- 'mdr_tracking' diubah ke 'mntp_tcr'
                 ]);
 
                 if (sErr) throw sErr;
