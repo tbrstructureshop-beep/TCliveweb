@@ -330,20 +330,45 @@
 
         async function submitData() {
             loader.style.display = 'flex';
-            const unit = document.getElementById('UnitCode').value, sMap = SUPABASE_UNITS[unit], orderNo = document.getElementById('s-order').value, status = document.getElementById('s-status').value;
+            const unit = document.getElementById('UnitCode').value;
+            const sMap = SUPABASE_UNITS[unit];
+            const orderNo = document.getElementById('s-order').value;
+            const status = document.getElementById('s-status').value;
+            
             try {
                 if (sMap && currentMode === 'edit') {
-                    const payload = {}; payload[sMap.colStatus] = status.toUpperCase();
-                    await supabaseClient.from('mdr_tracking').update(payload).eq('order', orderNo);
+                    const payload = {}; 
+                    payload[sMap.colStatus] = status.toUpperCase();
+                    
+                    const cleanOrder = Number(String(orderNo).trim());
+                    if (isNaN(cleanOrder)) throw new Error("Invalid Order format: " + orderNo);
+
+                    const { error } = await supabaseClient.from('mntp_tcr').update(payload).eq('order', cleanOrder);
+                    if (error) throw error;
                 } else if (currentMode === 'bulk') {
-                    for(let d of bulkData) await API.post({ tab: TAB_NAME, action: 'add', UnitCode: unit, ACReg: d.ac, OrderNo: d.order, Description: d.desc, Status: 'Open', primaryId: d.order });
+                    for(let d of bulkData) {
+                        await API.post({ tab: TAB_NAME, action: 'add', UnitCode: unit, ACReg: d.ac, OrderNo: d.order, Description: d.desc, Status: 'Open', primaryId: d.order });
+                    }
                 } else {
                     const action = (currentMode === 'edit' ? 'update' : 'add');
-                    await API.post({ tab: TAB_NAME, action: action, UnitCode: unit, ACReg: document.getElementById('s-ac').value, OrderNo: orderNo, Description: document.getElementById('s-desc').value, Status: status, primaryId: orderNo });
+                    await API.post({ 
+                        tab: TAB_NAME, 
+                        action: action, 
+                        UnitCode: unit, 
+                        ACReg: document.getElementById('s-ac').value, 
+                        OrderNo: orderNo, 
+                        Description: document.getElementById('s-desc').value, 
+                        Status: status, 
+                        primaryId: orderNo 
+                    });
                 }
-                closeModal(); await init();
+                closeModal(); 
+                await init();
                 Swal.fire({ icon: 'success', title: 'Authorization Success', timer: 1000, showConfirmButton: false, background: '#151921', color: '#fff' });
-            } catch (e) { loader.style.display = 'none'; }
+            } catch (e) { 
+                loader.style.display = 'none'; 
+                Swal.fire('Error', e.message, 'error');
+            }
         }
 
         function switchUnit(uCode) { activeUnit = uCode; currentPage = 1; renderTabs(); renderCards(); }
