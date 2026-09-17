@@ -118,8 +118,8 @@
 
         const PRIORITY = { 'Top Urgent': 0, 'Highlighted': 1, 'Open': 2, 'Progress': 3, 'Closed': 4 };
 
-        const S_URL = 'https://kuzsjdtluabnfkzyffgz.supabase.co';
-        const S_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt1enNqZHRsdWFibmZrenlmZmd6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTEyNzI0NTQsImV4cCI6MjA2Njg0ODQ1NH0.D-OhicEqoxnnX8G-mwi2Y4X8_03dgDsy_flNj2YbYVI';
+        const S_URL = 'https://tskcxblanrtvzlctpcyd.supabase.co';
+        const S_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRza2N4YmxhbnJ0dnpsY3RwY3lkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcwNjI0MjAsImV4cCI6MjA4MjYzODQyMH0.6epAPJdzgxe-pmG-rVtosdbg-dwF5lND6Xd18VgUeU0';
         const supabaseClient = supabase.createClient(S_URL, S_KEY);
 
         // MAP SESUAI FILE W301, W302, W303
@@ -164,15 +164,16 @@
             let fullData = [];
             const sMap = SUPABASE_UNITS[activeUnit];
 
-            // LOGIC: AMBIL DATA BERDASARKAN FILTER "RED" (Sama dengan Workshop)
+            // Ganti bagian mapping data di renderCards() pada Tabs/Operational Detail/index.html
             if (sMap) {
                 fullData = supabaseData
-                    .filter(item => item[sMap.filterCek] === 'red') // Ambil semua data workshop terkait
+                    .filter(item => item[sMap.filterCek] === 'red' && (item.report_sm1 === true || item.report_sm1 === '1' || item.report_sm1 === 'checked'))
                     .map(item => ({
                         ACReg: item.ac_reg || '-',
                         OrderNo: item.order || '-',
                         Description: item.description || '-',
                         Status: formatStatus(item[sMap.colStatus]),
+                        Remark: item.remark_sm1 || '-',
                         UnitCode: activeUnit,
                         isLive: true
                     }));
@@ -239,8 +240,7 @@
 
                     <div class="overflow-x-auto">
                         <table class="master-table">
-                            <thead><tr><th>AC Reg</th><th>Order No</th><th>Description</th><th class="w-32">Live Status</th><th class="text-right">Action</th></tr></thead>
-                            <tbody>
+                            <thead><tr><th>AC Reg</th><th>Order No</th><th>Description</th><th class="w-32">Live Status</th><th>Remark</th><th class="text-right">Action</th></tr></thead>
                                 ${paginatedItems.map(item => `
                                     <tr class="group hover:bg-white/[0.02] transition-all">
                                         <td class="font-black text-white uppercase">${item.ACReg}</td>
@@ -257,6 +257,7 @@
                                                 <button onclick="deleteOrder('${item.OrderNo}')" class="text-red-500/30 hover:text-red-500"><i data-lucide="trash-2" size="14"></i></button>
                                             </div>
                                         </td>
+                                        <td class="text-white/60">${item.Remark}</td>
                                     </tr>`).join('')}
                                 ${paginatedItems.length === 0 ? '<tr><td colspan="5" class="text-center py-20 opacity-20 italic tracking-widest font-mono">NODE_EMPTY // NO_ACTIVE_TASKS</td></tr>' : ''}
                             </tbody>
