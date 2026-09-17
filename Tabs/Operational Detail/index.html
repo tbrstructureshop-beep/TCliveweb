@@ -129,9 +129,10 @@
             'TCR-1': { colStatus: 'status_sm1', colDate: 'date_closed_sm1', filterCek: 'cek_sm1' },
             'TCR-2': { colStatus: 'status_cs1', colDate: 'date_closed_cs1', filterCek: 'cek_cs1' },
             'TCR-5': { colStatus: 'status_mw',  colDate: 'date_closed_mw',  filterCek: 'cek_mw' },
-            'TCR-3': { colStatus: 'status_sm4', colDate: 'date_closed_sm4', filterCek: 'cek_sm4' } // Tambahkan ini
+            'TCR-3': { colStatus: 'status_sm4', colDate: 'date_closed_sm4', filterCek: 'cek_sm4' },
+            'TCR-4': { colStatus: 'status_cs4', colDate: 'date_closed_cs4', filterCek: 'cek_cs4' } // Tambahkan ini
         };
-
+        
         async function init() {
             loader.style.display = 'flex';
             try {
@@ -169,7 +170,6 @@
 
             // Di dalam renderCards(), ganti logika fullData menjadi:
             if (sMap) {
-                // Tentukan key report dan remark yang dinamis
                 let reportKey = 'report_sm1';
                 let remarkKey = 'remark_sm1';
             
@@ -179,11 +179,13 @@
                 } else if (activeUnit === 'TCR-5') {
                     reportKey = 'report_mw';
                     remarkKey = 'remark_mw';
-                } else if (activeUnit === 'TCR-3') { // Tambahkan kondisi ini
+                } else if (activeUnit === 'TCR-3') {
                     reportKey = 'report_sm4';
                     remarkKey = 'remark_sm4';
-                }
-            
+                } else if (activeUnit === 'TCR-4') { // Tambahkan ini
+                    reportKey = 'report_cs4';
+                    remarkKey = 'remark_cs4';
+                }  
                 fullData = supabaseData
                     .filter(item => {
                         const isReported = (item[reportKey] === true || item[reportKey] === '1' || item[reportKey] === 'checked');
@@ -318,9 +320,16 @@
             try {
                 if (sMap) {
                     const payload = {};
-                    // Gunakan key dinamis berdasarkan unit
-                    const statusKey = (uCode === 'TCR-3') ? 'status_sm4' : (uCode === 'TCR-5' ? 'status_mw' : (uCode === 'TCR-2' ? 'status_cs1' : 'status_sm1'));
-                    const dateKey = (uCode === 'TCR-3') ? 'date_closed_sm4' : (uCode === 'TCR-5' ? 'date_closed_mw' : (uCode === 'TCR-2' ? 'date_closed_cs1' : 'date_closed_sm1'));
+                    // Gunakan pemetaan key berdasarkan unit
+                    const statusKey = (uCode === 'TCR-4') ? 'status_cs4' : 
+                                      (uCode === 'TCR-3') ? 'status_sm4' : 
+                                      (uCode === 'TCR-5') ? 'status_mw' : 
+                                      (uCode === 'TCR-2') ? 'status_cs1' : 'status_sm1';
+                                      
+                    const dateKey = (uCode === 'TCR-4') ? 'date_closed_cs4' : 
+                                    (uCode === 'TCR-3') ? 'date_closed_sm4' : 
+                                    (uCode === 'TCR-5') ? 'date_closed_mw' : 
+                                    (uCode === 'TCR-2') ? 'date_closed_cs1' : 'date_closed_sm1';
                     
                     payload[statusKey] = status.toUpperCase();
                     
