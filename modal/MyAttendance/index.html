@@ -154,6 +154,21 @@
         let currentUser = null;
         let isInsideOffice = false;
         let masterData = { users: [], attendance: [] };
+        
+        function isDeviceValid() {
+            const devKey = "DeviceId(phone)";
+            if (currentUser && currentUser[devKey] && currentUser[devKey] !== getFingerprint()) {
+                Swal.fire({ 
+                    icon: 'error', 
+                    title: 'Locked', 
+                    text: 'This account belongs to another phone.', 
+                    background: '#151921', 
+                    color: '#fff' 
+                });
+                return false;
+            }
+            return true;
+        }
 
         function getFingerprint() {
             return `${navigator.userAgent}-${screen.width}x${screen.height}`;
@@ -207,15 +222,14 @@
         function checkSession() {
             const saved = localStorage.getItem('tc_user');
             if (saved) {
-                currentUser = JSON.parse(saved);
-                // The key in getDisplayValues is "DeviceId(phone)" due to header cleaning
-                if (currentUser["DeviceId(phone)"] && currentUser["DeviceId(phone)"] !== getFingerprint()) {
-                    logout();
-                    Swal.fire({ icon: 'error', title: 'Device Mismatch', text: 'Account locked to another device.' });
-                } else {
-                    showMainInterface();
-                }
-            } else { showLogin(); }
+                const parsed = JSON.parse(saved);
+                // Ambil data user terupdate dari sheet
+                const freshUser = masterData.users.find(u => u.EmployeeId === parsed.EmployeeId);
+                currentUser = freshUser || parsed;
+                showMainInterface();
+            } else { 
+                showLogin(); 
+            }
         }
 
         function showMainInterface() {
@@ -300,6 +314,9 @@
         }
 
         async function recordAttendance(type) {
+
+            if (!isDeviceValid()) return;
+            
             loader.style.display = 'flex';
             const now = new Date();
             const timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
@@ -357,6 +374,8 @@
         }
         
         async function recordLeave() {
+
+            if (!isDeviceValid()) return;
             const leave = document.getElementById('leaveType').value;
             if (!leave) return;
             loader.style.display = 'flex';
@@ -395,15 +414,12 @@
             const user = masterData.users.find(u => u.EmployeeId === id && u.Password === pass);
             
             if (user) {
-                const devKey = "DeviceId(phone)";
-                if (user[devKey] && user[devKey] !== getFingerprint()) {
-                    Swal.fire({ icon: 'error', title: 'Locked', text: 'This account belongs to another phone.' });
-                    return;
-                }
                 currentUser = user;
                 localStorage.setItem('tc_user', JSON.stringify(user));
-                showMainInterface();
-            } else { Swal.fire({ icon: 'error', title: 'Failed', text: 'Check Credentials' }); }
+                showMainInterface(); // ✅ Bebas login dari device mana saja
+            } else { 
+                Swal.fire({ icon: 'error', title: 'Failed', text: 'Check Credentials' }); 
+            }
         };
 
         document.getElementById('register-form').onsubmit = async (e) => {
