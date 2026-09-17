@@ -268,7 +268,7 @@
                         </div>
                         <div class="bg-black/20 p-2 rounded-xl text-center">
                             <span class="text-[8px] uppercase opacity-40 block">Out</span>
-                            <span class="text-xs font-mono text-white">${r.F4 || '--:--'}</span>
+                            <span class="text-xs font-mono text-white">${r.F4 || (r.Date < today ? '-' : '--:--')}</span>
                         </div>
                         <div class="bg-black/20 p-2 rounded-xl text-center overflow-hidden">
                             <span class="text-[8px] uppercase opacity-40 block">Log</span>
