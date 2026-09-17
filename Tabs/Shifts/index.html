@@ -246,13 +246,32 @@
         };
 
         async function deleteData(ts) {
-            const res = await Swal.fire({ title: 'Delete Shift?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', background: '#151921', color: '#fff' });
+            const res = await Swal.fire({ 
+                title: 'Delete Shift?', 
+                icon: 'warning', 
+                showCancelButton: true, 
+                confirmButtonColor: '#ef4444', 
+                background: '#151921', 
+                color: '#fff' 
+            });
+            
             if (res.isConfirmed) {
                 loader.style.display = 'flex';
                 try {
-                    await API.post({ tab: 'SHIFTS', action: 'delete', primaryId: ts });
-                    await init();
-                } catch (e) { loader.style.display = 'none'; }
+                    const apiRes = await API.post({ tab: 'SHIFTS', action: 'delete', primaryId: ts });
+                    
+                    // Cek apakah response dari server benar-benar success
+                    if (apiRes.status === 'success') {
+                        await init();
+                        Swal.fire({ icon: 'success', title: 'Deleted', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, background: '#151921', color: '#fff' });
+                    } else {
+                        // Lempar error jika backend tidak menemukan data
+                        throw new Error(apiRes.message || 'Failed to delete data in server');
+                    }
+                } catch (e) { 
+                    loader.style.display = 'none'; 
+                    Swal.fire({ title: 'Error', text: e.message, icon: 'error', background: '#151921', color: '#fff' });
+                }
             }
         }
 
