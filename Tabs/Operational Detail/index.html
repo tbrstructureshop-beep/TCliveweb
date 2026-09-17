@@ -232,7 +232,8 @@
                     })
                     .map(item => ({
                         ...item,
-                        Status: formatStatus(item.Status)
+                        Status: formatStatus(item.Status),
+                        Remark: item.Remark || item.Remarks || '-' // ✅ BACA BAIK 'Remark' ATAU 'Remarks'
                     }));
             }
 
@@ -485,6 +486,8 @@
                         OrderNo: orderNo, 
                         Description: document.getElementById('s-desc').value, 
                         Status: status, 
+                        Remark: remark,  // ✅ TAMBAHKAN INI
+                        Remarks: remark, // ✅ DAN INI (agar cocok dengan header 'Remarks' di sheet)
                         primaryId: orderNo 
                     });
                 }
@@ -559,7 +562,8 @@
             document.getElementById('s-order').value = item.OrderNo;
             document.getElementById('s-desc').value = item.Description;
             document.getElementById('s-status').value = item.Status;
-            document.getElementById('s-remark').value = item.Remark; // Isi input remark
+            // ✅ BACA DARI Remark ATAU Remarks
+            document.getElementById('s-remark').value = item.Remark || item.Remarks || '';
         }
 
         function toggleReported() {
