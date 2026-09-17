@@ -115,6 +115,8 @@
         
         let currentPage = 1, rowsPerPage = 10;
         let rawOpData = [], supabaseData = [], unitList = [], activeUnit = null, currentMode = 'single', bulkData = [];
+        let showOnlyReported = true; // Default true
+        let searchQuery = '';
 
         const PRIORITY = { 'Top Urgent': 0, 'Highlighted': 1, 'Open': 2, 'Progress': 3, 'Closed': 4 };
 
@@ -164,28 +166,33 @@
             let fullData = [];
             const sMap = SUPABASE_UNITS[activeUnit];
 
-            // Ganti bagian mapping data di renderCards() pada Tabs/Operational Detail/index.html
+            // Di dalam renderCards(), ganti logika fullData menjadi:
             if (sMap) {
-                // Tentukan key report dan remark yang dinamis berdasarkan unit (TCR-1, TCR-2, atau TCR-5)
-                let reportKey = 'report_sm1';
-                let remarkKey = 'remark_sm1';
-
-                if (activeUnit === 'TCR-2') {
-                    reportKey = 'report_cs1';
-                    remarkKey = 'remark_cs1';
-                } else if (activeUnit === 'TCR-5') {
-                    reportKey = 'report_mw';
-                    remarkKey = 'remark_mw';
-                }
-
+                let reportKey = (activeUnit === 'TCR-2') ? 'report_cs1' : (activeUnit === 'TCR-5') ? 'report_mw' : 'report_sm1';
+                let remarkKey = (activeUnit === 'TCR-2') ? 'remark_cs1' : (activeUnit === 'TCR-5') ? 'remark_mw' : 'remark_sm1';
+            
                 fullData = supabaseData
-                    .filter(item => item[sMap.filterCek] === 'red' && (item[reportKey] === true || item[reportKey] === '1' || item[reportKey] === 'checked'))
+                    .filter(item => {
+                        // Filter 1: Reported (True/1/checked)
+                        const isReported = (item[reportKey] === true || item[reportKey] === '1' || item[reportKey] === 'checked');
+                        const matchReport = showOnlyReported ? isReported : true;
+                        
+                        // Filter 2: Search Query
+                        const matchSearch = (
+                            (item.ac_reg || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+                            (String(item.order) || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+                            (item.description || '').toLowerCase().includes(searchQuery.toLowerCase())
+                        );
+            
+                        // Filter 3: Harus 'red'
+                        return item[sMap.filterCek] === 'red' && matchReport && matchSearch;
+                    })
                     .map(item => ({
                         ACReg: item.ac_reg || '-',
                         OrderNo: item.order ? String(item.order) : '-', 
                         Description: item.description || '-',
-                        Status: formatStatus(item[sMap.colStatus]), // Otomatis membaca status_sm1, status_cs1, atau status_mw
-                        Remark: item[remarkKey] || '-',             // Otomatis membaca remark_sm1, remark_cs1, atau remark_mw
+                        Status: formatStatus(item[sMap.colStatus]),
+                        Remark: item[remarkKey] || '-',
                         UnitCode: activeUnit,
                         isLive: true
                     }));
@@ -213,12 +220,25 @@
             container.innerHTML = `
                 <div class="op-card animate-in fade-in duration-500">
                     <div class="flex flex-col xl:flex-row justify-between items-start gap-6 mb-10">
+                        <!-- Bagian Kiri: Judul -->
                         <div>
                             <span class="text-[10px] font-bold uppercase text-sky-500 tracking-[0.2em] mb-1 block">
                                 ${sMap ? 'Live Database (Syncing with Workshop)' : 'Cloud Spreadsheet Storage'}
                             </span>
                             <h2 class="text-4xl font-black text-white tracking-tighter uppercase">${activeUnit}</h2>
+                            
+                            <!-- SEARCH & TOGGLE DITEMPATKAN DI SINI -->
+                            <div class="flex flex-col md:flex-row gap-2 mt-4">
+                                <input type="text" id="search-input" placeholder="Search AC, Order, or Desc..." 
+                                    value="${searchQuery}" oninput="updateSearch(this.value)" 
+                                    class="input-field w-full md:w-64">
+                                
+                                <button onclick="toggleReported()" class="px-4 py-2 rounded-xl text-[10px] font-bold border transition-all ${showOnlyReported ? 'bg-sky-600 border-sky-500 text-white' : 'bg-white/5 border-white/10 text-white'}">
+                                    ${showOnlyReported ? 'REPORTED ONLY' : 'SHOW ALL'}
+                                </button>
+                            </div>
                         </div>
+                        
                         <!-- Stats Grid Lengkap -->
                         <div class="grid grid-cols-3 md:grid-cols-6 gap-2 flex-1 w-full max-w-4xl">
                             <div class="stat-box"><span class="stat-val">${stats.total}</span><span class="stat-lab">Total</span></div>
@@ -444,6 +464,18 @@
             document.getElementById('s-order').value = item.OrderNo;
             document.getElementById('s-desc').value = item.Description;
             document.getElementById('s-status').value = item.Status;
+        }
+
+        function toggleReported() {
+            showOnlyReported = !showOnlyReported;
+            currentPage = 1; // Reset ke halaman 1 saat filter diubah
+            renderCards();
+        }
+        
+        function updateSearch(val) {
+            searchQuery = val;
+            currentPage = 1; // Reset ke halaman 1 saat search
+            renderCards();
         }
 
         init();
