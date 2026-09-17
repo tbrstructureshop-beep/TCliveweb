@@ -261,13 +261,13 @@
                                                 ${['Top Urgent', 'Highlighted', 'Open', 'Progress', 'Closed'].map(s => `<option ${item.Status === s ? 'selected' : ''}>${s}</option>`).join('')}
                                             </select>
                                         </td>
+                                        <td class="text-white/60">${item.Remark}</td>
                                         <td class="text-right">
                                             <div class="flex gap-4 justify-end opacity-0 group-hover:opacity-100 transition-all">
                                                 <button onclick="editOrder('${item.OrderNo}')" class="text-sky-500/50 hover:text-sky-400"><i data-lucide="edit-3" size="14"></i></button>
                                                 <button onclick="deleteOrder('${item.OrderNo}')" class="text-red-500/30 hover:text-red-500"><i data-lucide="trash-2" size="14"></i></button>
                                             </div>
                                         </td>
-                                        <td class="text-white/60">${item.Remark}</td>
                                     </tr>`).join('')}
                                 ${paginatedItems.length === 0 ? '<tr><td colspan="5" class="text-center py-20 opacity-20 italic tracking-widest font-mono">NODE_EMPTY // NO_ACTIVE_TASKS</td></tr>' : ''}
                             </tbody>
