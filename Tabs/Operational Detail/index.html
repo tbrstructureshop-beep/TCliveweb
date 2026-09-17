@@ -166,14 +166,26 @@
 
             // Ganti bagian mapping data di renderCards() pada Tabs/Operational Detail/index.html
             if (sMap) {
+                // Tentukan key report dan remark yang dinamis berdasarkan unit (TCR-1, TCR-2, atau TCR-5)
+                let reportKey = 'report_sm1';
+                let remarkKey = 'remark_sm1';
+
+                if (activeUnit === 'TCR-2') {
+                    reportKey = 'report_cs1';
+                    remarkKey = 'remark_cs1';
+                } else if (activeUnit === 'TCR-5') {
+                    reportKey = 'report_mw';
+                    remarkKey = 'remark_mw';
+                }
+
                 fullData = supabaseData
-                    .filter(item => item[sMap.filterCek] === 'red' && (item.report_sm1 === true || item.report_sm1 === '1' || item.report_sm1 === 'checked'))
+                    .filter(item => item[sMap.filterCek] === 'red' && (item[reportKey] === true || item[reportKey] === '1' || item[reportKey] === 'checked'))
                     .map(item => ({
                         ACReg: item.ac_reg || '-',
-                        OrderNo: item.order ? String(item.order) : '-', // Paksa jadi string agar aman
+                        OrderNo: item.order ? String(item.order) : '-', 
                         Description: item.description || '-',
-                        Status: formatStatus(item.status_sm1), // Ambil status_sm1 asli
-                        Remark: item.remark_sm1 || '-',       // Ambil remark_sm1 asli
+                        Status: formatStatus(item[sMap.colStatus]), // Otomatis membaca status_sm1, status_cs1, atau status_mw
+                        Remark: item[remarkKey] || '-',             // Otomatis membaca remark_sm1, remark_cs1, atau remark_mw
                         UnitCode: activeUnit,
                         isLive: true
                     }));
