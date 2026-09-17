@@ -307,20 +307,34 @@
         async function deleteOrder(orderNo) {
             const sMap = SUPABASE_UNITS[activeUnit];
             const res = await Swal.fire({ 
-                title: 'Purge Item?', text: sMap ? 'Remove assigned tag? (This item will return to unassigned list)' : 'Delete from storage?',
-                icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', background: '#151921', color: '#fff' 
+                title: 'Purge Item?', 
+                text: sMap ? 'Remove assigned tag? (This item will return to unassigned list)' : 'Delete from storage?',
+                icon: 'warning', 
+                showCancelButton: true, 
+                confirmButtonColor: '#ef4444', 
+                background: '#151921', 
+                color: '#fff' 
             });
             if(res.isConfirmed) {
                 loader.style.display = 'flex';
                 try {
                     if (sMap) {
-                        const payload = {}; payload[sMap.filterCek] = ''; // Kembalikan ke unassigned
-                        await supabaseClient.from('mdr_tracking').update(payload).eq('order', orderNo);
+                        const payload = {}; 
+                        payload[sMap.filterCek] = ''; // Mengosongkan filter di Supabase
+                        const { error } = await supabaseClient.from('mdr_tracking').update(payload).eq('order', orderNo);
+                        if (error) throw error;
                     } else {
-                        await API.post({ tab: TAB_NAME, action: 'delete', primaryId: orderNo });
+                        // Mengirim orderNo sebagai primaryId ke Spreadsheet
+                        const apiRes = await API.post({ tab: TAB_NAME, action: 'delete', primaryId: orderNo });
+                        if (apiRes && apiRes.status !== 'success') {
+                            throw new Error(apiRes.message || 'Failed to delete record from spreadsheet');
+                        }
                     }
                     await init();
-                } catch (e) { loader.style.display = 'none'; }
+                } catch (e) { 
+                    loader.style.display = 'none';
+                    Swal.fire({ title: 'Error', text: e.message, icon: 'error', background: '#151921', color: '#fff' });
+                }
             }
         }
 
