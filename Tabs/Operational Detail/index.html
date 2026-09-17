@@ -271,19 +271,21 @@
             try {
                 if (sMap) {
                     const payload = {};
-                    payload['status_sm1'] = status.toUpperCase(); // Update kolom status_sm1
+                    payload['status_sm1'] = status.toUpperCase();
                     
                     if (status.toUpperCase() === 'CLOSED') {
                         const now = new Date();
                         const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
                         payload['date_closed_sm1'] = `${now.getDate().toString().padStart(2,'0')}-${months[now.getMonth()]}-${now.getFullYear()}`;
                     } else {
-                        payload['date_closed_sm1'] = null; // Reset jika dibuka kembali
+                        payload['date_closed_sm1'] = null;
                     }
 
-                    // Update berdasarkan kolom 'order' (pastikan di-parse ke angka jika tipe data DB integer)
-                    const orderVal = isNaN(oNo) ? oNo : parseInt(oNo, 10);
-                    const { error } = await supabaseClient.from('mntp_tcr').update(payload).eq('order', orderVal);
+                    // Pastikan order dikonversi ke Number agar cocok dengan tipe data integer di Supabase
+                    const cleanOrder = Number(String(oNo).trim());
+                    if (isNaN(cleanOrder)) throw new Error("Invalid Order format: " + oNo);
+
+                    const { error } = await supabaseClient.from('mntp_tcr').update(payload).eq('order', cleanOrder);
                     if (error) throw error;
                 } else {
                     await API.post({ tab: TAB_NAME, action: 'update', primaryId: oNo, Status: status });
@@ -292,6 +294,37 @@
             } catch (e) { 
                 loader.style.display = 'none'; 
                 Swal.fire('Update Error', e.message, 'error');
+            }
+        }
+
+        async function deleteOrder(orderNo) {
+            const sMap = SUPABASE_UNITS[activeUnit];
+            const res = await Swal.fire({ 
+                title: 'Purge Item?', 
+                text: sMap ? 'Remove assigned tag? (This item will return to unassigned list)' : 'Delete from storage?',
+                icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', background: '#151921', color: '#fff' 
+            });
+            if(res.isConfirmed) {
+                loader.style.display = 'flex';
+                try {
+                    if (sMap) {
+                        const payload = {}; 
+                        payload[sMap.filterCek] = ''; // Mengosongkan filter cek_sm1 di Supabase
+                        
+                        const cleanOrder = Number(String(orderNo).trim());
+                        if (isNaN(cleanOrder)) throw new Error("Invalid Order format: " + orderNo);
+
+                        const { error } = await supabaseClient.from('mntp_tcr').update(payload).eq('order', cleanOrder);
+                        if (error) throw error;
+                    } else {
+                        const apiRes = await API.post({ tab: TAB_NAME, action: 'delete', primaryId: orderNo });
+                        if (apiRes && apiRes.status !== 'success') throw new Error(apiRes.message);
+                    }
+                    await init();
+                } catch (e) { 
+                    loader.style.display = 'none';
+                    Swal.fire({ title: 'Error', text: e.message, icon: 'error', background: '#151921', color: '#fff' });
+                }
             }
         }
 
@@ -311,40 +344,6 @@
                 closeModal(); await init();
                 Swal.fire({ icon: 'success', title: 'Authorization Success', timer: 1000, showConfirmButton: false, background: '#151921', color: '#fff' });
             } catch (e) { loader.style.display = 'none'; }
-        }
-
-        async function deleteOrder(orderNo) {
-            const sMap = SUPABASE_UNITS[activeUnit];
-            const res = await Swal.fire({ 
-                title: 'Purge Item?', 
-                text: sMap ? 'Remove assigned tag? (This item will return to unassigned list)' : 'Delete from storage?',
-                icon: 'warning', 
-                showCancelButton: true, 
-                confirmButtonColor: '#ef4444', 
-                background: '#151921', 
-                color: '#fff' 
-            });
-            if(res.isConfirmed) {
-                loader.style.display = 'flex';
-                try {
-                    if (sMap) {
-                        const payload = {}; 
-                        payload[sMap.filterCek] = ''; // Mengosongkan filter di Supabase
-                        const { error } = await supabaseClient.from('mdr_tracking').update(payload).eq('order', orderNo);
-                        if (error) throw error;
-                    } else {
-                        // Mengirim orderNo sebagai primaryId ke Spreadsheet
-                        const apiRes = await API.post({ tab: TAB_NAME, action: 'delete', primaryId: orderNo });
-                        if (apiRes && apiRes.status !== 'success') {
-                            throw new Error(apiRes.message || 'Failed to delete record from spreadsheet');
-                        }
-                    }
-                    await init();
-                } catch (e) { 
-                    loader.style.display = 'none';
-                    Swal.fire({ title: 'Error', text: e.message, icon: 'error', background: '#151921', color: '#fff' });
-                }
-            }
         }
 
         function switchUnit(uCode) { activeUnit = uCode; currentPage = 1; renderTabs(); renderCards(); }
