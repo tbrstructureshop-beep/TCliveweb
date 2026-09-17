@@ -247,10 +247,26 @@
                 const res = await API.post(payload);
                 if (res.status === 'success') {
                     closeModal();
-                    await init(); // Init menangani loader.none di akhir
-                    Swal.fire({ icon: 'success', title: 'Committed', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, background: '#151921', color: '#fff' });
+                    // 1. Munculkan notifikasi sukses langsung tanpa menunggu fetch ulang
+                    Swal.fire({ 
+                        icon: 'success', 
+                        title: 'Committed', 
+                        toast: true, 
+                        position: 'top-end', 
+                        showConfirmButton: false, 
+                        timer: 1500, 
+                        background: '#151921', 
+                        color: '#fff' 
+                    });
+                    // 2. Refresh data di background
+                    await init();
+                } else {
+                    throw new Error(res.message || 'Transaction failed');
                 }
-            } catch (err) { loader.style.display = 'none'; Swal.fire({ title: 'Error', text: err.message, icon: 'error' }); }
+            } catch (err) { 
+                loader.style.display = 'none'; 
+                Swal.fire({ title: 'Error', text: err.message, icon: 'error', background: '#151921', color: '#fff' }); 
+            }
         };
 
         function formatTime24(t) {
