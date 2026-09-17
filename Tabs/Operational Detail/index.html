@@ -281,11 +281,9 @@
                         payload['date_closed_sm1'] = null;
                     }
 
-                    // Pastikan order dikonversi ke Number agar cocok dengan tipe data integer di Supabase
-                    const cleanOrder = Number(String(oNo).trim());
-                    if (isNaN(cleanOrder)) throw new Error("Invalid Order format: " + oNo);
-
-                    const { error } = await supabaseClient.from('mntp_tcr').update(payload).eq('order', cleanOrder);
+                    // Kirim sebagai string/teks agar aman dari error parse order Supabase
+                    const orderStr = String(oNo).trim();
+                    const { error } = await supabaseClient.from('mntp_tcr').update(payload).eq('order', orderStr);
                     if (error) throw error;
                 } else {
                     await API.post({ tab: TAB_NAME, action: 'update', primaryId: oNo, Status: status });
@@ -311,10 +309,8 @@
                         const payload = {}; 
                         payload[sMap.filterCek] = ''; // Mengosongkan filter cek_sm1 di Supabase
                         
-                        const cleanOrder = Number(String(orderNo).trim());
-                        if (isNaN(cleanOrder)) throw new Error("Invalid Order format: " + orderNo);
-
-                        const { error } = await supabaseClient.from('mntp_tcr').update(payload).eq('order', cleanOrder);
+                        const orderStr = String(orderNo).trim();
+                        const { error } = await supabaseClient.from('mntp_tcr').update(payload).eq('order', orderStr);
                         if (error) throw error;
                     } else {
                         const apiRes = await API.post({ tab: TAB_NAME, action: 'delete', primaryId: orderNo });
@@ -340,10 +336,8 @@
                     const payload = {}; 
                     payload[sMap.colStatus] = status.toUpperCase();
                     
-                    const cleanOrder = Number(String(orderNo).trim());
-                    if (isNaN(cleanOrder)) throw new Error("Invalid Order format: " + orderNo);
-
-                    const { error } = await supabaseClient.from('mntp_tcr').update(payload).eq('order', cleanOrder);
+                    const orderStr = String(orderNo).trim();
+                    const { error } = await supabaseClient.from('mntp_tcr').update(payload).eq('order', orderStr);
                     if (error) throw error;
                 } else if (currentMode === 'bulk') {
                     for(let d of bulkData) {
@@ -390,14 +384,23 @@
             bulkData = rows.map(r => { const cols = r.split('\t'); return { ac: cols[0] || '', order: cols[1] || '', desc: cols[2] || '' }; });
             Swal.fire('Buffer Full', `${bulkData.length} entries parsed`, 'info');
         }
+        
         function editOrder(orderNo) {
             const sMap = SUPABASE_UNITS[activeUnit];
             let item;
             if (sMap) {
-                const raw = supabaseData.find(d => d.order === orderNo);
-                item = { UnitCode: activeUnit, OrderNo: raw.order, ACReg: raw.ac_reg, Description: raw.description, Status: formatStatus(raw[sMap.colStatus]) };
+                // Cocokkan secara fleksibel (mengabaikan perbedaan tipe string/number)
+                const raw = supabaseData.find(d => String(d.order) === String(orderNo));
+                if (!raw) return;
+                item = { 
+                    UnitCode: activeUnit, 
+                    OrderNo: raw.order, 
+                    ACReg: raw.ac_reg, 
+                    Description: raw.description, 
+                    Status: formatStatus(raw[sMap.colStatus]) 
+                };
             } else {
-                item = rawOpData.find(d => d.OrderNo === orderNo);
+                item = rawOpData.find(d => String(d.OrderNo) === String(orderNo));
             }
             if(!item) return;
             openModal('edit');
