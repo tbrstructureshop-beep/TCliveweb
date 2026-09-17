@@ -100,6 +100,10 @@
                             <option>Top Urgent</option><option>Highlighted</option><option>Open</option><option>Progress</option><option>Closed</option>
                         </select>
                     </div>
+                    <div class="col-span-2">
+                        <label class="text-[10px] font-bold uppercase mb-1 block">Remark Editor</label>
+                        <input id="s-remark" class="input-field w-full" placeholder="Enter custom remark...">
+                    </div>
                 </div>
             </div>
             <div class="p-6 border-t border-white/5">
@@ -393,15 +397,23 @@
             const sMap = SUPABASE_UNITS[unit];
             const orderNo = document.getElementById('s-order').value;
             const status = document.getElementById('s-status').value;
+            const remark = document.getElementById('s-remark').value; // Ambil nilai remark
             
             try {
-                if (sMap && currentMode === 'edit') {
+                if (sMap && (currentMode === 'edit' || currentMode === 'single')) {
                     const payload = {}; 
                     payload[sMap.colStatus] = status.toUpperCase();
                     
+                    // Tentukan key remark dinamis
+                    const rKey = (unit === 'TCR-2') ? 'remark_cs1' : 
+                                 (unit === 'TCR-5') ? 'remark_mw' : 
+                                 (unit === 'TCR-3') ? 'remark_sm4' : 'remark_sm1';
+                    
+                    payload[rKey] = remark; // Simpan remark
+                    
                     const targetRow = supabaseData.find(d => String(d.order) === String(orderNo));
                     if (!targetRow || !targetRow.id) throw new Error("Row ID not found for order: " + orderNo);
-
+        
                     const { error } = await supabaseClient.from('mntp_tcr').update(payload).eq('id', targetRow.id);
                     if (error) throw error;
                 } else if (currentMode === 'bulk') {
@@ -465,19 +477,26 @@
             const sMap = SUPABASE_UNITS[activeUnit];
             let item;
             if (sMap) {
-                // Cocokkan secara fleksibel (mengabaikan perbedaan tipe string/number)
                 const raw = supabaseData.find(d => String(d.order) === String(orderNo));
                 if (!raw) return;
+                
+                // Tentukan key remark dinamis
+                const rKey = (activeUnit === 'TCR-2') ? 'remark_cs1' : 
+                             (activeUnit === 'TCR-5') ? 'remark_mw' : 
+                             (activeUnit === 'TCR-3') ? 'remark_sm4' : 'remark_sm1';
+        
                 item = { 
                     UnitCode: activeUnit, 
                     OrderNo: raw.order, 
                     ACReg: raw.ac_reg, 
                     Description: raw.description, 
-                    Status: formatStatus(raw[sMap.colStatus]) 
+                    Status: formatStatus(raw[sMap.colStatus]),
+                    Remark: raw[rKey] || '' // Ambil remark dari database
                 };
             } else {
                 item = rawOpData.find(d => String(d.OrderNo) === String(orderNo));
             }
+            
             if(!item) return;
             openModal('edit');
             document.getElementById('UnitCode').value = item.UnitCode;
@@ -485,6 +504,7 @@
             document.getElementById('s-order').value = item.OrderNo;
             document.getElementById('s-desc').value = item.Description;
             document.getElementById('s-status').value = item.Status;
+            document.getElementById('s-remark').value = item.Remark; // Isi input remark
         }
 
         function toggleReported() {
