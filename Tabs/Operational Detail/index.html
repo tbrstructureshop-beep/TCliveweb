@@ -281,9 +281,12 @@
                         payload['date_closed_sm1'] = null;
                     }
 
-                    // Kirim sebagai string/teks agar aman dari error parse order Supabase
-                    const orderStr = String(oNo).trim();
-                    const { error } = await supabaseClient.from('mntp_tcr').update(payload).eq('order', orderStr);
+                    // Cari 'id' baris berdasarkan order-nya terlebih dahulu dari data yang sudah disync
+                    const targetRow = supabaseData.find(d => String(d.order) === String(oNo));
+                    if (!targetRow || !targetRow.id) throw new Error("Row ID not found for order: " + oNo);
+
+                    // Update menggunakan kolom 'id' (Primary Key) untuk menghindari masalah reserved word 'order'
+                    const { error } = await supabaseClient.from('mntp_tcr').update(payload).eq('id', targetRow.id);
                     if (error) throw error;
                 } else {
                     await API.post({ tab: TAB_NAME, action: 'update', primaryId: oNo, Status: status });
@@ -309,8 +312,10 @@
                         const payload = {}; 
                         payload[sMap.filterCek] = ''; // Mengosongkan filter cek_sm1 di Supabase
                         
-                        const orderStr = String(orderNo).trim();
-                        const { error } = await supabaseClient.from('mntp_tcr').update(payload).eq('order', orderStr);
+                        const targetRow = supabaseData.find(d => String(d.order) === String(orderNo));
+                        if (!targetRow || !targetRow.id) throw new Error("Row ID not found for order: " + orderNo);
+
+                        const { error } = await supabaseClient.from('mntp_tcr').update(payload).eq('id', targetRow.id);
                         if (error) throw error;
                     } else {
                         const apiRes = await API.post({ tab: TAB_NAME, action: 'delete', primaryId: orderNo });
@@ -336,8 +341,10 @@
                     const payload = {}; 
                     payload[sMap.colStatus] = status.toUpperCase();
                     
-                    const orderStr = String(orderNo).trim();
-                    const { error } = await supabaseClient.from('mntp_tcr').update(payload).eq('order', orderStr);
+                    const targetRow = supabaseData.find(d => String(d.order) === String(orderNo));
+                    if (!targetRow || !targetRow.id) throw new Error("Row ID not found for order: " + orderNo);
+
+                    const { error } = await supabaseClient.from('mntp_tcr').update(payload).eq('id', targetRow.id);
                     if (error) throw error;
                 } else if (currentMode === 'bulk') {
                     for(let d of bulkData) {
