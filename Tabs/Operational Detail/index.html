@@ -170,15 +170,13 @@
                     .filter(item => item[sMap.filterCek] === 'red' && (item.report_sm1 === true || item.report_sm1 === '1' || item.report_sm1 === 'checked'))
                     .map(item => ({
                         ACReg: item.ac_reg || '-',
-                        OrderNo: item.order || '-',
+                        OrderNo: item.order ? String(item.order) : '-', // Paksa jadi string agar aman
                         Description: item.description || '-',
-                        Status: formatStatus(item[sMap.colStatus]),
-                        Remark: item.remark_sm1 || '-',
+                        Status: formatStatus(item.status_sm1), // Ambil status_sm1 asli
+                        Remark: item.remark_sm1 || '-',       // Ambil remark_sm1 asli
                         UnitCode: activeUnit,
                         isLive: true
                     }));
-            } else {
-                fullData = rawOpData.filter(i => i.UnitCode === activeUnit);
             }
 
             fullData.sort((a, b) => PRIORITY[a.Status] - PRIORITY[b.Status]);
@@ -273,13 +271,19 @@
             try {
                 if (sMap) {
                     const payload = {};
-                    payload[sMap.colStatus] = status.toUpperCase();
+                    payload['status_sm1'] = status.toUpperCase(); // Update kolom status_sm1
+                    
                     if (status.toUpperCase() === 'CLOSED') {
                         const now = new Date();
                         const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-                        payload[sMap.colDate] = `${now.getDate().toString().padStart(2,'0')}-${months[now.getMonth()]}-${now.getFullYear()}`;
+                        payload['date_closed_sm1'] = `${now.getDate().toString().padStart(2,'0')}-${months[now.getMonth()]}-${now.getFullYear()}`;
+                    } else {
+                        payload['date_closed_sm1'] = null; // Reset jika dibuka kembali
                     }
-                    const { error } = await supabaseClient.from('mntp_tcr').update(payload).eq('order', oNo);
+
+                    // Update berdasarkan kolom 'order' (pastikan di-parse ke angka jika tipe data DB integer)
+                    const orderVal = isNaN(oNo) ? oNo : parseInt(oNo, 10);
+                    const { error } = await supabaseClient.from('mntp_tcr').update(payload).eq('order', orderVal);
                     if (error) throw error;
                 } else {
                     await API.post({ tab: TAB_NAME, action: 'update', primaryId: oNo, Status: status });
