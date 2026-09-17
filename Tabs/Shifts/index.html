@@ -180,7 +180,7 @@
                                             <span class="text-xs font-bold text-white/80 uppercase">${s.ShiftCategory}</span>
                                             <div class="flex gap-2 opacity-0 group-hover/item:opacity-100 transition-all">
                                                 <button onclick="editData('${s.UnitCode}', '${s.ShiftCategory}')" class="text-sky-500/40 hover:text-sky-400"><i data-lucide="edit-3" size="14"></i></button>
-                                                <button onclick="deleteData('${s.Timestamp}')" class="text-red-500/40 hover:text-red-400"><i data-lucide="trash-2" size="14"></i></button>
+                                                <button onclick="deleteData('${s.UnitCode}', '${s.ShiftCategory}')" class="text-red-500/40 hover:text-red-400"><i data-lucide="trash-2" size="14"></i></button>
                                             </div>
                                         </div>
                                         <div class="grid grid-cols-2 gap-4 text-white mb-3">
@@ -245,15 +245,10 @@
             } catch (err) { loader.style.display = 'none'; Swal.fire({ title: 'Error', text: err.message, icon: 'error' }); }
         };
 
-        async function deleteData(ts) {
-            // Validasi pencegahan jika ts undefined (kolom Timestamp tidak ada/kosong)
-            if (!ts || ts === 'undefined') {
-                Swal.fire({ title: 'Error', text: 'Data ini tidak memiliki Timestamp (ID Unik). Silakan cek database Sheets Anda.', icon: 'error', background: '#151921', color: '#fff' });
-                return;
-            }
-        
+        async function deleteData(unitCode, shiftCategory) {
             const res = await Swal.fire({ 
                 title: 'Delete Shift?', 
+                text: `Hapus shift ${shiftCategory} untuk unit ${unitCode}?`,
                 icon: 'warning', 
                 showCancelButton: true, 
                 confirmButtonColor: '#ef4444', 
@@ -264,7 +259,15 @@
             if (res.isConfirmed) {
                 loader.style.display = 'flex';
                 try {
-                    const apiRes = await API.post({ tab: 'SHIFTS', action: 'delete', primaryId: ts });
+                    // Mengirimkan kombinasi UnitCode dan ShiftCategory sebagai primaryId 
+                    // dipisahkan dengan delimiter (contoh: "TCP-10|Morning Shift")
+                    const uniqueKey = `${unitCode}|${shiftCategory}`;
+                    
+                    const apiRes = await API.post({ 
+                        tab: 'SHIFTS', 
+                        action: 'delete', 
+                        primaryId: uniqueKey 
+                    });
                     
                     if (apiRes.status === 'success') {
                         await init(); // Refresh data
@@ -275,7 +278,6 @@
                 } catch (e) { 
                     Swal.fire({ title: 'Error', text: e.message, icon: 'error', background: '#151921', color: '#fff' }); 
                 } finally {
-                    // Pastikan loader selalu mati, baik saat sukses maupun error
                     loader.style.display = 'none'; 
                 }
             }
