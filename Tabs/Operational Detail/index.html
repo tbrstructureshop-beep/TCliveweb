@@ -257,8 +257,9 @@
                                         <td class="font-mono text-sky-400">${item.OrderNo}</td>
                                         <td class="text-white/60 leading-tight pr-4">${item.Description}</td>
                                         <td>
-                                            <select onchange="handleUpdateStatus('${activeUnit}', '${item.OrderNo}', this.value)" class="bg-transparent border-none text-[10px] font-bold outline-none cursor-pointer text-sky-500">
-                                                ${['Top Urgent', 'Highlighted', 'Open', 'Progress', 'Closed'].map(s => `<option ${item.Status === s ? 'selected' : ''}>${s}</option>`).join('')}
+                                            <select onchange="handleUpdateStatus('${activeUnit}', '${item.OrderNo}', this.value)" 
+                                                class="px-2.5 py-1 rounded-lg text-[10px] font-extrabold uppercase tracking-wider outline-none cursor-pointer transition-all border border-white/5 ${getStatusBadgeClass(item.Status)}">
+                                                ${['Top Urgent', 'Highlighted', 'Open', 'Progress', 'Closed'].map(s => `<option value="${s}" class="bg-[#151921] text-white">${s}</option>`).join('')}
                                             </select>
                                         </td>
                                         <td class="text-white/60">${item.Remark}</td>
@@ -388,6 +389,16 @@
         function updateRowsPerPage(val) { rowsPerPage = val; currentPage = 1; renderCards(); }
         function changePage(dir) { currentPage += dir; renderCards(); }
         function formatStatus(s) { if (!s) return 'Open'; return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase(); }
+        function getStatusBadgeClass(status) {
+            switch(status) {
+                case 'Top Urgent': return 'bg-red-500/15 text-red-500 border-red-500/30';
+                case 'Highlighted': return 'bg-purple-500/15 text-purple-400 border-purple-500/30';
+                case 'Open': return 'bg-blue-500/15 text-blue-400 border-blue-500/30';
+                case 'Progress': return 'bg-yellow-500/15 text-yellow-400 border-yellow-500/30';
+                case 'Closed': return 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30';
+                default: return 'bg-white/5 text-white border-white/10';
+            }
+        }
         
         function openModal(mode) {
             currentMode = mode; 
