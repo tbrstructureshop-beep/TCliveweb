@@ -172,8 +172,8 @@
             let fullData = [];
             const sMap = SUPABASE_UNITS[activeUnit];
 
-            // Di dalam renderCards(), ganti logika fullData menjadi:
             if (sMap) {
+                // --- LOGIKA SUPABASE (TCR 1-5) ---
                 let reportKey = 'report_sm1';
                 let remarkKey = 'remark_sm1';
             
@@ -186,10 +186,11 @@
                 } else if (activeUnit === 'TCR-3') {
                     reportKey = 'report_sm4';
                     remarkKey = 'remark_sm4';
-                } else if (activeUnit === 'TCR-4') { // Tambahkan ini
+                } else if (activeUnit === 'TCR-4') {
                     reportKey = 'report_cs4';
                     remarkKey = 'remark_cs4';
-                }  
+                }
+            
                 fullData = supabaseData
                     .filter(item => {
                         const isReported = (item[reportKey] === true || item[reportKey] === '1' || item[reportKey] === 'checked');
@@ -211,6 +212,22 @@
                         Remark: item[remarkKey] || '-',
                         UnitCode: activeUnit,
                         isLive: true
+                    }));
+            } else {
+                // --- LOGIKA GOOGLE SHEET (TCP-10, dll) ---
+                fullData = rawOpData
+                    .filter(item => {
+                        const matchUnit = item.UnitCode === activeUnit;
+                        const matchSearch = (
+                            (item.ACReg || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+                            (String(item.OrderNo) || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+                            (item.Description || '').toLowerCase().includes(searchQuery.toLowerCase())
+                        );
+                        return matchUnit && matchSearch;
+                    })
+                    .map(item => ({
+                        ...item,
+                        Status: formatStatus(item.Status)
                     }));
             }
 
@@ -323,6 +340,7 @@
             const sMap = SUPABASE_UNITS[uCode];
             try {
                 if (sMap) {
+                    // --- LOGIKA SUPABASE (TCR 1-5) ---
                     const payload = {};
                     // Gunakan pemetaan key berdasarkan unit
                     const statusKey = (uCode === 'TCR-4') ? 'status_cs4' : 
@@ -351,7 +369,13 @@
                     const { error } = await supabaseClient.from('mntp_tcr').update(payload).eq('id', targetRow.id);
                     if (error) throw error;
                 } else {
-                    await API.post({ tab: TAB_NAME, action: 'update', primaryId: oNo, Status: status });
+                    // --- LOGIKA GOOGLE SHEET (Unit lainnya) ---
+                    await API.post({ 
+                        tab: TAB_NAME, 
+                        action: 'update', 
+                        primaryId: oNo, 
+                        Status: status 
+                    });
                 }
                 await init();
             } catch (e) { 
@@ -367,12 +391,14 @@
                 text: sMap ? 'Remove assigned tag? (This item will return to unassigned list)' : 'Delete from storage?',
                 icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', background: '#151921', color: '#fff' 
             });
+            
             if(res.isConfirmed) {
                 loader.style.display = 'flex';
                 try {
                     if (sMap) {
+                        // --- LOGIKA SUPABASE (TCR 1-5) ---
                         const payload = {}; 
-                        payload[sMap.filterCek] = ''; // Mengosongkan filter cek_sm1 di Supabase
+                        payload[sMap.filterCek] = ''; // Mengosongkan filter (misal: cek_sm4) di Supabase
                         
                         const targetRow = supabaseData.find(d => String(d.order) === String(orderNo));
                         if (!targetRow || !targetRow.id) throw new Error("Row ID not found for order: " + orderNo);
@@ -380,17 +406,31 @@
                         const { error } = await supabaseClient.from('mntp_tcr').update(payload).eq('id', targetRow.id);
                         if (error) throw error;
                     } else {
-                        const apiRes = await API.post({ tab: TAB_NAME, action: 'delete', primaryId: orderNo });
-                        if (apiRes && apiRes.status !== 'success') throw new Error(apiRes.message);
+                        // --- LOGIKA GOOGLE SHEET (Unit lainnya seperti TCP-10) ---
+                        const apiRes = await API.post({ 
+                            tab: TAB_NAME, 
+                            action: 'delete', 
+                            primaryId: orderNo 
+                        });
+                        
+                        if (apiRes && apiRes.status !== 'success') {
+                            throw new Error(apiRes.message || "Failed to delete from storage");
+                        }
                     }
                     await init();
                 } catch (e) { 
                     loader.style.display = 'none';
-                    Swal.fire({ title: 'Error', text: e.message, icon: 'error', background: '#151921', color: '#fff' });
+                    Swal.fire({ 
+                        title: 'Error', 
+                        text: e.message, 
+                        icon: 'error', 
+                        background: '#151921', 
+                        color: '#fff' 
+                    });
                 }
             }
         }
-
+        
         async function submitData() {
             loader.style.display = 'flex';
             const unit = document.getElementById('UnitCode').value;
