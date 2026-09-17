@@ -172,6 +172,11 @@
             let fullData = [];
             const sMap = SUPABASE_UNITS[activeUnit];
 
+            // AMBIL DATA DESKRIPSI & LEADER DARI unitList
+            const activeUnitData = unitList.find(u => u.UnitCode === activeUnit) || {};
+            const unitDesc = activeUnitData.UnitDesc || 'No Description';
+            const unitLeader = activeUnitData.UnitLeader || 'Unassigned';
+
             if (sMap) {
                 // --- LOGIKA SUPABASE (TCR 1-5) ---
                 let reportKey = 'report_sm1';
@@ -253,15 +258,25 @@
             container.innerHTML = `
                 <div class="op-card animate-in fade-in duration-500">
                     <div class="flex flex-col xl:flex-row justify-between items-start gap-6 mb-10">
-                        <!-- Bagian Kiri: Judul -->
+                        <!-- Bagian Kiri: Judul & Informasi Unit -->
                         <div>
                             <span class="text-[10px] font-bold uppercase text-sky-500 tracking-[0.2em] mb-1 block">
                                 ${sMap ? 'Live Database (Syncing with Workshop)' : 'Cloud Spreadsheet Storage'}
                             </span>
-                            <h2 class="text-4xl font-black text-white tracking-tighter uppercase">${activeUnit}</h2>
+                            <h2 class="text-4xl font-black text-white tracking-tighter uppercase leading-none">${activeUnit}</h2>
+                            
+                            <!-- DESKRIPSI & LEADER MUNCUL DI SINI -->
+                            <div class="flex flex-wrap items-center gap-3 mt-3">
+                                <span class="bg-white/5 border border-white/10 text-white/80 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-widest">
+                                    ${unitDesc}
+                                </span>
+                                <span class="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-sky-400">
+                                    <i data-lucide="shield-check" class="w-3 h-3"></i> ${unitLeader}
+                                </span>
+                            </div>
                             
                             <!-- SEARCH & TOGGLE DITEMPATKAN DI SINI -->
-                            <div class="flex flex-col md:flex-row gap-2 mt-4">
+                            <div class="flex flex-col md:flex-row gap-2 mt-5">
                                 <input type="text" id="search-input" placeholder="Search AC, Order, or Desc..." 
                                     value="${searchQuery}" oninput="updateSearch(this.value)" 
                                     class="input-field w-full md:w-64">
