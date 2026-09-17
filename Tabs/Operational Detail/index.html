@@ -116,7 +116,7 @@
         let currentPage = 1, rowsPerPage = 10;
         let rawOpData = [], supabaseData = [], unitList = [], activeUnit = null, currentMode = 'single', bulkData = [];
 
-        const PRIORITY = { 'TOP URGENT': 0, 'HIGHLIGHTED': 1, 'OPEN': 2, 'PROGRESS': 3, 'CLOSED': 4 };
+        const PRIORITY = { 'Top Urgent': 0, 'Highlighted': 1, 'Open': 2, 'Progress': 3, 'Closed': 4 };
 
         const S_URL = 'https://tskcxblanrtvzlctpcyd.supabase.co';
         const S_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRza2N4YmxhbnJ0dnpsY3RwY3lkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcwNjI0MjAsImV4cCI6MjA4MjYzODQyMH0.6epAPJdzgxe-pmG-rVtosdbg-dwF5lND6Xd18VgUeU0';
@@ -257,9 +257,8 @@
                                         <td class="font-mono text-sky-400">${item.OrderNo}</td>
                                         <td class="text-white/60 leading-tight pr-4">${item.Description}</td>
                                         <td>
-                                            <select onchange="handleUpdateStatus('${activeUnit}', '${item.OrderNo}', this.value)" 
-                                                class="px-2.5 py-1 rounded-lg text-[10px] font-extrabold uppercase tracking-wider outline-none cursor-pointer transition-all border border-white/5 ${getStatusBadgeClass(item.Status)}">
-                                                ${['Top Urgent', 'Highlighted', 'Open', 'Progress', 'Closed'].map(s => `<option value="${s}" class="bg-[#151921] text-white">${s}</option>`).join('')}
+                                            <select onchange="handleUpdateStatus('${activeUnit}', '${item.OrderNo}', this.value)" class="bg-transparent border-none text-[10px] font-bold outline-none cursor-pointer text-sky-500">
+                                                ${['Top Urgent', 'Highlighted', 'Open', 'Progress', 'Closed'].map(s => `<option ${item.Status === s ? 'selected' : ''}>${s}</option>`).join('')}
                                             </select>
                                         </td>
                                         <td class="text-white/60">${item.Remark}</td>
@@ -388,34 +387,7 @@
         function switchUnit(uCode) { activeUnit = uCode; currentPage = 1; renderTabs(); renderCards(); }
         function updateRowsPerPage(val) { rowsPerPage = val; currentPage = 1; renderCards(); }
         function changePage(dir) { currentPage += dir; renderCards(); }
-        function formatStatus(s) {
-            if (!s) return 'OPEN';
-            const clean = s.trim().toUpperCase();
-            if (clean.includes('TOP') || clean.includes('URGENT')) return 'TOP URGENT';
-            if (clean.includes('HIGHLIGHT')) return 'HIGHLIGHTED';
-            if (clean.includes('OPEN')) return 'OPEN';
-            if (clean.includes('PROG')) return 'PROGRESS';
-            if (clean.includes('CLOSE') || clean.includes('DONE')) return 'CLOSED';
-            return clean;
-        }
-
-        function getStatusBadgeClass(status) {
-            const normalized = (status || '').trim().toUpperCase();
-            switch(normalized) {
-                case 'TOP URGENT': 
-                    return 'bg-red-500/15 text-red-500 border-red-500/30';
-                case 'HIGHLIGHTED': 
-                    return 'bg-purple-500/15 text-purple-400 border-purple-500/30';
-                case 'OPEN': 
-                    return 'bg-blue-500/15 text-blue-400 border-blue-500/30';
-                case 'PROGRESS': 
-                    return 'bg-yellow-500/15 text-yellow-400 border-yellow-500/30';
-                case 'CLOSED': 
-                    return 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30';
-                default: 
-                    return 'bg-white/5 text-white border-white/10';
-            }
-        }
+        function formatStatus(s) { if (!s) return 'Open'; return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase(); }
         
         function openModal(mode) {
             currentMode = mode; 
