@@ -74,7 +74,7 @@
         <form id="register-form" class="glass-panel p-8 space-y-4 hidden">
             <div class="grid grid-cols-2 gap-3">
                 <select id="regUnit" required class="input-field text-xs"></select>
-                <select id="regShift" required class="input-field text-xs"></select>
+                <select id="regCrew" required class="input-field text-xs"></select>
             </div>
             <select id="regClass" required class="input-field text-xs">
                 <option value="" disabled selected>SELECT CLASS</option>
@@ -181,9 +181,21 @@
                 masterData.attendance = att.data;
                 
                 document.getElementById('regUnit').innerHTML = u.data.map(u => `<option value="${u.UnitCode}">${u.UnitCode}</option>`).join('');
+                // Cari baris ini di dalam fungsi init():
                 document.getElementById('regUnit').onchange = (e) => {
-                    const filtered = s.data.filter(sh => sh.UnitCode === e.target.value);
-                    document.getElementById('regShift').innerHTML = filtered.map(sh => `<option value="${sh.ShiftCategory}">${sh.ShiftCategory}</option>`).join('');
+                    // Filter shift berdasarkan unit yang dipilih dan pastikan kolom Crew tidak kosong
+                    const filtered = s.data.filter(sh => sh.UnitCode === e.target.value && sh.Crew);
+                    
+                    // Ambil daftar crew unik (menghindari duplikasi jika ada beberapa shift dengan crew yang sama)
+                    const uniqueCrews = [...new Set(filtered.map(sh => sh.Crew.trim()))];
+                
+                    if (uniqueCrews.length > 0) {
+                        document.getElementById('regCrew').innerHTML = uniqueCrews
+                            .map(crew => `<option value="${crew}">${crew}</option>`)
+                            .join('');
+                    } else {
+                        document.getElementById('regCrew').innerHTML = `<option value="" disabled selected>NO CREW ASSIGNED</option>`;
+                    }
                 };
                 document.getElementById('regUnit').dispatchEvent(new Event('change'));
 
@@ -352,9 +364,10 @@
             e.preventDefault();
             loader.style.display = 'flex';
             const payload = {
-                tab: 'USER', action: 'add',
+                tab: 'USER', 
+                action: 'add',
                 UnitCode: document.getElementById('regUnit').value,
-                Shift: document.getElementById('regShift').value,
+                Crew: document.getElementById('regCrew').value, // ✅ PERBAIKAN DI SINI (Sebelumnya regShift)
                 Class: document.getElementById('regClass').value,
                 EmployeeId: document.getElementById('regId').value,
                 Name: document.getElementById('regName').value,
