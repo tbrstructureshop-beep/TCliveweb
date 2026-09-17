@@ -284,11 +284,25 @@
             const now = new Date();
             const timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
             
-            // Format tanggal lokal (YYYY-MM-DD)
             const year = now.getFullYear();
             const month = String(now.getMonth() + 1).padStart(2, '0');
             const day = String(now.getDate()).padStart(2, '0');
             const dateStr = `${year}-${month}-${day}`;
+
+            // ✅ JIKA ADA ABSEN HARI SEBELUMNYA TANPA F4, OTOMATIS ISI DENGAN '-'
+            if (type === 'F1') {
+                const pastUnclosed = masterData.attendance.find(r => 
+                    r.EmployeeId === currentUser.EmployeeId && r.Date < dateStr && (!r.F4 || r.F4 === '')
+                );
+                if (pastUnclosed) {
+                    await API.post({
+                        tab: 'ATTENDANCE_RECORD',
+                        action: 'update',
+                        primaryId: `${currentUser.EmployeeId}|${pastUnclosed.Date}`,
+                        F4: '-'
+                    });
+                }
+            }
 
             const payload = {
                 tab: 'ATTENDANCE_RECORD',
@@ -302,7 +316,6 @@
             const todayRec = masterData.attendance.find(r => r.Date === dateStr && r.EmployeeId === currentUser.EmployeeId);
             if (todayRec) {
                 payload.action = 'update';
-                // ✅ WAJIB INI (Jangan pakai todayRec.Timestamp):
                 payload.primaryId = `${currentUser.EmployeeId}|${dateStr}`;
             }
 
@@ -314,7 +327,6 @@
                     showMainInterface();
                     Swal.fire({ icon: 'success', title: 'Committed', text: `${type} at ${timeStr}`, background: '#151921', color: '#fff' });
                 } else {
-                    // Agar jika gagal, ada pesan error muncul (bukan diam saja)
                     throw new Error(res.message || 'Failed to update attendance');
                 }
             } catch (e) { 
