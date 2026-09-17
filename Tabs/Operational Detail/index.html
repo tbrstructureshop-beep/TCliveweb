@@ -389,14 +389,17 @@
         function updateRowsPerPage(val) { rowsPerPage = val; currentPage = 1; renderCards(); }
         function changePage(dir) { currentPage += dir; renderCards(); }
         function formatStatus(s) {
-            if (!s) return 'Open';
+            if (!s || typeof s !== 'string') return 'Open';
             const clean = s.trim().toLowerCase();
-            if (clean === 'top urgent' || clean === 'top_urgent') return 'Top Urgent';
-            if (clean === 'highlighted') return 'Highlighted';
+            
+            if (clean === 'top urgent' || clean === 'top_urgent' || clean === 'urgent') return 'Top Urgent';
+            if (clean === 'highlighted' || clean === 'high') return 'Highlighted';
             if (clean === 'open') return 'Open';
-            if (clean === 'progress') return 'Progress';
-            if (clean === 'closed') return 'Closed';
-            return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+            if (clean === 'progress' || clean === 'in_progress') return 'Progress';
+            if (clean === 'closed' || clean === 'done') return 'Closed';
+            
+            // Jika status dari database tidak dikenali sama sekali, kembalikan 'Open' (Jangan Top Urgent!)
+            return 'Open';
         }
 
         function getStatusBadgeClass(status) {
