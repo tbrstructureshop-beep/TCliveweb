@@ -59,10 +59,8 @@
             <div class="w-full pt-4 border-t border-white/5 flex items-center justify-between">
                 <div class="text-left">
                     <p id="user-name" class="text-white font-bold text-sm"></p>
-                    <p id="user-job" class="text-[10px] opacity-50 uppercase"></p>
+                    <p id="user-job" class="text-[10px] text-sky-400 font-semibold uppercase tracking-wider"></p>
                 </div>
-                <!-- TOMBOL LOGOUT SEKARANG MENGEMBALIKAN KE LAYAR UTAMA -->
-                <button onclick="logout()" class="p-2 bg-white/5 rounded-lg text-red-400 hover:bg-red-500 hover:text-white transition"><i data-lucide="log-out" size="16"></i></button>
             </div>
         </div>
 
@@ -184,15 +182,15 @@
             container.innerHTML = userRecords.map(r => {
                 const outDisplay = r.F4 || (r.Date < todayStr ? '-' : '--:--');
                 return `
-                <div class="history-card p-3 rounded-xl">
+                <div class="history-card p-3 rounded-xl border border-white/10">
                     <div class="flex justify-between items-center mb-2">
-                        <span class="text-[10px] font-mono text-sky-500 font-bold">${r.Date}</span>
-                        <span class="text-[8px] px-2 py-0.5 rounded bg-white/5 border border-white/5 font-bold uppercase ${r.StatusApproval === 'Approved' ? 'text-green-500' : 'text-amber-500'}">${r.StatusApproval || 'Pending'}</span>
+                        <span class="text-[11px] font-mono text-sky-400 font-bold">${r.Date}</span>
+                        <span class="text-[9px] px-2 py-0.5 rounded bg-white/5 border border-white/10 font-bold uppercase ${r.StatusApproval === 'Approved' ? 'text-green-400' : 'text-amber-400'}">${r.StatusApproval || 'Pending'}</span>
                     </div>
                     <div class="grid grid-cols-3 gap-2">
-                        <div class="bg-black/20 p-1.5 rounded-lg text-center"><span class="text-[7px] uppercase opacity-40 block">In</span><span class="text-[10px] font-mono">${r.F1 || '--:--'}</span></div>
-                        <div class="bg-black/20 p-1.5 rounded-lg text-center"><span class="text-[7px] uppercase opacity-40 block">Out</span><span class="text-[10px] font-mono">${outDisplay}</span></div>
-                        <div class="bg-black/20 p-1.5 rounded-lg text-center overflow-hidden"><span class="text-[7px] uppercase opacity-40 block">Log</span><span class="text-[8px] font-bold text-sky-400 uppercase truncate block">${r.Leave || 'Present'}</span></div>
+                        <div class="bg-black/30 p-2 rounded-lg text-center"><span class="text-[8px] uppercase tracking-wider text-white/70 font-bold block mb-1">In</span><span class="text-xs font-mono text-white font-bold">${r.F1 || '--:--'}</span></div>
+                        <div class="bg-black/30 p-2 rounded-lg text-center"><span class="text-[8px] uppercase tracking-wider text-white/70 font-bold block mb-1">Out</span><span class="text-xs font-mono text-white font-bold">${outDisplay}</span></div>
+                        <div class="bg-black/30 p-2 rounded-lg text-center overflow-hidden"><span class="text-[8px] uppercase tracking-wider text-white/70 font-bold block mb-1">Log</span><span class="text-[9px] font-extrabold text-sky-400 uppercase truncate block">${r.Leave || 'Present'}</span></div>
                     </div>
                 </div>`;
             }).join('');
