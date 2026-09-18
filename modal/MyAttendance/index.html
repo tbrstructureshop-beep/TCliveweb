@@ -11,7 +11,7 @@
     
     <style>
         :root { --bg: #151921; --panel: #1c222c; --border: rgba(255, 255, 255, 0.05); --accent: #0ea5e9; --text-main: #94a3b8; --text-bold: #ffffff; }
-        .body { background: transparent; color: var(--text-main); font-family: 'Inter', sans-serif; margin: 0; padding: 0; overflow-x: hidden; overflow-y: auto; }
+        body { background: transparent; color: var(--text-main); font-family: 'Inter', sans-serif; margin: 0; padding: 0; overflow-x: hidden; overflow-y: auto; }
         .font-mono { font-family: 'JetBrains Mono', monospace; }
         .glass-panel { background: var(--panel); border: 1px solid var(--border); border-radius: 1.5rem; overflow: hidden; }
         .input-field { width: 100%; background: rgba(0,0,0,0.2); border: 1px solid var(--border); border-radius: 0.75rem; padding: 0.75rem 1rem; color: white; outline: none; font-size: 0.875rem; }
@@ -22,6 +22,9 @@
         #btn-f1 span, #btn-f4 span { color: var(--text-bold) !important; }
         .history-card { background: rgba(255,255,255,0.02); border: 1px solid var(--border); transition: all 0.3s; }
         
+        .tab-btn { flex: 1; padding: 0.5rem; text-align: center; font-size: 10px; font-weight: bold; text-transform: uppercase; cursor: pointer; border-radius: 0.75rem; transition: all 0.2s; color: var(--text-main); }
+        .tab-btn.active { background: var(--accent); color: white; }
+
         /* Accordion CSS */
         details > summary { list-style: none; }
         details > summary::-webkit-details-marker { display: none; }
@@ -32,7 +35,6 @@
         ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
         
-        /* Dropdown Option Styling for Dark Mode */
         select option { background-color: #1c222c; color: #fff; }
     </style>
 </head>
@@ -79,7 +81,7 @@
             </button>
         </div>
 
-        <!-- LEAVE / PERMIT PROPOSAL PANEL (Selalu Tampil) -->
+        <!-- LEAVE & PERMIT PROPOSAL PANEL -->
         <div id="remote-actions" class="glass-panel p-6 space-y-3">
             <div class="flex items-center gap-2 text-amber-500 font-bold text-[10px] uppercase">
                 <i data-lucide="calendar-range" size="14"></i> Leave & Permit Proposal
@@ -126,13 +128,22 @@
             <button onclick="recordLeave()" class="btn-primary w-full text-[10px] py-3 mt-2">Submit Proposal</button>
         </div>
 
-        <!-- ✅ ACCORDION HISTORY -->
+        <!-- ✅ ACCORDION HISTORY DENGAN PEMISAHAN TAB -->
         <details class="glass-panel group pb-4">
             <summary class="flex items-center justify-between p-4 cursor-pointer outline-none hover:bg-white/5 transition-colors">
-                <span class="text-[10px] font-bold uppercase tracking-widest text-sky-500">Recent Logs (Past 7 Days)</span>
+                <span class="text-[10px] font-bold uppercase tracking-widest text-sky-500">Weekly History (This Week)</span>
                 <i data-lucide="chevron-down" class="w-4 h-4 text-sky-500 group-open:rotate-180 transition-transform"></i>
             </summary>
-            <div id="history-container" class="px-4 space-y-2 mt-2"></div>
+            
+            <div class="px-4 space-y-3">
+                <!-- Tab Switcher -->
+                <div class="flex bg-black/30 p-1 rounded-xl border border-white/5">
+                    <button id="tab-att" onclick="switchHistoryTab('attendance')" class="tab-btn active">Attendance</button>
+                    <button id="tab-leave" onclick="switchHistoryTab('leave')" class="tab-btn">Leave / Permit</button>
+                </div>
+                
+                <div id="history-container" class="space-y-2 mt-2"></div>
+            </div>
         </details>
     </div>
 
@@ -143,6 +154,7 @@
         let currentUser = null;
         let isInsideOffice = false;
         let masterData = { attendance: [] };
+        let activeHistoryTab = 'attendance'; // 'attendance' atau 'leave'
 
         function getFingerprint() { return `${navigator.userAgent}-${screen.width}x${screen.height}`; }
 
@@ -205,7 +217,6 @@
             const attendanceList = masterData.attendance || [];
             const todayRecord = attendanceList.find(r => r.Date === dateStr && String(r.EmployeeId).trim() === String(currentUser.EmployeeId).trim());
 
-            // Tombol Clock In / Out diaktifkan/dinonaktifkan sesuai data hari ini
             document.getElementById('btn-f1').disabled = !!todayRecord?.F1;
             document.getElementById('btn-f4').disabled = !todayRecord?.F1 || !!todayRecord?.F4;
 
@@ -213,20 +224,63 @@
             startClock();
         }
 
+        function switchHistoryTab(tab) {
+            activeHistoryTab = tab;
+            document.getElementById('tab-att').className = `tab-btn ${tab === 'attendance' ? 'active' : ''}`;
+            document.getElementById('tab-leave').className = `tab-btn ${tab === 'leave' ? 'active' : ''}`;
+            
+            const now = new Date();
+            const dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+            renderHistory(dateStr);
+        }
+
         function renderHistory(todayStr) {
             const container = document.getElementById('history-container');
             const attendanceList = masterData.attendance || [];
+
+            // Filter riwayat minggu berjalan (senin s.d minggu / 7 hari terakhir dari minggu ini)
+            const curr = new Date();
+            const firstDayOfWeek = new Date(curr.setDate(curr.getDate() - curr.getDay() + (curr.getDay() === 0 ? -6 : 1))); // Senin minggu ini
+            firstDayOfWeek.setHours(0,0,0,0);
+
             const userRecords = attendanceList
                 .filter(r => String(r.EmployeeId).trim() === String(currentUser.EmployeeId).trim())
-                .sort((a, b) => new Date(b.Date) - new Date(a.Date))
-                .slice(0, 7);
+                .filter(r => {
+                    const recordDate = new Date(r.Date);
+                    return recordDate >= firstDayOfWeek; // Hanya minggu berjalan
+                })
+                .sort((a, b) => new Date(b.Date) - new Date(a.Date));
 
-            if (userRecords.length === 0) {
-                container.innerHTML = '<div class="py-4 text-center text-[10px] opacity-20 uppercase">No history found</div>';
+            // Pisahkan antara Attendance (F1/F4) dan Leave (Cuti)
+            const filteredRecords = userRecords.filter(r => {
+                const hasLeave = r.Leave && r.Leave.trim() !== '' && r.Leave !== 'Present';
+                if (activeHistoryTab === 'leave') return hasLeave;
+                return !hasLeave; // Attendance biasa
+            });
+
+            if (filteredRecords.length === 0) {
+                container.innerHTML = `<div class="py-4 text-center text-[10px] opacity-20 uppercase">No ${activeHistoryTab} records this week</div>`;
                 return;
             }
 
-            container.innerHTML = userRecords.map(r => {
+            container.innerHTML = filteredRecords.map(r => {
+                const hasLeave = r.Leave && r.Leave.trim() !== '' && r.Leave !== 'Present';
+
+                // Tampilan untuk Tab Leave
+                if (activeHistoryTab === 'leave') {
+                    return `
+                    <div class="history-card p-3 rounded-xl border border-amber-500/20 bg-amber-500/5">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-[11px] font-mono text-amber-400 font-bold">${r.Date}</span>
+                            <span class="text-[9px] px-2 py-0.5 rounded bg-white/5 border border-white/10 font-bold uppercase ${r.StatusApproval === 'Approved' ? 'text-green-400' : 'text-amber-400'}">${r.StatusApproval || 'Pending'}</span>
+                        </div>
+                        <div class="text-xs font-bold text-white uppercase tracking-wider mt-1">
+                            🎯 ${r.Leave}
+                        </div>
+                    </div>`;
+                }
+
+                // Tampilan untuk Tab Attendance (In/Out)
                 const outDisplay = r.F4 || (r.Date < todayStr ? '-' : '--:--');
                 return `
                 <div class="history-card p-3 rounded-xl border border-white/10">
@@ -237,7 +291,7 @@
                     <div class="grid grid-cols-3 gap-2">
                         <div class="bg-black/30 p-2 rounded-lg text-center"><span class="text-[8px] uppercase tracking-wider text-white/70 font-bold block mb-1">In</span><span class="text-xs font-mono text-white font-bold">${r.F1 || '--:--'}</span></div>
                         <div class="bg-black/30 p-2 rounded-lg text-center"><span class="text-[8px] uppercase tracking-wider text-white/70 font-bold block mb-1">Out</span><span class="text-xs font-mono text-white font-bold">${outDisplay}</span></div>
-                        <div class="bg-black/30 p-2 rounded-lg text-center overflow-hidden"><span class="text-[8px] uppercase tracking-wider text-white/70 font-bold block mb-1">Log</span><span class="text-[9px] font-extrabold text-sky-400 uppercase truncate block">${r.Leave || 'Present'}</span></div>
+                        <div class="bg-black/30 p-2 rounded-lg text-center overflow-hidden"><span class="text-[8px] uppercase tracking-wider text-white/70 font-bold block mb-1">Status</span><span class="text-[9px] font-extrabold text-emerald-400 uppercase truncate block">Present</span></div>
                     </div>
                 </div>`;
             }).join('');
@@ -307,6 +361,8 @@
 
             try {
                 let currDate = new Date(startDate);
+                let promises = []; // Array untuk menampung promise agar jalan paralel
+
                 while (currDate <= untilDate) {
                     const year = currDate.getFullYear();
                     const month = String(currDate.getMonth() + 1).padStart(2, '0');
@@ -327,9 +383,13 @@
                         primaryId: `${currentUser.EmployeeId}|${dateStr}`
                     };
 
-                    await API.post(payload);
+                    // Masukkan ke array promises agar terkirim sekaligus secara bersamaan (Cepat)
+                    promises.push(API.post(payload));
                     currDate.setDate(currDate.getDate() + 1);
                 }
+
+                // Kirim semua data tanggal sekaligus secara paralel
+                await Promise.all(promises);
 
                 const att = await API.get('ATTENDANCE_RECORD');
                 masterData.attendance = att.data || [];
