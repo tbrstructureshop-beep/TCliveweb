@@ -47,7 +47,7 @@
         <button type="button" onclick="toggleView()" class="w-full text-[10px] opacity-50 uppercase mt-2">Cancel</button>
     </form>
 
-    <script>
+   <script>
         const loader = document.getElementById('local-loader');
         let masterData = { users: [] };
 
@@ -55,20 +55,32 @@
 
         async function init() {
             try {
-                // ✅ 1. Paksa hapus cache USER agar selalu dapat password & user terbaru dari Google Sheet
-                try { if (window.parent && window.parent.clearCache) window.parent.clearCache('USER'); } catch(e) {}
-                await API._dbOp("delete", "USER");
+                // ✅ Ambil data langsung dari API (Tanpa _dbOp yang berisiko nge-lock)
+                const [u, s, usr] = await Promise.all([
+                    API.get('UNIT'), 
+                    API.get('SHIFTS'), 
+                    API.get('USER')
+                ]);
 
-                const [u, s, usr] = await Promise.all([API.get('UNIT'), API.get('SHIFTS'), API.get('USER')]);
-                masterData.users = usr.data;
-                document.getElementById('regUnit').innerHTML = u.data.map(u => `<option value="${u.UnitCode}">${u.UnitCode}</option>`).join('');
-                document.getElementById('regUnit').onchange = (e) => {
-                    const filtered = s.data.filter(sh => sh.UnitCode === e.target.value && sh.Crew);
-                    const uniqueCrews = [...new Set(filtered.map(sh => sh.Crew.trim()))];
-                    document.getElementById('regCrew').innerHTML = uniqueCrews.length ? uniqueCrews.map(c => `<option>${c}</option>`).join('') : '<option disabled selected>NO CREW</option>';
-                };
-                document.getElementById('regUnit').dispatchEvent(new Event('change'));
-            } catch (e) { } finally { loader.style.display = 'none'; }
+                // Validasi data user aman
+                masterData.users = usr && usr.data ? usr.data : [];
+
+                if (u && u.data) {
+                    document.getElementById('regUnit').innerHTML = u.data.map(item => `<option value="${item.UnitCode}">${item.UnitCode}</option>`).join('');
+                    document.getElementById('regUnit').onchange = (e) => {
+                        const filtered = s && s.data ? s.data.filter(sh => sh.UnitCode === e.target.value && sh.Crew) : [];
+                        const uniqueCrews = [...new Set(filtered.map(sh => sh.Crew.trim()))];
+                        document.getElementById('regCrew').innerHTML = uniqueCrews.length ? uniqueCrews.map(c => `<option>${c}</option>`).join('') : '<option disabled selected>NO CREW</option>';
+                    };
+                    document.getElementById('regUnit').dispatchEvent(new Event('change'));
+                }
+            } catch (e) {
+                console.error("Init Error:", e);
+                Swal.fire({ icon: 'warning', title: 'Connection Warning', text: 'Gagal memuat data awal, silahkan coba lagi.', background: '#151921', color: '#fff' });
+            } finally { 
+                // ✅ Pastikan loader SELALU hilang apapun yang terjadi
+                if (loader) loader.style.display = 'none'; 
+            }
         }
 
         function toggleView() {
@@ -81,27 +93,53 @@
             const inputId = document.getElementById('loginId').value.trim();
             const inputPass = document.getElementById('loginPass').value.trim();
             
-            // ✅ 2. Ubah u.EmployeeId menjadi String() agar tidak bentrok antara Number dan Teks
+            // Validasi pencarian user dengan aman (String & Trim)
             const user = masterData.users.find(u => 
-                String(u.EmployeeId).trim() === inputId && 
-                String(u.Password).trim() === inputPass
+                u && String(u.EmployeeId || '').trim() === inputId && 
+                String(u.Password || '').trim() === inputPass
             );
             
             if (user) {
                 localStorage.setItem('tc_user', JSON.stringify(user));
-                window.parent.closeUserModalAndRefresh(); 
+                if (window.parent && typeof window.parent.closeUserModalAndRefresh === 'function') {
+                    window.parent.closeUserModalAndRefresh(); 
+                } else {
+                    location.reload(); // Fallback jika fungsi parent belum terbaca
+                }
             } else { 
                 Swal.fire({ icon: 'error', title: 'Failed', text: 'Wrong Credentials', background: '#151921', color: '#fff' }); 
             }
         };
 
         document.getElementById('register-form').onsubmit = async (e) => {
-            e.preventDefault(); loader.style.display = 'flex';
-            const payload = { tab: 'USER', action: 'add', UnitCode: document.getElementById('regUnit').value, Crew: document.getElementById('regCrew').value, Class: document.getElementById('regClass').value, EmployeeId: document.getElementById('regId').value, Name: document.getElementById('regName').value, JobTitle: document.getElementById('regJob').value, Password: document.getElementById('regPass').value, "DeviceId(phone)": getFingerprint() };
+            e.preventDefault(); 
+            if (loader) loader.style.display = 'flex';
+            
+            const payload = { 
+                tab: 'USER', 
+                action: 'add', 
+                UnitCode: document.getElementById('regUnit').value, 
+                Crew: document.getElementById('regCrew').value, 
+                Class: document.getElementById('regClass').value, 
+                EmployeeId: document.getElementById('regId').value, 
+                Name: document.getElementById('regName').value, 
+                JobTitle: document.getElementById('regJob').value, 
+                Password: document.getElementById('regPass').value, 
+                "DeviceId(phone)": getFingerprint() 
+            };
+            
             try {
-                await API.post(payload);
-                Swal.fire({ icon: 'success', title: 'Device Linked', background: '#151921', color: '#fff' }).then(() => { location.reload(); });
-            } catch (err) {} finally { loader.style.display = 'none'; }
+                const res = await API.post(payload);
+                if (res && res.status === 'success') {
+                    Swal.fire({ icon: 'success', title: 'Device Linked', background: '#151921', color: '#fff' }).then(() => { location.reload(); });
+                } else {
+                    throw new Error(res?.message || 'Gagal mendaftarkan device.');
+                }
+            } catch (err) {
+                Swal.fire({ icon: 'error', title: 'Registration Failed', text: err.message, background: '#151921', color: '#fff' });
+            } finally { 
+                if (loader) loader.style.display = 'none'; 
+            }
         };
 
         init();
