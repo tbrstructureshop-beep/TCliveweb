@@ -11,7 +11,7 @@
     
     <style>
         :root { --bg: #151921; --panel: #1c222c; --border: rgba(255, 255, 255, 0.05); --accent: #0ea5e9; --text-main: #94a3b8; --text-bold: #ffffff; }
-        body { background: transparent; color: var(--text-main); font-family: 'Inter', sans-serif; margin: 0; padding: 0; overflow-x: hidden; }
+        .body { background: transparent; color: var(--text-main); font-family: 'Inter', sans-serif; margin: 0; padding: 0; overflow-x: hidden; overflow-y: auto; }
         .font-mono { font-family: 'JetBrains Mono', monospace; }
         .glass-panel { background: var(--panel); border: 1px solid var(--border); border-radius: 1.5rem; overflow: hidden; }
         .input-field { width: 100%; background: rgba(0,0,0,0.2); border: 1px solid var(--border); border-radius: 0.75rem; padding: 0.75rem 1rem; color: white; outline: none; font-size: 0.875rem; }
@@ -24,6 +24,13 @@
         /* Accordion CSS */
         details > summary { list-style: none; }
         details > summary::-webkit-details-marker { display: none; }
+
+        /* CUSTOM SCROLLBAR THEME */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+        
     </style>
 </head>
 <body class="p-4 bg-[#151921] min-h-screen">
