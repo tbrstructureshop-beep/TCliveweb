@@ -17,36 +17,61 @@
             transform: translateY(-2px);
             box-shadow: 0 10px 30px -10px rgba(14, 165, 233, 0.3);
         }
+        .logout-card:hover {
+            border-color: #ef4444 !important;
+            box-shadow: 0 10px 30px -10px rgba(239, 68, 68, 0.3);
+        }
     </style>
 </head>
 <body class="p-6">
     
     <div id="main-options" class="space-y-4">
-        <!-- FIXED: Redirects to the Attendance Module inside this same iframe -->
+        <!-- Record My Attendance -->
         <div onclick="window.parent.openAttendanceModal()" class="option-card p-5 rounded-2xl cursor-pointer flex items-center gap-5 group">
             <div class="bg-sky-500/10 p-4 rounded-xl text-sky-500 group-hover:bg-sky-500 group-hover:text-white transition-colors">
                 <i data-lucide="map-pin" class="w-6 h-6"></i>
             </div>
             <div>
                 <h4 class="text-white font-bold text-lg">Record My Attendance</h4>
-                <p class="text-slate-500 text-sm">IP-Locked Office Check-in</p>
+                <p class="text-slate-400 text-sm">IP-Locked Office Check-in</p>
             </div>
         </div>
 
-        <!-- KEEPING AS COMING SOON: Since Job Tracking isn't built yet -->
+        <!-- Record My Job (Coming Soon) -->
         <div onclick="window.parent.showGlobalComingSoon()" class="option-card p-5 rounded-2xl cursor-pointer flex items-center gap-5 group">
             <div class="bg-sky-500/10 p-4 rounded-xl text-sky-500 group-hover:bg-sky-500 group-hover:text-white transition-colors">
                 <i data-lucide="timer" class="w-6 h-6"></i>
             </div>
             <div>
                 <h4 class="text-white font-bold text-lg">Record My Job</h4>
-                <p class="text-slate-500 text-sm">Live Time-Consumption Tracking</p>
+                <p class="text-slate-400 text-sm">Live Time-Consumption Tracking</p>
+            </div>
+        </div>
+
+        <!-- LOGOUT / SWITCH USER -->
+        <div onclick="handleLogout()" class="option-card logout-card p-5 rounded-2xl cursor-pointer flex items-center gap-5 group">
+            <div class="bg-red-500/10 p-4 rounded-xl text-red-500 group-hover:bg-red-500 group-hover:text-white transition-colors">
+                <i data-lucide="log-out" class="w-6 h-6"></i>
+            </div>
+            <div>
+                <h4 class="text-white font-bold text-lg">Sign Out / Switch User</h4>
+                <p class="text-slate-400 text-sm">Clear session for next technician</p>
             </div>
         </div>
     </div>
 
     <script>
         lucide.createIcons();
+
+        function handleLogout() {
+            // Hapus sesi user aktif
+            localStorage.removeItem('tc_user');
+            
+            // Tutup modal option di parent window, lalu refresh atau biarkan mengarah ke login berikutnya
+            if (window.parent && typeof window.parent.toggleUserModal === 'function') {
+                window.parent.toggleUserModal();
+            }
+        }
     </script>
 </body>
 </html>
