@@ -19,6 +19,7 @@
         .btn-primary:disabled { opacity: 0.1; cursor: not-allowed; filter: grayscale(1); }
         
         #local-loader { position: fixed; inset: 0; background: var(--bg); z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        #btn-f1 span, #btn-f4 span { color: var(--text-bold) !important; }
         .history-card { background: rgba(255,255,255,0.02); border: 1px solid var(--border); transition: all 0.3s; }
         
         /* Accordion CSS */
@@ -215,27 +216,35 @@
             const timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
             const dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
 
+            // Pastikan attendance berupa array sebelum .find()
+            const attendanceList = masterData.attendance || [];
+
             if (type === 'F1') {
-                const pastUnclosed = masterData.attendance.find(r => r.EmployeeId === currentUser.EmployeeId && r.Date < dateStr && (!r.F4 || r.F4 === ''));
+                const pastUnclosed = attendanceList.find(r => r.EmployeeId === currentUser.EmployeeId && r.Date < dateStr && (!r.F4 || r.F4 === ''));
                 if (pastUnclosed) {
                     await API.post({ tab: 'ATTENDANCE_RECORD', action: 'update', primaryId: `${currentUser.EmployeeId}|${pastUnclosed.Date}`, F4: '-' });
                 }
             }
 
             const payload = { tab: 'ATTENDANCE_RECORD', action: 'add', EmployeeId: currentUser.EmployeeId, Date: dateStr, [type]: timeStr, StatusApproval: 'Pending' };
-            const todayRec = masterData.attendance.find(r => r.Date === dateStr && r.EmployeeId === currentUser.EmployeeId);
+            const todayRec = attendanceList.find(r => r.Date === dateStr && r.EmployeeId === currentUser.EmployeeId);
             if (todayRec) { payload.action = 'update'; payload.primaryId = `${currentUser.EmployeeId}|${dateStr}`; }
 
             try {
                 const res = await API.post(payload);
                 if (res.status === 'success') {
+                    // Paksa ambil data terbaru tanpa jeda lama
                     const att = await API.get('ATTENDANCE_RECORD');
-                    masterData.attendance = att.data;
+                    masterData.attendance = att.data || [];
                     showMainInterface();
+                    loader.style.display = 'none'; // Matikan loader SEBELUM SweetAlert muncul agar tidak nge-lag/lama
                     Swal.fire({ icon: 'success', title: 'Committed', text: `${type} at ${timeStr}`, background: '#151921', color: '#fff' });
+                    return; // Hentikan agar finally tidak menimpa
                 } else throw new Error(res.message);
-            } catch (e) { Swal.fire({ icon: 'error', title: 'Error', text: e.message, background: '#151921', color: '#fff' }); } 
-            finally { loader.style.display = 'none'; }
+            } catch (e) { 
+                loader.style.display = 'none';
+                Swal.fire({ icon: 'error', title: 'Error', text: e.message, background: '#151921', color: '#fff' }); 
+            } 
         }
         
         async function recordLeave() {
@@ -246,18 +255,25 @@
             const now = new Date();
             const dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
 
+            const attendanceList = masterData.attendance || [];
             const payload = { tab: 'ATTENDANCE_RECORD', action: 'add', EmployeeId: currentUser.EmployeeId, Date: dateStr, Leave: leave, StatusApproval: 'Pending' };
-            const todayRec = masterData.attendance.find(r => r.Date === dateStr && r.EmployeeId === currentUser.EmployeeId);
+            const todayRec = attendanceList.find(r => r.Date === dateStr && r.EmployeeId === currentUser.EmployeeId);
             if (todayRec) { payload.action = 'update'; payload.primaryId = `${currentUser.EmployeeId}|${dateStr}`; }
             
             try {
-                await API.post(payload);
-                const att = await API.get('ATTENDANCE_RECORD');
-                masterData.attendance = att.data;
-                showMainInterface();
-                Swal.fire({ icon: 'success', title: 'Proposal Sent', background: '#151921', color: '#fff' });
-            } catch (e) { Swal.fire({ icon: 'error', title: 'Error', text: e.message }); }
-            finally { loader.style.display = 'none'; }
+                const res = await API.post(payload);
+                if (res.status === 'success') {
+                    const att = await API.get('ATTENDANCE_RECORD');
+                    masterData.attendance = att.data || [];
+                    showMainInterface();
+                    loader.style.display = 'none';
+                    Swal.fire({ icon: 'success', title: 'Proposal Sent', background: '#151921', color: '#fff' });
+                    return;
+                } else throw new Error(res.message);
+            } catch (e) { 
+                loader.style.display = 'none';
+                Swal.fire({ icon: 'error', title: 'Error', text: e.message, background: '#151921', color: '#fff' }); 
+            } 
         }
 
         function startClock() { setInterval(() => { document.getElementById('display-clock').innerText = new Date().toLocaleTimeString('en-GB'); document.getElementById('display-date').innerText = new Date().toDateString(); }, 1000); }
