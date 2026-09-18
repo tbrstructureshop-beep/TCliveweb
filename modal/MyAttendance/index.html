@@ -32,6 +32,8 @@
         ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
         
+        /* Dropdown Option Styling for Dark Mode */
+        select option { background-color: #1c222c; color: #fff; }
     </style>
 </head>
 <body class="p-4 bg-[#151921] min-h-screen">
@@ -65,7 +67,8 @@
             </div>
         </div>
 
-        <div id="office-actions" class="grid grid-cols-2 gap-4 hidden">
+        <!-- CLOCK IN / OUT ACTIONS -->
+        <div id="office-actions" class="grid grid-cols-2 gap-4">
             <button id="btn-f1" onclick="recordAttendance('F1')" class="glass-panel p-6 flex flex-col items-center gap-3 hover:border-sky-500 transition-all group">
                 <div class="p-3 rounded-2xl bg-sky-500/10 text-sky-500 group-hover:bg-sky-500 group-hover:text-white"><i data-lucide="play" size="24"></i></div>
                 <span class="text-[10px] font-bold uppercase">Clock In</span>
@@ -76,12 +79,12 @@
             </button>
         </div>
 
-        <div id="remote-actions" class="glass-panel p-6 hidden space-y-3">
+        <!-- LEAVE / PERMIT PROPOSAL PANEL (Selalu Tampil) -->
+        <div id="remote-actions" class="glass-panel p-6 space-y-3">
             <div class="flex items-center gap-2 text-amber-500 font-bold text-[10px] uppercase">
-                <i data-lucide="map-pin-off" size="14"></i> Status Proposal (Leave / Permit)
+                <i data-lucide="calendar-range" size="14"></i> Leave & Permit Proposal
             </div>
             
-            <!-- Dropdown Pilihan Leave yang Lengkap -->
             <select id="leaveType" class="input-field text-xs">
                 <option value="" disabled selected>-- SELECT LEAVE TYPE --</option>
                 <option value="Sick Leave">Sick Leave</option>
@@ -109,7 +112,6 @@
                 <option value="Got Call from Police/Court/Gov">Got Call from Police/Court/Gov</option>
             </select>
 
-            <!-- Input Start Date dan Until Date -->
             <div class="grid grid-cols-2 gap-2">
                 <div>
                     <span class="text-[9px] uppercase opacity-60 block mb-1 font-bold">Start Date</span>
@@ -174,7 +176,6 @@
             await verifyNetwork();
             
             try {
-                // 1. Tampilkan data dari cache lokal (IndexedDB) terlebih dahulu agar instan (0 detik)
                 const cachedAtt = await API.get('ATTENDANCE_RECORD');
                 if (cachedAtt && cachedAtt.data) {
                     masterData.attendance = cachedAtt.data;
@@ -183,16 +184,14 @@
             } catch (e) { 
                 console.error(e); 
             } finally { 
-                // Matikan loader secepat kilat agar modal langsung terbuka
                 loader.style.display = 'none'; 
             }
 
-            // 2. Tarik data terbaru dari Google Sheet di background (tanpa loader/tidak kelihatan user)
             try {
                 const freshAtt = await API.get('ATTENDANCE_RECORD');
                 if (freshAtt && freshAtt.data) {
                     masterData.attendance = freshAtt.data;
-                    showMainInterface(); // Refresh tampilan jika ada data baru
+                    showMainInterface();
                 }
             } catch (e) {}
         }
@@ -203,15 +202,12 @@
             
             const now = new Date();
             const dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
-            const todayRecord = masterData.attendance.find(r => r.Date === dateStr && String(r.EmployeeId).trim() === String(currentUser.EmployeeId).trim());
+            const attendanceList = masterData.attendance || [];
+            const todayRecord = attendanceList.find(r => r.Date === dateStr && String(r.EmployeeId).trim() === String(currentUser.EmployeeId).trim());
 
-            if (isInsideOffice) {
-                document.getElementById('office-actions').classList.remove('hidden');
-                document.getElementById('btn-f1').disabled = !!todayRecord?.F1;
-                document.getElementById('btn-f4').disabled = !todayRecord?.F1 || !!todayRecord?.F4;
-            } else {
-                document.getElementById('remote-actions').classList.remove('hidden');
-            }
+            // Tombol Clock In / Out diaktifkan/dinonaktifkan sesuai data hari ini
+            document.getElementById('btn-f1').disabled = !!todayRecord?.F1;
+            document.getElementById('btn-f4').disabled = !todayRecord?.F1 || !!todayRecord?.F4;
 
             renderHistory(dateStr);
             startClock();
@@ -219,7 +215,8 @@
 
         function renderHistory(todayStr) {
             const container = document.getElementById('history-container');
-            const userRecords = masterData.attendance
+            const attendanceList = masterData.attendance || [];
+            const userRecords = attendanceList
                 .filter(r => String(r.EmployeeId).trim() === String(currentUser.EmployeeId).trim())
                 .sort((a, b) => new Date(b.Date) - new Date(a.Date))
                 .slice(0, 7);
@@ -252,8 +249,6 @@
             const now = new Date();
             const timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
             const dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
-
-            // Pastikan attendance berupa array sebelum .find()
             const attendanceList = masterData.attendance || [];
 
             if (type === 'F1') {
@@ -270,13 +265,12 @@
             try {
                 const res = await API.post(payload);
                 if (res.status === 'success') {
-                    // Paksa ambil data terbaru tanpa jeda lama
                     const att = await API.get('ATTENDANCE_RECORD');
                     masterData.attendance = att.data || [];
                     showMainInterface();
-                    loader.style.display = 'none'; // Matikan loader SEBELUM SweetAlert muncul agar tidak nge-lag/lama
+                    loader.style.display = 'none';
                     Swal.fire({ icon: 'success', title: 'Committed', text: `${type} at ${timeStr}`, background: '#151921', color: '#fff' });
-                    return; // Hentikan agar finally tidak menimpa
+                    return;
                 } else throw new Error(res.message);
             } catch (e) { 
                 loader.style.display = 'none';
@@ -358,11 +352,6 @@
 
         function startClock() { setInterval(() => { document.getElementById('display-clock').innerText = new Date().toLocaleTimeString('en-GB'); document.getElementById('display-date').innerText = new Date().toDateString(); }, 1000); }
         
-        function logout() { 
-            localStorage.removeItem('tc_user'); 
-            window.parent.closeAttendanceModal(); 
-        }
-
         init();
     </script>
 </body>
