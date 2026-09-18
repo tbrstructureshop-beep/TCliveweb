@@ -312,7 +312,6 @@
             const attendanceList = masterData.attendance || [];
 
             try {
-                // Looping hari dari Start Date sampai Until Date
                 let currDate = new Date(startDate);
                 while (currDate <= untilDate) {
                     const year = currDate.getFullYear();
@@ -335,10 +334,9 @@
                     };
 
                     await API.post(payload);
-                    currDate.setDate(currDate.getDate() + 1); // Tambah 1 hari
+                    currDate.setDate(currDate.getDate() + 1);
                 }
 
-                // Tarik data terbaru setelah looping selesai
                 const att = await API.get('ATTENDANCE_RECORD');
                 masterData.attendance = att.data || [];
                 showMainInterface();
