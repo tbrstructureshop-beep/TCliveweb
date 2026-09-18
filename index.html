@@ -306,10 +306,17 @@
         function toggleUserModal() {
             const modal = document.getElementById('user-modal');
             const content = document.getElementById('modal-content');
+            // Ambil elemen iframe
+            const iframe = modal.querySelector('iframe');
             
             if (modal.classList.contains('hidden')) {
+                // ✅ CEK SESSION DI SINI SEBELUM MODAL MUNCUL
+                const isLoggedIn = localStorage.getItem('tc_user') !== null;
+                
+                // Arahkan iframe ke halaman yang tepat
+                iframe.src = isLoggedIn ? 'modal/option/index.html' : 'modal/logIn/index.html';
+
                 modal.classList.remove('hidden');
-                // Small delay to allow CSS transitions to trigger
                 setTimeout(() => {
                     content.classList.remove('scale-95', 'opacity-0');
                     content.classList.add('scale-100', 'opacity-100');
@@ -317,9 +324,18 @@
             } else {
                 content.classList.add('scale-95', 'opacity-0');
                 content.classList.remove('scale-100', 'opacity-100');
-                setTimeout(() => modal.classList.add('hidden'), 200);
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                    iframe.src = ''; // Kosongkan iframe saat ditutup agar reset
+                }, 200);
             }
         }
+
+        // ✅ Tambahkan fungsi ini agar iframe Login bisa menyuruh index.html menutup dirinya
+        window.closeUserModalAndRefresh = function() {
+            toggleUserModal(); // Tutup modal
+            Swal.fire({ icon: 'success', title: 'Authenticated', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, background: '#151921', color: '#fff' });
+        };
 
         function showGlobalComingSoon() {
             // 1. Close the small user modal
