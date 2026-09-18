@@ -306,35 +306,48 @@
         function toggleUserModal() {
             const modal = document.getElementById('user-modal');
             const content = document.getElementById('modal-content');
-            // Ambil elemen iframe
             const iframe = modal.querySelector('iframe');
             
             if (modal.classList.contains('hidden')) {
-                // ✅ CEK SESSION DI SINI SEBELUM MODAL MUNCUL
+                // 1. Cek apakah ada sesi user yang tersimpan
                 const isLoggedIn = localStorage.getItem('tc_user') !== null;
                 
-                // Arahkan iframe ke halaman yang tepat
-                iframe.src = isLoggedIn ? 'modal/option/index.html' : 'modal/logIn/index.html';
+                // 2. Arahkan URL iframe sesuai status login
+                // PERHATIKAN: Pastikan nama folder Anda 'logIn' atau 'login'. Ubah di bawah ini jika nama folder Anda huruf kecil semua!
+                if (iframe) {
+                    iframe.src = isLoggedIn ? 'modal/option/index.html' : 'modal/logIn/index.html'; 
+                }
 
+                // 3. Tampilkan Animasi Modal
                 modal.classList.remove('hidden');
                 setTimeout(() => {
                     content.classList.remove('scale-95', 'opacity-0');
                     content.classList.add('scale-100', 'opacity-100');
                 }, 10);
             } else {
+                // 4. Sembunyikan Animasi Modal
                 content.classList.add('scale-95', 'opacity-0');
                 content.classList.remove('scale-100', 'opacity-100');
                 setTimeout(() => {
                     modal.classList.add('hidden');
-                    iframe.src = ''; // Kosongkan iframe saat ditutup agar reset
+                    if (iframe) iframe.src = ''; // Kosongkan iframe agar reset saat ditutup
                 }, 200);
             }
         }
 
-        // ✅ Tambahkan fungsi ini agar iframe Login bisa menyuruh index.html menutup dirinya
+        // Fungsi ini wajib ada agar iframe Login bisa menyuruh Halaman Utama menutup modal
         window.closeUserModalAndRefresh = function() {
-            toggleUserModal(); // Tutup modal
-            Swal.fire({ icon: 'success', title: 'Authenticated', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, background: '#151921', color: '#fff' });
+            toggleUserModal(); // Menutup modal secara visual
+            Swal.fire({ 
+                icon: 'success', 
+                title: 'Authenticated', 
+                toast: true, 
+                position: 'top-end', 
+                showConfirmButton: false, 
+                timer: 1500, 
+                background: '#151921', 
+                color: '#fff' 
+            });
         };
 
         function showGlobalComingSoon() {
