@@ -238,30 +238,52 @@
             const container = document.getElementById('history-container');
             const attendanceList = masterData.attendance || [];
 
-            // Filter riwayat minggu berjalan (Senin s.d Minggu)
-            const curr = new Date();
-            const firstDayOfWeek = new Date(curr.setDate(curr.getDate() - curr.getDay() + (curr.getDay() === 0 ? -6 : 1)));
-            firstDayOfWeek.setHours(0,0,0,0);
-
             const userRecords = attendanceList
                 .filter(r => String(r.EmployeeId).trim() === String(currentUser.EmployeeId).trim())
-                .filter(r => new Date(r.Date) >= firstDayOfWeek)
                 .sort((a, b) => new Date(b.Date) - new Date(a.Date));
+
+            // 1. ATURAN FILTER WAKTU BERDASARKAN TAB YANG AKTIF
+            const curr = new Date();
+            let filteredRecords = [];
+
+            if (activeHistoryTab === 'leave') {
+                // ATURAN LEAVE: 1 Bulan Berjalan (Dari tanggal 1 s.d akhir bulan ini)
+                const firstDayOfMonth = new Date(curr.getFullYear(), curr.getMonth(), 1);
+                firstDayOfMonth.setHours(0,0,0,0);
+                
+                const lastDayOfMonth = new Date(curr.getFullYear(), curr.getMonth() + 1, 0);
+                lastDayOfMonth.setHours(23,59,59,999);
+
+                filteredRecords = userRecords
+                    .filter(r => {
+                        const hasLeave = r.Leave && r.Leave.trim() !== '' && r.Leave !== 'Present';
+                        const recordDate = new Date(r.Date);
+                        return hasLeave && recordDate >= firstDayOfMonth && recordDate <= lastDayOfMonth;
+                    });
+            } else {
+                // ATURAN ATTENDANCE: 1 Minggu Berjalan (Senin s.d Minggu minggu ini)
+                const firstDayOfWeek = new Date(curr.setDate(curr.getDate() - curr.getDay() + (curr.getDay() === 0 ? -6 : 1)));
+                firstDayOfWeek.setHours(0,0,0,0);
+
+                filteredRecords = userRecords
+                    .filter(r => {
+                        const hasLeave = r.Leave && r.Leave.trim() !== '' && r.Leave !== 'Present';
+                        const recordDate = new Date(r.Date);
+                        return !hasLeave && recordDate >= firstDayOfWeek;
+                    });
+            }
+
+            if (filteredRecords.length === 0) {
+                container.innerHTML = `<div class="py-4 text-center text-[10px] opacity-20 uppercase">No ${activeHistoryTab} records found for this period</div>`;
+                return;
+            }
 
             // Jika tab aktif adalah Leave, kelompokkan tanggal yang beruntun
             if (activeHistoryTab === 'leave') {
-                const leaveRecords = userRecords.filter(r => r.Leave && r.Leave.trim() !== '' && r.Leave !== 'Present');
-                
-                if (leaveRecords.length === 0) {
-                    container.innerHTML = `<div class="py-4 text-center text-[10px] opacity-20 uppercase">No leave records this week</div>`;
-                    return;
-                }
-
-                // Mengelompokkan tanggal cuti yang beruntun (Grouping Consecutive Dates)
                 let groupedLeaves = [];
                 let tempGroup = [];
 
-                leaveRecords.sort((a, b) => new Date(a.Date) - new Date(b.Date)).forEach((r, idx) => {
+                filteredRecords.sort((a, b) => new Date(a.Date) - new Date(b.Date)).forEach((r, idx) => {
                     if (tempGroup.length === 0) {
                         tempGroup.push(r);
                     } else {
@@ -277,8 +299,11 @@
                             tempGroup = [r];
                         }
                     }
-                    if (idx === leaveRecords.length - 1) groupedLeaves.push(tempGroup);
+                    if (idx === filteredRecords.length - 1) groupedLeaves.push(tempGroup);
                 });
+
+                // Urutkan kembali dari yang terbaru setelah dikelompokkan
+                groupedLeaves.sort((a, b) => new Date(b[0].Date) - new Date(a[0].Date));
 
                 container.innerHTML = groupedLeaves.map(group => {
                     const firstDate = group[0].Date;
@@ -303,14 +328,7 @@
             }
 
             // Tampilan untuk Tab Attendance (In/Out)
-            const attRecords = userRecords.filter(r => !r.Leave || r.Leave.trim() === '' || r.Leave === 'Present');
-
-            if (attRecords.length === 0) {
-                container.innerHTML = `<div class="py-4 text-center text-[10px] opacity-20 uppercase">No attendance records this week</div>`;
-                return;
-            }
-
-            container.innerHTML = attRecords.map(r => {
+            container.innerHTML = filteredRecords.map(r => {
                 let statusText = 'Attend';
                 let statusColor = 'text-sky-400 border-sky-500/30 bg-sky-500/10';
 
