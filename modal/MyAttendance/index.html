@@ -238,65 +238,107 @@
             const container = document.getElementById('history-container');
             const attendanceList = masterData.attendance || [];
 
-            // Filter riwayat minggu berjalan (senin s.d minggu / 7 hari terakhir dari minggu ini)
+            // Filter riwayat minggu berjalan (Senin s.d Minggu)
             const curr = new Date();
-            const firstDayOfWeek = new Date(curr.setDate(curr.getDate() - curr.getDay() + (curr.getDay() === 0 ? -6 : 1))); // Senin minggu ini
+            const firstDayOfWeek = new Date(curr.setDate(curr.getDate() - curr.getDay() + (curr.getDay() === 0 ? -6 : 1)));
             firstDayOfWeek.setHours(0,0,0,0);
 
             const userRecords = attendanceList
                 .filter(r => String(r.EmployeeId).trim() === String(currentUser.EmployeeId).trim())
-                .filter(r => {
-                    const recordDate = new Date(r.Date);
-                    return recordDate >= firstDayOfWeek; // Hanya minggu berjalan
-                })
+                .filter(r => new Date(r.Date) >= firstDayOfWeek)
                 .sort((a, b) => new Date(b.Date) - new Date(a.Date));
 
-            // Pisahkan antara Attendance (F1/F4) dan Leave (Cuti)
-            const filteredRecords = userRecords.filter(r => {
-                const hasLeave = r.Leave && r.Leave.trim() !== '' && r.Leave !== 'Present';
-                if (activeHistoryTab === 'leave') return hasLeave;
-                return !hasLeave; // Attendance biasa
-            });
+            // Jika tab aktif adalah Leave, kelompokkan tanggal yang beruntun
+            if (activeHistoryTab === 'leave') {
+                const leaveRecords = userRecords.filter(r => r.Leave && r.Leave.trim() !== '' && r.Leave !== 'Present');
+                
+                if (leaveRecords.length === 0) {
+                    container.innerHTML = `<div class="py-4 text-center text-[10px] opacity-20 uppercase">No leave records this week</div>`;
+                    return;
+                }
 
-            if (filteredRecords.length === 0) {
-                container.innerHTML = `<div class="py-4 text-center text-[10px] opacity-20 uppercase">No ${activeHistoryTab} records this week</div>`;
+                // Mengelompokkan tanggal cuti yang beruntun (Grouping Consecutive Dates)
+                let groupedLeaves = [];
+                let tempGroup = [];
+
+                leaveRecords.sort((a, b) => new Date(a.Date) - new Date(b.Date)).forEach((r, idx) => {
+                    if (tempGroup.length === 0) {
+                        tempGroup.push(r);
+                    } else {
+                        const lastDate = new Date(tempGroup[tempGroup.length - 1].Date);
+                        const currDate = new Date(r.Date);
+                        const diffTime = Math.abs(currDate - lastDate);
+                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                        if (diffDays === 1 && tempGroup[0].Leave === r.Leave) {
+                            tempGroup.push(r);
+                        } else {
+                            groupedLeaves.push(tempGroup);
+                            tempGroup = [r];
+                        }
+                    }
+                    if (idx === leaveRecords.length - 1) groupedLeaves.push(tempGroup);
+                });
+
+                container.innerHTML = groupedLeaves.map(group => {
+                    const firstDate = group[0].Date;
+                    const endDate = group[group.length - 1].Date;
+                    const leaveType = group[0].Leave;
+                    const status = group[0].StatusApproval || 'Pending';
+                    
+                    const dateDisplay = firstDate === endDate ? firstDate : `${firstDate} Thru ${endDate}`;
+
+                    return `
+                    <div class="history-card p-3 rounded-xl border border-amber-500/20 bg-amber-500/5 space-y-1">
+                        <div class="flex justify-between items-center">
+                            <span class="text-[11px] font-mono text-amber-400 font-bold">${dateDisplay}</span>
+                            <span class="text-[9px] px-2 py-0.5 rounded bg-white/5 border border-white/10 font-bold uppercase ${status === 'Approved' ? 'text-green-400' : 'text-amber-400'}">${status}</span>
+                        </div>
+                        <div class="text-xs font-bold text-white uppercase tracking-wider">
+                            🎯 ${leaveType}
+                        </div>
+                    </div>`;
+                }).join('');
                 return;
             }
 
-            container.innerHTML = filteredRecords.map(r => {
-                const hasLeave = r.Leave && r.Leave.trim() !== '' && r.Leave !== 'Present';
+            // Tampilan untuk Tab Attendance (In/Out)
+            const attRecords = userRecords.filter(r => !r.Leave || r.Leave.trim() === '' || r.Leave === 'Present');
 
-                // Tampilan untuk Tab Leave
-                if (activeHistoryTab === 'leave') {
-                    return `
-                    <div class="history-card p-3 rounded-xl border border-amber-500/20 bg-amber-500/5">
-                        <div class="flex justify-between items-center mb-1">
-                            <span class="text-[11px] font-mono text-amber-400 font-bold">${r.Date}</span>
-                            <span class="text-[9px] px-2 py-0.5 rounded bg-white/5 border border-white/10 font-bold uppercase ${r.StatusApproval === 'Approved' ? 'text-green-400' : 'text-amber-400'}">${r.StatusApproval || 'Pending'}</span>
-                        </div>
-                        <div class="text-xs font-bold text-white uppercase tracking-wider mt-1">
-                            🎯 ${r.Leave}
-                        </div>
-                    </div>`;
+            if (attRecords.length === 0) {
+                container.innerHTML = `<div class="py-4 text-center text-[10px] opacity-20 uppercase">No attendance records this week</div>`;
+                return;
+            }
+
+            container.innerHTML = attRecords.map(r => {
+                let statusText = 'Attend';
+                let statusColor = 'text-sky-400 border-sky-500/30 bg-sky-500/10';
+
+                if (r.F1 && r.F4 && r.F4 !== '-') {
+                    statusText = 'Complete';
+                    statusColor = 'text-green-400 border-green-500/30 bg-green-500/10';
+                } else if (r.F1 && (!r.F4 || r.F4 === '-') && r.Date < todayStr) {
+                    statusText = 'No Clock out';
+                    statusColor = 'text-yellow-400 border-yellow-500/30 bg-yellow-500/10';
                 }
 
-                // Tampilan untuk Tab Attendance (In/Out)
                 const outDisplay = r.F4 || (r.Date < todayStr ? '-' : '--:--');
+
                 return `
                 <div class="history-card p-3 rounded-xl border border-white/10">
                     <div class="flex justify-between items-center mb-2">
                         <span class="text-[11px] font-mono text-sky-400 font-bold">${r.Date}</span>
-                        <span class="text-[9px] px-2 py-0.5 rounded bg-white/5 border border-white/10 font-bold uppercase ${r.StatusApproval === 'Approved' ? 'text-green-400' : 'text-amber-400'}">${r.StatusApproval || 'Pending'}</span>
+                        <span class="text-[9px] px-2.5 py-0.5 rounded border font-bold uppercase ${statusColor}">${statusText}</span>
                     </div>
                     <div class="grid grid-cols-3 gap-2">
                         <div class="bg-black/30 p-2 rounded-lg text-center"><span class="text-[8px] uppercase tracking-wider text-white/70 font-bold block mb-1">In</span><span class="text-xs font-mono text-white font-bold">${r.F1 || '--:--'}</span></div>
                         <div class="bg-black/30 p-2 rounded-lg text-center"><span class="text-[8px] uppercase tracking-wider text-white/70 font-bold block mb-1">Out</span><span class="text-xs font-mono text-white font-bold">${outDisplay}</span></div>
-                        <div class="bg-black/30 p-2 rounded-lg text-center overflow-hidden"><span class="text-[8px] uppercase tracking-wider text-white/70 font-bold block mb-1">Status</span><span class="text-[9px] font-extrabold text-emerald-400 uppercase truncate block">Present</span></div>
+                        <div class="bg-black/30 p-2 rounded-lg text-center overflow-hidden"><span class="text-[8px] uppercase tracking-wider text-white/70 font-bold block mb-1">Approval</span><span class="text-[9px] font-extrabold text-amber-400 uppercase truncate block">${r.StatusApproval || 'Pending'}</span></div>
                     </div>
                 </div>`;
             }).join('');
         }
-
+        
         async function recordAttendance(type) {
             if (!isDeviceValid()) return;
             loader.style.display = 'flex';
