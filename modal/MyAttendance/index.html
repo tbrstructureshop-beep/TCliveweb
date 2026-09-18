@@ -76,15 +76,52 @@
             </button>
         </div>
 
-        <div id="remote-actions" class="glass-panel p-6 hidden">
-            <div class="flex items-center gap-2 mb-4 text-amber-500 font-bold text-[10px] uppercase"><i data-lucide="map-pin-off" size="14"></i> Status Proposal (Outside IP)</div>
-            <div class="flex gap-2">
-                <select id="leaveType" class="input-field text-xs">
-                    <option value="" disabled selected>-- SELECT STATUS --</option>
-                    <option>Sick</option><option>Training</option><option>Annual Leave</option><option>Work Outside</option>
-                </select>
-                <button onclick="recordLeave()" class="btn-primary px-6 text-[10px] whitespace-nowrap">Send</button>
+        <div id="remote-actions" class="glass-panel p-6 hidden space-y-3">
+            <div class="flex items-center gap-2 text-amber-500 font-bold text-[10px] uppercase">
+                <i data-lucide="map-pin-off" size="14"></i> Status Proposal (Leave / Permit)
             </div>
+            
+            <!-- Dropdown Pilihan Leave yang Lengkap -->
+            <select id="leaveType" class="input-field text-xs">
+                <option value="" disabled selected>-- SELECT LEAVE TYPE --</option>
+                <option value="Sick Leave">Sick Leave</option>
+                <option value="Annual Leave">Annual Leave</option>
+                <option value="Training">Training</option>
+                <option value="Business Trip">Business Trip</option>
+                <option value="Special Leave">Special Leave</option>
+                <option value="Marriage Leave">Marriage Leave</option>
+                <option value="Child Marriage">Child Marriage</option>
+                <option value="Child Circumcision">Child Circumcision</option>
+                <option value="Child Baptism">Child Baptism</option>
+                <option value="Child tooth Cut">Child tooth Cut</option>
+                <option value="Wife Child Birth">Wife Child Birth</option>
+                <option value="Miscarriage">Miscarriage</option>
+                <option value="Spouse/Parent Death">Spouse/Parent Death</option>
+                <option value="Family in One Household Passed Away">Family in One Household Passed Away</option>
+                <option value="Child/Spouse Hospitalized">Child/Spouse Hospitalized</option>
+                <option value="Hajj Leave">Hajj Leave</option>
+                <option value="Umrah Leave">Umrah Leave</option>
+                <option value="Pilgrimage Leave">Pilgrimage Leave</option>
+                <option value="Baby Birth">Baby Birth</option>
+                <option value="Premature Baby Birth">Premature Baby Birth</option>
+                <option value="Emergency Leave">Emergency Leave</option>
+                <option value="Masa Persiapan Pensiun">Masa Persiapan Pensiun</option>
+                <option value="Got Call from Police/Court/Gov">Got Call from Police/Court/Gov</option>
+            </select>
+
+            <!-- Input Start Date dan Until Date -->
+            <div class="grid grid-cols-2 gap-2">
+                <div>
+                    <span class="text-[9px] uppercase opacity-60 block mb-1 font-bold">Start Date</span>
+                    <input type="date" id="startDate" class="input-field text-xs font-mono">
+                </div>
+                <div>
+                    <span class="text-[9px] uppercase opacity-60 block mb-1 font-bold">Until Date</span>
+                    <input type="date" id="untilDate" class="input-field text-xs font-mono">
+                </div>
+            </div>
+
+            <button onclick="recordLeave()" class="btn-primary w-full text-[10px] py-3 mt-2">Submit Proposal</button>
         </div>
 
         <!-- ✅ ACCORDION HISTORY -->
@@ -249,31 +286,76 @@
         
         async function recordLeave() {
             if (!isDeviceValid()) return;
-            const leave = document.getElementById('leaveType').value;
-            if (!leave) return;
-            loader.style.display = 'flex';
-            const now = new Date();
-            const dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
-
-            const attendanceList = masterData.attendance || [];
-            const payload = { tab: 'ATTENDANCE_RECORD', action: 'add', EmployeeId: currentUser.EmployeeId, Date: dateStr, Leave: leave, StatusApproval: 'Pending' };
-            const todayRec = attendanceList.find(r => r.Date === dateStr && r.EmployeeId === currentUser.EmployeeId);
-            if (todayRec) { payload.action = 'update'; payload.primaryId = `${currentUser.EmployeeId}|${dateStr}`; }
             
+            const leave = document.getElementById('leaveType').value;
+            const startStr = document.getElementById('startDate').value;
+            const untilStr = document.getElementById('untilDate').value;
+
+            if (!leave) {
+                Swal.fire({ icon: 'warning', title: 'Pilih Jenis Cuti', background: '#151921', color: '#fff' });
+                return;
+            }
+            if (!startStr || !untilStr) {
+                Swal.fire({ icon: 'warning', title: 'Tentukan Tanggal Mulai dan Selesai', background: '#151921', color: '#fff' });
+                return;
+            }
+
+            const startDate = new Date(startStr);
+            const untilDate = new Date(untilStr);
+
+            if (startDate > untilDate) {
+                Swal.fire({ icon: 'error', title: 'Tanggal "Until" harus setelah "Start"', background: '#151921', color: '#fff' });
+                return;
+            }
+
+            loader.style.display = 'flex';
+            const attendanceList = masterData.attendance || [];
+
             try {
-                const res = await API.post(payload);
-                if (res.status === 'success') {
-                    const att = await API.get('ATTENDANCE_RECORD');
-                    masterData.attendance = att.data || [];
-                    showMainInterface();
-                    loader.style.display = 'none';
-                    Swal.fire({ icon: 'success', title: 'Proposal Sent', background: '#151921', color: '#fff' });
-                    return;
-                } else throw new Error(res.message);
+                // Looping hari dari Start Date sampai Until Date
+                let currDate = new Date(startDate);
+                while (currDate <= untilDate) {
+                    const year = currDate.getFullYear();
+                    const month = String(currDate.getMonth() + 1).padStart(2, '0');
+                    const day = String(currDate.getDate()).padStart(2, '0');
+                    const dateStr = `${year}-${month}-${day}`;
+
+                    const existingRec = attendanceList.find(r => r.Date === dateStr && String(r.EmployeeId).trim() === String(currentUser.EmployeeId).trim());
+
+                    const payload = {
+                        tab: 'ATTENDANCE_RECORD',
+                        action: existingRec ? 'update' : 'add',
+                        EmployeeId: currentUser.EmployeeId,
+                        Date: dateStr,
+                        F1: existingRec?.F1 || '-',
+                        F4: existingRec?.F4 || '-',
+                        Leave: leave,
+                        StatusApproval: 'Pending',
+                        primaryId: `${currentUser.EmployeeId}|${dateStr}`
+                    };
+
+                    await API.post(payload);
+                    currDate.setDate(currDate.getDate() + 1); // Tambah 1 hari
+                }
+
+                // Tarik data terbaru setelah looping selesai
+                const att = await API.get('ATTENDANCE_RECORD');
+                masterData.attendance = att.data || [];
+                showMainInterface();
+                loader.style.display = 'none';
+
+                Swal.fire({ 
+                    icon: 'success', 
+                    title: 'Proposals Submitted', 
+                    text: `Cuti/Izin dari ${startStr} s.d ${untilStr} berhasil diajukan.`, 
+                    background: '#151921', 
+                    color: '#fff' 
+                });
+
             } catch (e) { 
                 loader.style.display = 'none';
                 Swal.fire({ icon: 'error', title: 'Error', text: e.message, background: '#151921', color: '#fff' }); 
-            } 
+            }
         }
 
         function startClock() { setInterval(() => { document.getElementById('display-clock').innerText = new Date().toLocaleTimeString('en-GB'); document.getElementById('display-date').innerText = new Date().toDateString(); }, 1000); }
