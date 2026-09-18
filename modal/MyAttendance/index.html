@@ -128,23 +128,35 @@
         async function init() {
             const saved = localStorage.getItem('tc_user');
             if (!saved) {
-                // ✅ Ganti menjadi pesan kosong, hapus window.parent.closeAttendanceModal()
                 document.body.innerHTML = '<div style="display:flex; height:100vh; align-items:center; justify-content:center; color:#0ea5e9; font-family:monospace; text-transform:uppercase; font-size:10px;">Authentication Required</div>';
                 return;
             }
             currentUser = JSON.parse(saved);
 
             await verifyNetwork();
+            
             try {
-                try { if (window.parent && window.parent.clearCache) window.parent.clearCache('ATTENDANCE_RECORD'); } catch(e) {}
-                await API._dbOp("delete", "ATTENDANCE_RECORD");
+                // 1. Tampilkan data dari cache lokal (IndexedDB) terlebih dahulu agar instan (0 detik)
+                const cachedAtt = await API.get('ATTENDANCE_RECORD');
+                if (cachedAtt && cachedAtt.data) {
+                    masterData.attendance = cachedAtt.data;
+                    showMainInterface();
+                }
+            } catch (e) { 
+                console.error(e); 
+            } finally { 
+                // Matikan loader secepat kilat agar modal langsung terbuka
+                loader.style.display = 'none'; 
+            }
 
-                const att = await API.get('ATTENDANCE_RECORD');
-                masterData.attendance = att.data;
-                
-                showMainInterface();
-            } catch (e) { console.error(e); } 
-            finally { loader.style.display = 'none'; }
+            // 2. Tarik data terbaru dari Google Sheet di background (tanpa loader/tidak kelihatan user)
+            try {
+                const freshAtt = await API.get('ATTENDANCE_RECORD');
+                if (freshAtt && freshAtt.data) {
+                    masterData.attendance = freshAtt.data;
+                    showMainInterface(); // Refresh tampilan jika ada data baru
+                }
+            } catch (e) {}
         }
 
         function showMainInterface() {
