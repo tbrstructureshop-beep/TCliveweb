@@ -10,35 +10,20 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
     
     <style>
-        :root { 
-            --bg: #151921; --panel: #1c222c; --border: rgba(255, 255, 255, 0.05); 
-            --accent: #0ea5e9; --text-main: #94a3b8; --text-bold: #ffffff;
-        }
+        :root { --bg: #151921; --panel: #1c222c; --border: rgba(255, 255, 255, 0.05); --accent: #0ea5e9; --text-main: #94a3b8; --text-bold: #ffffff; }
         body { background: transparent; color: var(--text-main); font-family: 'Inter', sans-serif; margin: 0; padding: 0; overflow-x: hidden; }
         .font-mono { font-family: 'JetBrains Mono', monospace; }
-        
         .glass-panel { background: var(--panel); border: 1px solid var(--border); border-radius: 1.5rem; overflow: hidden; }
-        .input-field {
-            width: 100%; background: rgba(0,0,0,0.2); border: 1px solid var(--border);
-            border-radius: 0.75rem; padding: 0.75rem 1rem; color: white; outline: none; transition: all 0.2s;
-            font-size: 0.875rem;
-        }
-        
-        .btn-primary { 
-            background: var(--accent); color: white; font-weight: 700; text-transform: uppercase;
-            letter-spacing: 0.05em; padding: 0.8rem; border-radius: 0.75rem; transition: all 0.2s;
-        }
-        .btn-primary:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); }
+        .input-field { width: 100%; background: rgba(0,0,0,0.2); border: 1px solid var(--border); border-radius: 0.75rem; padding: 0.75rem 1rem; color: white; outline: none; font-size: 0.875rem; }
+        .btn-primary { background: var(--accent); color: white; font-weight: 700; text-transform: uppercase; padding: 0.8rem; border-radius: 0.75rem; transition: all 0.2s; }
         .btn-primary:disabled { opacity: 0.1; cursor: not-allowed; filter: grayscale(1); }
-
-        .hidden { display: none !important; }
         
-        #local-loader {
-            position: fixed; inset: 0; background: var(--bg); z-index: 100;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-        }
-        
+        #local-loader { position: fixed; inset: 0; background: var(--bg); z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .history-card { background: rgba(255,255,255,0.02); border: 1px solid var(--border); transition: all 0.3s; }
+        
+        /* Accordion CSS */
+        details > summary { list-style: none; }
+        details > summary::-webkit-details-marker { display: none; }
     </style>
 </head>
 <body class="p-4 bg-[#151921] min-h-screen">
@@ -59,42 +44,8 @@
         </div>
     </div>
 
-    <!-- AUTH SECTION -->
-    <div id="auth-section" class="max-w-md mx-auto space-y-6 hidden">
-        <form id="login-form" class="glass-panel p-8 space-y-4">
-            <h2 class="text-xl font-bold text-white uppercase text-center mb-6">Technician Login</h2>
-            <input type="text" id="loginId" required class="input-field font-mono" placeholder="EMPLOYEE ID">
-            <input type="password" id="loginPass" required class="input-field" placeholder="PASSWORD">
-            <button type="submit" class="w-full btn-primary">Login</button>
-            <p class="text-center text-[10px] uppercase font-bold tracking-widest opacity-50 pt-4">
-                New User? <button type="button" onclick="showRegister()" class="text-sky-500">Register Phone</button>
-            </p>
-        </form>
-
-        <form id="register-form" class="glass-panel p-8 space-y-4 hidden">
-            <div class="grid grid-cols-2 gap-3">
-                <select id="regUnit" required class="input-field text-xs"></select>
-                <select id="regCrew" required class="input-field text-xs"></select>
-            </div>
-            <select id="regClass" required class="input-field text-xs">
-                <option value="" disabled selected>SELECT CLASS</option>
-                <option value="Employee">Employee</option>
-                <option value="Additional Employee">Additional Employee</option>
-                <option value="OJT">OJT</option>
-            </select>
-            <input type="text" id="regName" required class="input-field" placeholder="FULL NAME">
-            <input type="text" id="regJob" required class="input-field" placeholder="JOB TITLE">
-            <div class="grid grid-cols-2 gap-3">
-                <input type="text" id="regId" required class="input-field font-mono" placeholder="ID">
-                <input type="password" id="regPass" required class="input-field" placeholder="PASS">
-            </div>
-            <button type="submit" class="w-full btn-primary">Initialize Device Link</button>
-            <button type="button" onclick="showLogin()" class="w-full text-[10px] opacity-50 uppercase">Cancel</button>
-        </form>
-    </div>
-
     <!-- MAIN INTERFACE -->
-    <div id="main-interface" class="max-w-md mx-auto hidden space-y-4">
+    <div id="main-interface" class="max-w-md mx-auto space-y-4">
         <div class="glass-panel p-6 flex flex-col items-center text-center">
             <p id="display-date" class="text-[10px] font-mono text-sky-500 uppercase mb-1"></p>
             <h1 id="display-clock" class="text-4xl font-bold text-white font-mono tracking-widest mb-4">00:00:00</h1>
@@ -103,48 +54,41 @@
                     <p id="user-name" class="text-white font-bold text-sm"></p>
                     <p id="user-job" class="text-[10px] opacity-50 uppercase"></p>
                 </div>
-                <button onclick="logout()" class="p-2 bg-white/5 rounded-lg text-red-400"><i data-lucide="log-out" size="16"></i></button>
+                <!-- TOMBOL LOGOUT SEKARANG MENGEMBALIKAN KE LAYAR UTAMA -->
+                <button onclick="logout()" class="p-2 bg-white/5 rounded-lg text-red-400 hover:bg-red-500 hover:text-white transition"><i data-lucide="log-out" size="16"></i></button>
             </div>
         </div>
 
-        <!-- OFFICE ONLY ACTION -->
         <div id="office-actions" class="grid grid-cols-2 gap-4 hidden">
             <button id="btn-f1" onclick="recordAttendance('F1')" class="glass-panel p-6 flex flex-col items-center gap-3 hover:border-sky-500 transition-all group">
-                <div class="p-3 rounded-2xl bg-sky-500/10 text-sky-500 group-hover:bg-sky-500 group-hover:text-white">
-                    <i data-lucide="play" size="24"></i>
-                </div>
+                <div class="p-3 rounded-2xl bg-sky-500/10 text-sky-500 group-hover:bg-sky-500 group-hover:text-white"><i data-lucide="play" size="24"></i></div>
                 <span class="text-[10px] font-bold uppercase">Clock In</span>
             </button>
             <button id="btn-f4" onclick="recordAttendance('F4')" class="glass-panel p-6 flex flex-col items-center gap-3 hover:border-red-500 transition-all group">
-                <div class="p-3 rounded-2xl bg-red-500/10 text-red-500 group-hover:bg-red-500 group-hover:text-white">
-                    <i data-lucide="square" size="24"></i>
-                </div>
+                <div class="p-3 rounded-2xl bg-red-500/10 text-red-500 group-hover:bg-red-500 group-hover:text-white"><i data-lucide="square" size="24"></i></div>
                 <span class="text-[10px] font-bold uppercase">Clock Out</span>
             </button>
         </div>
 
-        <!-- REMOTE ONLY ACTION -->
         <div id="remote-actions" class="glass-panel p-6 hidden">
-            <div class="flex items-center gap-2 mb-4 text-amber-500 font-bold text-[10px] uppercase">
-                <i data-lucide="map-pin-off" size="14"></i> Status Proposal (Outside IP)
-            </div>
+            <div class="flex items-center gap-2 mb-4 text-amber-500 font-bold text-[10px] uppercase"><i data-lucide="map-pin-off" size="14"></i> Status Proposal (Outside IP)</div>
             <div class="flex gap-2">
                 <select id="leaveType" class="input-field text-xs">
                     <option value="" disabled selected>-- SELECT STATUS --</option>
-                    <option value="Sick">Sick</option>
-                    <option value="Training">Training</option>
-                    <option value="Annual Leave">Annual Leave</option>
-                    <option value="Work Outside">Work Outside</option>
+                    <option>Sick</option><option>Training</option><option>Annual Leave</option><option>Work Outside</option>
                 </select>
                 <button onclick="recordLeave()" class="btn-primary px-6 text-[10px] whitespace-nowrap">Send</button>
             </div>
         </div>
 
-        <!-- HISTORY -->
-        <div class="space-y-2 pb-10">
-            <h3 class="text-[10px] font-bold uppercase opacity-30 ml-2">Recent Logs (Past 7 Days)</h3>
-            <div id="history-container" class="space-y-2"></div>
-        </div>
+        <!-- ✅ ACCORDION HISTORY -->
+        <details class="glass-panel group pb-4">
+            <summary class="flex items-center justify-between p-4 cursor-pointer outline-none hover:bg-white/5 transition-colors">
+                <span class="text-[10px] font-bold uppercase tracking-widest text-sky-500">Recent Logs (Past 7 Days)</span>
+                <i data-lucide="chevron-down" class="w-4 h-4 text-sky-500 group-open:rotate-180 transition-transform"></i>
+            </summary>
+            <div id="history-container" class="px-4 space-y-2 mt-2"></div>
+        </details>
     </div>
 
     <script>
@@ -153,25 +97,17 @@
         const ALLOWED_IPS = ["118.97.115.66", "118.97.70.226"]; 
         let currentUser = null;
         let isInsideOffice = false;
-        let masterData = { users: [], attendance: [] };
-        
+        let masterData = { attendance: [] };
+
+        function getFingerprint() { return `${navigator.userAgent}-${screen.width}x${screen.height}`; }
+
         function isDeviceValid() {
             const devKey = "DeviceId(phone)";
             if (currentUser && currentUser[devKey] && currentUser[devKey] !== getFingerprint()) {
-                Swal.fire({ 
-                    icon: 'error', 
-                    title: 'Locked', 
-                    text: 'This account belongs to another phone.', 
-                    background: '#151921', 
-                    color: '#fff' 
-                });
+                Swal.fire({ icon: 'error', title: 'Locked', text: 'This account belongs to another phone.', background: '#151921', color: '#fff' });
                 return false;
             }
             return true;
-        }
-
-        function getFingerprint() {
-            return `${navigator.userAgent}-${screen.width}x${screen.height}`;
         }
 
         async function verifyNetwork() {
@@ -179,100 +115,55 @@
                 const resp = await fetch('https://api.ipify.org?format=json');
                 const data = await resp.json();
                 isInsideOffice = ALLOWED_IPS.includes(data.ip);
-                
                 document.getElementById('ip-status-dot').className = `w-2 h-2 rounded-full ${isInsideOffice ? 'bg-green-500' : 'bg-amber-500 animate-pulse'}`;
                 document.getElementById('ip-label').innerText = isInsideOffice ? 'OFFICE_NETWORK' : 'REMOTE_NETWORK';
-                return true;
-            } catch (e) { return false; }
+            } catch (e) {}
         }
 
         async function init() {
+            // Karena ini file baru dipanggil, panggil session langsung
+            const saved = localStorage.getItem('tc_user');
+            if (!saved) {
+                // Harusnya tidak terjadi karena dikunci dari Option menu, tapi jaga-jaga
+                window.parent.closeAttendanceModal();
+                return;
+            }
+            currentUser = JSON.parse(saved);
+
             await verifyNetwork();
             try {
-                // ✅ TAMBAHKAN DUA BARIS INI: Paksa hapus cache absensi agar PC selalu sinkron dengan HP
                 try { if (window.parent && window.parent.clearCache) window.parent.clearCache('ATTENDANCE_RECORD'); } catch(e) {}
                 await API._dbOp("delete", "ATTENDANCE_RECORD");
 
-                const [u, s, usr, att] = await Promise.all([
-                    API.get('UNIT'), API.get('SHIFTS'), API.get('USER'), API.get('ATTENDANCE_RECORD')
-                ]);
-                masterData.users = usr.data;
+                const att = await API.get('ATTENDANCE_RECORD');
                 masterData.attendance = att.data;
                 
-                document.getElementById('regUnit').innerHTML = u.data.map(u => `<option value="${u.UnitCode}">${u.UnitCode}</option>`).join('');
-                document.getElementById('regUnit').onchange = (e) => {
-                    const filtered = s.data.filter(sh => sh.UnitCode === e.target.value && sh.Crew);
-                    const uniqueCrews = [...new Set(filtered.map(sh => sh.Crew.trim()))];
-                
-                    if (uniqueCrews.length > 0) {
-                        document.getElementById('regCrew').innerHTML = uniqueCrews
-                            .map(crew => `<option value="${crew}">${crew}</option>`)
-                            .join('');
-                    } else {
-                        document.getElementById('regCrew').innerHTML = `<option value="" disabled selected>NO CREW ASSIGNED</option>`;
-                    }
-                };
-                document.getElementById('regUnit').dispatchEvent(new Event('change'));
-
-                checkSession();
+                showMainInterface();
             } catch (e) { console.error(e); } 
             finally { loader.style.display = 'none'; }
         }
 
-        function checkSession() {
-            const saved = localStorage.getItem('tc_user');
-            if (saved) {
-                const parsed = JSON.parse(saved);
-                // Ambil data user terupdate dari sheet
-                const freshUser = masterData.users.find(u => u.EmployeeId === parsed.EmployeeId);
-                currentUser = freshUser || parsed;
-                showMainInterface();
-            } else { 
-                showLogin(); 
-            }
-        }
-
         function showMainInterface() {
-            document.getElementById('auth-section').classList.add('hidden');
-            document.getElementById('main-interface').classList.remove('hidden');
             document.getElementById('user-name').innerText = currentUser.Name;
             document.getElementById('user-job').innerText = currentUser.JobTitle;
             
-            // Format tanggal lokal YYYY-MM-DD
             const now = new Date();
-            const year = now.getFullYear();
-            const month = String(now.getMonth() + 1).padStart(2, '0');
-            const day = String(now.getDate()).padStart(2, '0');
-            const today = `${year}-${month}-${day}`;
+            const dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+            const todayRecord = masterData.attendance.find(r => r.Date === dateStr && String(r.EmployeeId).trim() === String(currentUser.EmployeeId).trim());
 
-            const todayRecord = masterData.attendance.find(r => 
-                r.Date === today && String(r.EmployeeId).trim() === String(currentUser.EmployeeId).trim()
-            );
-
-            // UI Logic based on IP
             if (isInsideOffice) {
                 document.getElementById('office-actions').classList.remove('hidden');
-                document.getElementById('remote-actions').classList.add('hidden');
                 document.getElementById('btn-f1').disabled = !!todayRecord?.F1;
                 document.getElementById('btn-f4').disabled = !todayRecord?.F1 || !!todayRecord?.F4;
             } else {
-                document.getElementById('office-actions').classList.add('hidden');
                 document.getElementById('remote-actions').classList.remove('hidden');
             }
 
-            renderHistory();
+            renderHistory(dateStr);
             startClock();
-            lucide.createIcons();
         }
 
-        function renderHistory() {
-            // ✅ Deklarasikan tanggal hari ini (YYYY-MM-DD) agar tidak error ReferenceError
-            const now = new Date();
-            const year = now.getFullYear();
-            const month = String(now.getMonth() + 1).padStart(2, '0');
-            const day = String(now.getDate()).padStart(2, '0');
-            const today = `${year}-${month}-${day}`;
-
+        function renderHistory(todayStr) {
             const container = document.getElementById('history-container');
             const userRecords = masterData.attendance
                 .filter(r => String(r.EmployeeId).trim() === String(currentUser.EmployeeId).trim())
@@ -280,81 +171,44 @@
                 .slice(0, 7);
 
             if (userRecords.length === 0) {
-                container.innerHTML = '<div class="p-8 text-center text-[10px] opacity-20 uppercase">No history found</div>';
+                container.innerHTML = '<div class="py-4 text-center text-[10px] opacity-20 uppercase">No history found</div>';
                 return;
             }
 
             container.innerHTML = userRecords.map(r => {
-                // Jika hari sudah lewat dan F4 kosong, tampilkan '-', jika hari ini tampilkan '--:--'
-                const outDisplay = r.F4 || (r.Date < today ? '-' : '--:--');
-
+                const outDisplay = r.F4 || (r.Date < todayStr ? '-' : '--:--');
                 return `
-                <div class="history-card p-4 rounded-2xl">
-                    <div class="flex justify-between items-center mb-3">
+                <div class="history-card p-3 rounded-xl">
+                    <div class="flex justify-between items-center mb-2">
                         <span class="text-[10px] font-mono text-sky-500 font-bold">${r.Date}</span>
-                        <span class="text-[9px] px-2 py-0.5 rounded bg-white/5 border border-white/5 font-bold uppercase ${r.StatusApproval === 'Approved' ? 'text-green-500' : 'text-amber-500'}">${r.StatusApproval || 'Pending'}</span>
+                        <span class="text-[8px] px-2 py-0.5 rounded bg-white/5 border border-white/5 font-bold uppercase ${r.StatusApproval === 'Approved' ? 'text-green-500' : 'text-amber-500'}">${r.StatusApproval || 'Pending'}</span>
                     </div>
                     <div class="grid grid-cols-3 gap-2">
-                        <div class="bg-black/20 p-2 rounded-xl text-center">
-                            <span class="text-[8px] uppercase opacity-40 block">In</span>
-                            <span class="text-xs font-mono text-white">${r.F1 || '--:--'}</span>
-                        </div>
-                        <div class="bg-black/20 p-2 rounded-xl text-center">
-                            <span class="text-[8px] uppercase opacity-40 block">Out</span>
-                            <span class="text-xs font-mono text-white">${outDisplay}</span>
-                        </div>
-                        <div class="bg-black/20 p-2 rounded-xl text-center overflow-hidden">
-                            <span class="text-[8px] uppercase opacity-40 block">Log</span>
-                            <span class="text-[9px] font-bold text-sky-400 uppercase truncate block">${r.Leave || 'Present'}</span>
-                        </div>
+                        <div class="bg-black/20 p-1.5 rounded-lg text-center"><span class="text-[7px] uppercase opacity-40 block">In</span><span class="text-[10px] font-mono">${r.F1 || '--:--'}</span></div>
+                        <div class="bg-black/20 p-1.5 rounded-lg text-center"><span class="text-[7px] uppercase opacity-40 block">Out</span><span class="text-[10px] font-mono">${outDisplay}</span></div>
+                        <div class="bg-black/20 p-1.5 rounded-lg text-center overflow-hidden"><span class="text-[7px] uppercase opacity-40 block">Log</span><span class="text-[8px] font-bold text-sky-400 uppercase truncate block">${r.Leave || 'Present'}</span></div>
                     </div>
-                </div>
-            `;
+                </div>`;
             }).join('');
         }
 
         async function recordAttendance(type) {
-
             if (!isDeviceValid()) return;
-            
             loader.style.display = 'flex';
             const now = new Date();
             const timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-            
-            const year = now.getFullYear();
-            const month = String(now.getMonth() + 1).padStart(2, '0');
-            const day = String(now.getDate()).padStart(2, '0');
-            const dateStr = `${year}-${month}-${day}`;
+            const dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
 
-            // ✅ JIKA ADA ABSEN HARI SEBELUMNYA TANPA F4, OTOMATIS ISI DENGAN '-'
             if (type === 'F1') {
-                const pastUnclosed = masterData.attendance.find(r => 
-                    r.EmployeeId === currentUser.EmployeeId && r.Date < dateStr && (!r.F4 || r.F4 === '')
-                );
+                const pastUnclosed = masterData.attendance.find(r => r.EmployeeId === currentUser.EmployeeId && r.Date < dateStr && (!r.F4 || r.F4 === ''));
                 if (pastUnclosed) {
-                    await API.post({
-                        tab: 'ATTENDANCE_RECORD',
-                        action: 'update',
-                        primaryId: `${currentUser.EmployeeId}|${pastUnclosed.Date}`,
-                        F4: '-'
-                    });
+                    await API.post({ tab: 'ATTENDANCE_RECORD', action: 'update', primaryId: `${currentUser.EmployeeId}|${pastUnclosed.Date}`, F4: '-' });
                 }
             }
 
-            const payload = {
-                tab: 'ATTENDANCE_RECORD',
-                action: 'add',
-                EmployeeId: currentUser.EmployeeId,
-                Date: dateStr,
-                [type]: timeStr,
-                StatusApproval: 'Pending'
-            };
-
+            const payload = { tab: 'ATTENDANCE_RECORD', action: 'add', EmployeeId: currentUser.EmployeeId, Date: dateStr, [type]: timeStr, StatusApproval: 'Pending' };
             const todayRec = masterData.attendance.find(r => r.Date === dateStr && r.EmployeeId === currentUser.EmployeeId);
-            if (todayRec) {
-                payload.action = 'update';
-                payload.primaryId = `${currentUser.EmployeeId}|${dateStr}`;
-            }
+            if (todayRec) { payload.action = 'update'; payload.primaryId = `${currentUser.EmployeeId}|${dateStr}`; }
 
             try {
                 const res = await API.post(payload);
@@ -363,39 +217,22 @@
                     masterData.attendance = att.data;
                     showMainInterface();
                     Swal.fire({ icon: 'success', title: 'Committed', text: `${type} at ${timeStr}`, background: '#151921', color: '#fff' });
-                } else {
-                    throw new Error(res.message || 'Failed to update attendance');
-                }
-            } catch (e) { 
-                Swal.fire({ icon: 'error', title: 'Error', text: e.message, background: '#151921', color: '#fff' }); 
-            } finally { 
-                loader.style.display = 'none'; 
-            }
+                } else throw new Error(res.message);
+            } catch (e) { Swal.fire({ icon: 'error', title: 'Error', text: e.message, background: '#151921', color: '#fff' }); } 
+            finally { loader.style.display = 'none'; }
         }
         
         async function recordLeave() {
-
             if (!isDeviceValid()) return;
             const leave = document.getElementById('leaveType').value;
             if (!leave) return;
             loader.style.display = 'flex';
-            const dateStr = new Date().toISOString().split('T')[0];
+            const now = new Date();
+            const dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
 
-            const payload = {
-                tab: 'ATTENDANCE_RECORD',
-                action: 'add',
-                EmployeeId: currentUser.EmployeeId,
-                Date: dateStr,
-                Leave: leave,
-                StatusApproval: 'Pending'
-            };
-
+            const payload = { tab: 'ATTENDANCE_RECORD', action: 'add', EmployeeId: currentUser.EmployeeId, Date: dateStr, Leave: leave, StatusApproval: 'Pending' };
             const todayRec = masterData.attendance.find(r => r.Date === dateStr && r.EmployeeId === currentUser.EmployeeId);
-            if (todayRec) {
-                payload.action = 'update';
-                // ✅ Ganti menjadi gabungan ID dan Tanggal:
-                payload.primaryId = `${currentUser.EmployeeId}|${dateStr}`;
-            }
+            if (todayRec) { payload.action = 'update'; payload.primaryId = `${currentUser.EmployeeId}|${dateStr}`; }
             
             try {
                 await API.post(payload);
@@ -407,51 +244,12 @@
             finally { loader.style.display = 'none'; }
         }
 
-        document.getElementById('login-form').onsubmit = (e) => {
-            e.preventDefault();
-            const id = document.getElementById('loginId').value;
-            const pass = document.getElementById('loginPass').value;
-            const user = masterData.users.find(u => u.EmployeeId === id && u.Password === pass);
-            
-            if (user) {
-                currentUser = user;
-                localStorage.setItem('tc_user', JSON.stringify(user));
-                showMainInterface(); // ✅ Bebas login dari device mana saja
-            } else { 
-                Swal.fire({ icon: 'error', title: 'Failed', text: 'Check Credentials' }); 
-            }
-        };
-
-        document.getElementById('register-form').onsubmit = async (e) => {
-            e.preventDefault();
-            loader.style.display = 'flex';
-            const payload = {
-                tab: 'USER', 
-                action: 'add',
-                UnitCode: document.getElementById('regUnit').value,
-                Crew: document.getElementById('regCrew').value, // ✅ PERBAIKAN DI SINI (Sebelumnya regShift)
-                Class: document.getElementById('regClass').value,
-                EmployeeId: document.getElementById('regId').value,
-                Name: document.getElementById('regName').value,
-                JobTitle: document.getElementById('regJob').value,
-                Password: document.getElementById('regPass').value,
-                // Match the GAS cleaned header key: DeviceId(phone)
-                "DeviceId(phone)": getFingerprint()
-            };
-            try {
-                await API.post(payload);
-                const usr = await API.get('USER');
-                masterData.users = usr.data;
-                showLogin();
-                Swal.fire({ icon: 'success', title: 'Success', text: 'Device Linked' });
-            } catch (err) { Swal.fire({ icon: 'error', title: 'Failed', text: err.message }); }
-            finally { loader.style.display = 'none'; }
-        };
-
-        function showLogin() { document.getElementById('auth-section').classList.remove('hidden'); document.getElementById('main-interface').classList.add('hidden'); document.getElementById('login-form').classList.remove('hidden'); document.getElementById('register-form').classList.add('hidden'); }
-        function showRegister() { document.getElementById('login-form').classList.add('hidden'); document.getElementById('register-form').classList.remove('hidden'); }
         function startClock() { setInterval(() => { document.getElementById('display-clock').innerText = new Date().toLocaleTimeString('en-GB'); document.getElementById('display-date').innerText = new Date().toDateString(); }, 1000); }
-        function logout() { localStorage.removeItem('tc_user'); location.reload(); }
+        
+        function logout() { 
+            localStorage.removeItem('tc_user'); 
+            window.parent.closeAttendanceModal(); 
+        }
 
         init();
     </script>
