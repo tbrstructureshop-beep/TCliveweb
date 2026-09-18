@@ -55,8 +55,12 @@
 
         async function init() {
             try {
+                // ✅ Hapus cache USER dari RAM/Session parent agar selalu dapat data terbaru dari Google Sheet
+                try { if (window.parent && window.parent.clearCache) window.parent.clearCache('USER'); } catch(e) {}
+
                 const [u, s, usr] = await Promise.all([API.get('UNIT'), API.get('SHIFTS'), API.get('USER')]);
-                masterData.users = usr.data;
+                masterData.users = usr.data || [];
+                
                 document.getElementById('regUnit').innerHTML = u.data.map(u => `<option value="${u.UnitCode}">${u.UnitCode}</option>`).join('');
                 document.getElementById('regUnit').onchange = (e) => {
                     const filtered = s.data.filter(sh => sh.UnitCode === e.target.value && sh.Crew);
@@ -64,7 +68,11 @@
                     document.getElementById('regCrew').innerHTML = uniqueCrews.length ? uniqueCrews.map(c => `<option>${c}</option>`).join('') : '<option disabled selected>NO CREW</option>';
                 };
                 document.getElementById('regUnit').dispatchEvent(new Event('change'));
-            } catch (e) { } finally { loader.style.display = 'none'; }
+            } catch (e) { 
+                console.error("Init Error:", e);
+            } finally { 
+                loader.style.display = 'none'; 
+            }
         }
 
         function toggleView() {
@@ -74,11 +82,21 @@
 
         document.getElementById('login-form').onsubmit = (e) => {
             e.preventDefault();
-            const user = masterData.users.find(u => u.EmployeeId === document.getElementById('loginId').value && u.Password === document.getElementById('loginPass').value);
+            const inputId = document.getElementById('loginId').value.trim();
+            const inputPass = document.getElementById('loginPass').value.trim();
+            
+            // ✅ Bungkus dengan String() & trim() agar aman dari perbedaan Number (Sheet) vs String (Input)
+            const user = masterData.users.find(u => 
+                String(u.EmployeeId || '').trim() === inputId && 
+                String(u.Password || '').trim() === inputPass
+            );
+
             if (user) {
                 localStorage.setItem('tc_user', JSON.stringify(user));
                 window.parent.closeUserModalAndRefresh(); // ✅ Tutup modal otomatis!
-            } else { Swal.fire({ icon: 'error', title: 'Failed', text: 'Wrong Credentials', background: '#151921', color: '#fff' }); }
+            } else { 
+                Swal.fire({ icon: 'error', title: 'Failed', text: 'Wrong Credentials', background: '#151921', color: '#fff' }); 
+            }
         };
 
         document.getElementById('register-form').onsubmit = async (e) => {
