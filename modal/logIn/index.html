@@ -1,1 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="../../api.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <style>
+        body { background: transparent; font-family: 'Inter', sans-serif; overflow: hidden; margin:0; padding:1.5rem; color: #fff;}
+        .input-field { width: 100%; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); border-radius: 0.75rem; padding: 0.75rem; color: white; outline: none; font-size: 0.875rem;}
+        .btn-primary { background: #0ea5e9; color: white; font-weight: 700; text-transform: uppercase; padding: 0.8rem; border-radius: 0.75rem; width: 100%; }
+        #local-loader { position: fixed; inset: 0; background: #151921; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    </style>
+</head>
+<body>
+    <div id="local-loader">
+        <div class="w-8 h-8 border-4 border-sky-500/20 border-t-sky-500 rounded-full animate-spin mb-4"></div>
+        <p class="text-[10px] font-mono text-sky-500">Authenticating...</p>
+    </div>
 
+    <!-- LOGIN FORM -->
+    <form id="login-form" class="space-y-4">
+        <h2 class="text-xl font-bold uppercase text-center mb-4">Technician Login</h2>
+        <input type="text" id="loginId" required class="input-field font-mono" placeholder="EMPLOYEE ID">
+        <input type="password" id="loginPass" required class="input-field" placeholder="PASSWORD">
+        <button type="submit" class="btn-primary">Login</button>
+        <p class="text-center text-[10px] uppercase font-bold opacity-50 pt-2 cursor-pointer hover:text-sky-400" onclick="toggleView()">New User? Register Phone</p>
+    </form>
+
+    <!-- REGISTER FORM -->
+    <form id="register-form" class="space-y-3 hidden overflow-y-auto max-h-[300px] pr-2">
+        <h2 class="text-lg font-bold uppercase text-center mb-2 text-sky-500">Device Link</h2>
+        <div class="grid grid-cols-2 gap-2">
+            <select id="regUnit" required class="input-field text-xs"></select>
+            <select id="regCrew" required class="input-field text-xs"></select>
+        </div>
+        <select id="regClass" required class="input-field text-xs"><option value="" disabled selected>SELECT CLASS</option><option>Employee</option><option>OJT</option></select>
+        <input type="text" id="regName" required class="input-field" placeholder="FULL NAME">
+        <input type="text" id="regJob" required class="input-field" placeholder="JOB TITLE">
+        <div class="grid grid-cols-2 gap-2">
+            <input type="text" id="regId" required class="input-field font-mono" placeholder="ID">
+            <input type="password" id="regPass" required class="input-field" placeholder="PASS">
+        </div>
+        <button type="submit" class="btn-primary">Initialize Link</button>
+        <button type="button" onclick="toggleView()" class="w-full text-[10px] opacity-50 uppercase mt-2">Cancel</button>
+    </form>
+
+    <script>
+        const loader = document.getElementById('local-loader');
+        let masterData = { users: [] };
+
+        function getFingerprint() { return `${navigator.userAgent}-${screen.width}x${screen.height}`; }
+
+        async function init() {
+            try {
+                const [u, s, usr] = await Promise.all([API.get('UNIT'), API.get('SHIFTS'), API.get('USER')]);
+                masterData.users = usr.data;
+                document.getElementById('regUnit').innerHTML = u.data.map(u => `<option value="${u.UnitCode}">${u.UnitCode}</option>`).join('');
+                document.getElementById('regUnit').onchange = (e) => {
+                    const filtered = s.data.filter(sh => sh.UnitCode === e.target.value && sh.Crew);
+                    const uniqueCrews = [...new Set(filtered.map(sh => sh.Crew.trim()))];
+                    document.getElementById('regCrew').innerHTML = uniqueCrews.length ? uniqueCrews.map(c => `<option>${c}</option>`).join('') : '<option disabled selected>NO CREW</option>';
+                };
+                document.getElementById('regUnit').dispatchEvent(new Event('change'));
+            } catch (e) { } finally { loader.style.display = 'none'; }
+        }
+
+        function toggleView() {
+            document.getElementById('login-form').classList.toggle('hidden');
+            document.getElementById('register-form').classList.toggle('hidden');
+        }
+
+        document.getElementById('login-form').onsubmit = (e) => {
+            e.preventDefault();
+            const user = masterData.users.find(u => u.EmployeeId === document.getElementById('loginId').value && u.Password === document.getElementById('loginPass').value);
+            if (user) {
+                localStorage.setItem('tc_user', JSON.stringify(user));
+                window.parent.closeUserModalAndRefresh(); // ✅ Tutup modal otomatis!
+            } else { Swal.fire({ icon: 'error', title: 'Failed', text: 'Wrong Credentials', background: '#151921', color: '#fff' }); }
+        };
+
+        document.getElementById('register-form').onsubmit = async (e) => {
+            e.preventDefault(); loader.style.display = 'flex';
+            const payload = { tab: 'USER', action: 'add', UnitCode: document.getElementById('regUnit').value, Crew: document.getElementById('regCrew').value, Class: document.getElementById('regClass').value, EmployeeId: document.getElementById('regId').value, Name: document.getElementById('regName').value, JobTitle: document.getElementById('regJob').value, Password: document.getElementById('regPass').value, "DeviceId(phone)": getFingerprint() };
+            try {
+                await API.post(payload);
+                Swal.fire({ icon: 'success', title: 'Device Linked', background: '#151921', color: '#fff' }).then(() => { location.reload(); });
+            } catch (err) {} finally { loader.style.display = 'none'; }
+        };
+
+        init();
+    </script>
+</body>
+</html>
