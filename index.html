@@ -194,16 +194,16 @@
         <!-- Dark Backdrop -->
         <div class="absolute inset-0 bg-black/60 backdrop-blur-md" onclick="toggleUserModal()"></div>
         
-        <!-- Modal Container -->
-        <div class="relative w-full max-w-md h-[600px] max-h-[90vh] transition-all transform scale-95 opacity-0" id="attendance-content">
+        <!-- Modal Container (ID WAJIB modal-content) -->
+        <div class="relative w-full max-w-lg bg-[#151921] border border-white/10 rounded-3xl overflow-hidden shadow-2xl transition-all transform scale-95 opacity-0" id="modal-content">
             <div class="p-4 border-b border-white/5 flex justify-between items-center bg-[#0b0e14]/50">
                 <h3 class="text-xs font-bold uppercase tracking-[0.2em] text-sky-500">Technician Command</h3>
                 <button onclick="toggleUserModal()" class="text-white/30 hover:text-white transition-colors">
                     <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
-            <!-- IMPORTANT: src must match your folder structure -->
-            <iframe src="/modal/option/index.html" class="w-full h-[400px] border-none"></iframe>
+            <!-- iframe dinamis -->
+            <iframe src="" class="w-full h-[400px] border-none"></iframe>
         </div>
     </div>
 
@@ -309,45 +309,47 @@
             const iframe = modal.querySelector('iframe');
             
             if (modal.classList.contains('hidden')) {
-                // 1. Cek apakah ada sesi user yang tersimpan
+                // 1. Cek apakah ada sesi user yang tersimpan di localStorage
                 const isLoggedIn = localStorage.getItem('tc_user') !== null;
                 
-                // 2. Arahkan URL iframe sesuai status login
-                // PERHATIKAN: Pastikan nama folder Anda 'logIn' atau 'login'. Ubah di bawah ini jika nama folder Anda huruf kecil semua!
+                // 2. Arahkan iframe ke form Login atau Option Menu
                 if (iframe) {
                     iframe.src = isLoggedIn ? 'modal/option/index.html' : 'modal/logIn/index.html'; 
                 }
 
-                // 3. Tampilkan Animasi Modal
+                // 3. Munculkan modal dengan animasi
                 modal.classList.remove('hidden');
                 setTimeout(() => {
                     content.classList.remove('scale-95', 'opacity-0');
                     content.classList.add('scale-100', 'opacity-100');
                 }, 10);
             } else {
-                // 4. Sembunyikan Animasi Modal
+                // 4. Sembunyikan modal
                 content.classList.add('scale-95', 'opacity-0');
                 content.classList.remove('scale-100', 'opacity-100');
                 setTimeout(() => {
                     modal.classList.add('hidden');
-                    if (iframe) iframe.src = ''; // Kosongkan iframe agar reset saat ditutup
+                    if (iframe) iframe.src = ''; // Kosongkan iframe saat ditutup
                 }, 200);
             }
         }
 
-        // Fungsi ini wajib ada agar iframe Login bisa menyuruh Halaman Utama menutup modal
+        // Fungsi penutup dari iframe login (pastikan library SweetAlert2 sudah terpanggil di index.html utama jika ingin menampilkan pop-up sukses)
         window.closeUserModalAndRefresh = function() {
-            toggleUserModal(); // Menutup modal secara visual
-            Swal.fire({ 
-                icon: 'success', 
-                title: 'Authenticated', 
-                toast: true, 
-                position: 'top-end', 
-                showConfirmButton: false, 
-                timer: 1500, 
-                background: '#151921', 
-                color: '#fff' 
-            });
+            toggleUserModal(); 
+            // Cek apakah SweetAlert2 tersedia di index.html utama, jika belum bisa diganti alert biasa atau dipasang CDN-nya
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({ 
+                    icon: 'success', 
+                    title: 'Authenticated', 
+                    toast: true, 
+                    position: 'top-end', 
+                    showConfirmButton: false, 
+                    timer: 1500, 
+                    background: '#151921', 
+                    color: '#fff' 
+                });
+            }
         };
 
         function showGlobalComingSoon() {
