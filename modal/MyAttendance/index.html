@@ -128,11 +128,10 @@
         }
 
         async function init() {
-            // Karena ini file baru dipanggil, panggil session langsung
             const saved = localStorage.getItem('tc_user');
             if (!saved) {
-                // Harusnya tidak terjadi karena dikunci dari Option menu, tapi jaga-jaga
-                window.parent.closeAttendanceModal();
+                // ✅ Ganti menjadi pesan kosong, hapus window.parent.closeAttendanceModal()
+                document.body.innerHTML = '<div style="display:flex; height:100vh; align-items:center; justify-content:center; color:#0ea5e9; font-family:monospace; text-transform:uppercase; font-size:10px;">Authentication Required</div>';
                 return;
             }
             currentUser = JSON.parse(saved);
