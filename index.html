@@ -217,6 +217,16 @@
         </button>
     </div>
 
+    <!-- ATTENDANCE MODAL OVERLAY (PRELOADED) -->
+    <div id="attendance-modal" class="fixed inset-0 z-[250] hidden flex items-center justify-center p-4 md:p-8">
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-md" onclick="closeAttendanceModal()"></div>
+        
+        <div class="relative w-full max-w-md h-[90vh] transition-all transform scale-95 opacity-0" id="attendance-content">
+            <!-- Iframe ini dimuat sejak awal agar tidak ada loading saat dibuka -->
+            <iframe src="modal/MyAttendance/index.html" class="w-full h-full border border-white/10 rounded-[2rem] shadow-2xl bg-[#151921]"></iframe>
+        </div>
+    </div>
+
     <script>
 
         window.GLOBAL_CACHE = {}; 
@@ -324,6 +334,37 @@
         
         function hideGlobalComingSoon() {
             document.getElementById('global-coming-soon').classList.add('hidden');
+        }
+
+        function openAttendanceModal() {
+            // Tutup modal option terlebih dahulu
+            const userModal = document.getElementById('user-modal');
+            const userContent = document.getElementById('modal-content');
+            userContent.classList.remove('scale-100', 'opacity-100');
+            userContent.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => userModal.classList.add('hidden'), 200);
+
+            // Buka modal attendance
+            const attModal = document.getElementById('attendance-modal');
+            const attContent = document.getElementById('attendance-content');
+            attModal.classList.remove('hidden');
+            setTimeout(() => {
+                attContent.classList.remove('scale-95', 'opacity-0');
+                attContent.classList.add('scale-100', 'opacity-100');
+            }, 10);
+        }
+
+        function closeAttendanceModal() {
+            const attModal = document.getElementById('attendance-modal');
+            const attContent = document.getElementById('attendance-content');
+            attContent.classList.remove('scale-100', 'opacity-100');
+            attContent.classList.add('scale-95', 'opacity-0');
+            
+            setTimeout(() => {
+                attModal.classList.add('hidden');
+                // Otomatis buka kembali modal Option saat menekan Back
+                toggleUserModal(); 
+            }, 200);
         }
         
         setInterval(() => {
