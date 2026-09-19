@@ -9,12 +9,31 @@
     <script src="../../api.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <style>
-        :root { --bg: #151921; --panel: #1c222c; --border: rgba(255, 255, 255, 0.05); --accent: #0ea5e9; --text-main: #94a3b8; --text-bold: #ffffff; }
+        :root { --bg: #151921; --panel: #1c222c; --border: rgba(255, 255, 255, 0.08); --accent: #0ea5e9; --text-main: #94a3b8; --text-bold: #ffffff; }
         body { background: var(--bg); color: var(--text-main); font-family: 'Inter', sans-serif; margin: 0; padding: 1.5rem; }
-        .glass-panel { background: var(--panel); border: 1px solid var(--border); border-radius: 1.5rem; }
-        .input-field { width: 100%; background: rgba(0,0,0,0.2); border: 1px solid var(--border); border-radius: 0.75rem; padding: 0.6rem 0.75rem; color: white; outline: none; font-size: 0.8rem; }
-        .btn-primary { background: var(--accent); color: white; font-weight: 700; text-transform: uppercase; padding: 0.7rem; border-radius: 0.75rem; transition: all 0.2s; font-size: 11px; letter-spacing: 0.05em; }
+        .glass-panel { background: var(--panel); border: 1px solid var(--border); border-radius: 1.5rem; transition: all 0.3s ease; }
+        
+        /* Input & Hover Styling Sesuai Tema */
+        .input-field { 
+            width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--border); 
+            border-radius: 0.75rem; padding: 0.65rem 0.75rem; color: white; outline: none; 
+            font-size: 0.8rem; transition: all 0.2s ease; 
+        }
+        .input-field:hover { border-color: rgba(255, 255, 255, 0.2); }
+        .input-field:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.2); }
+        
+        .btn-primary { 
+            background: var(--accent); color: white; font-weight: 700; text-transform: uppercase; 
+            padding: 0.7rem; border-radius: 0.75rem; transition: all 0.2s; font-size: 11px; 
+            letter-spacing: 0.05em; box-shadow: 0 4px 12px rgba(14, 165, 233, 0.2); 
+        }
+        .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+
         #local-loader { position: fixed; inset: 0; background: var(--bg); z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        
+        /* Dropdown Option Warna Gelap */
+        select option { background-color: #1c222c; color: #fff; }
+
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
     </style>
@@ -31,10 +50,10 @@
             <h2 id="modal-subtitle" class="text-xs font-mono text-sky-500 uppercase tracking-widest">UNIT // CREW</h2>
             <h1 class="text-xl font-bold text-white uppercase">Crew Member Management</h1>
         </div>
-        <button onclick="window.parent.closeCrewModal()" class="p-2 bg-white/5 rounded-full text-white/50 hover:text-white"><i data-lucide="x" size="18"></i></button>
+        <button onclick="window.parent.closeCrewModal()" class="p-2 bg-white/5 hover:bg-white/10 rounded-full text-white/50 hover:text-white transition"><i data-lucide="x" size="18"></i></button>
     </div>
 
-    <!-- FORM TAMBAH ANGGOTA BARU -->
+    <!-- FORM TAMBAH ANGGOTA BARU (Dengan Efek Hover & Tema Seragam) -->
     <form id="add-member-form" class="glass-panel p-4 mb-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
         <input type="text" id="newId" required class="input-field font-mono" placeholder="Employee ID">
         <input type="text" id="newName" required class="input-field" placeholder="Full Name">
@@ -76,10 +95,9 @@
         lucide.createIcons();
         const loader = document.getElementById('local-loader');
         
-        // Ambil parameter unit & crew dari URL (contoh: ?unit=TCP-10&crew=Crew%20A)
         const urlParams = new URLSearchParams(window.location.search);
-        const targetUnit = urlParams.get('unit') || '';
-        const targetCrew = urlParams.get('crew') || '';
+        const targetUnit = decodeURIComponent(urlParams.get('unit') || '').trim();
+        const targetCrew = decodeURIComponent(urlParams.get('crew') || '').trim();
 
         document.getElementById('modal-subtitle').innerText = `${targetUnit} // ${targetCrew}`;
 
@@ -87,6 +105,10 @@
 
         async function init() {
             try {
+                // ✅ Paksa hapus cache USER agar data terbaru dari spreadsheet langsung terbaca
+                try { if (window.parent && window.parent.clearCache) window.parent.clearCache('USER'); } catch(e) {}
+                await API._dbOp("delete", "USER");
+
                 const res = await API.get('USER');
                 allUsers = res.data || [];
                 renderMembers();
@@ -99,8 +121,12 @@
 
         function renderMembers() {
             const listContainer = document.getElementById('member-list');
-            // Filter user berdasarkan UnitCode dan Crew yang sedang dibuka
-            const members = allUsers.filter(u => String(u.UnitCode).trim() === targetUnit && String(u.Crew).trim() === targetCrew);
+            
+            // ✅ Filter aman dengan mencocokkan string trim() dan mengabaikan perbedaan huruf besar/kecil
+            const members = allUsers.filter(u => 
+                String(u.UnitCode || '').trim().toLowerCase() === targetUnit.toLowerCase() && 
+                String(u.Crew || '').trim().toLowerCase() === targetCrew.toLowerCase()
+            );
             
             document.getElementById('member-count').innerText = `${members.length} PAX`;
 
@@ -137,12 +163,15 @@
                 JobTitle: document.getElementById('newJob').value.trim(),
                 Class: document.getElementById('newClass').value,
                 Password: document.getElementById('newPass').value.trim(),
-                "DeviceId(phone)": "" // Kosong agar bisa di-link nanti oleh perangkat user
+                "DeviceId(phone)": "" 
             };
 
             try {
                 const res = await API.post(payload);
                 if (res.status === 'success') {
+                    try { if (window.parent && window.parent.clearCache) window.parent.clearCache('USER'); } catch(e) {}
+                    await API._dbOp("delete", "USER");
+
                     const usr = await API.get('USER');
                     allUsers = usr.data || [];
                     renderMembers();
@@ -165,6 +194,9 @@
                 try {
                     const res = await API.post({ tab: 'USER', action: 'delete', primaryId: empId });
                     if (res.status === 'success') {
+                        try { if (window.parent && window.parent.clearCache) window.parent.clearCache('USER'); } catch(e) {}
+                        await API._dbOp("delete", "USER");
+
                         const usr = await API.get('USER');
                         allUsers = usr.data || [];
                         renderMembers();
