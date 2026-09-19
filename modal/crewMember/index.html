@@ -13,7 +13,6 @@
         body { background: var(--bg); color: var(--text-main); font-family: 'Inter', sans-serif; margin: 0; padding: 1.5rem; }
         .glass-panel { background: var(--panel); border: 1px solid var(--border); border-radius: 1.5rem; transition: all 0.3s ease; }
         
-        /* Input & Hover Styling Sesuai Tema */
         .input-field { 
             width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--border); 
             border-radius: 0.75rem; padding: 0.65rem 0.75rem; color: white; outline: none; 
@@ -30,10 +29,7 @@
         .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
 
         #local-loader { position: fixed; inset: 0; background: var(--bg); z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        
-        /* Dropdown Option Warna Gelap */
         select option { background-color: #1c222c; color: #fff; }
-
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
     </style>
@@ -53,7 +49,7 @@
         <button onclick="window.parent.closeCrewModal()" class="p-2 bg-white/5 hover:bg-white/10 rounded-full text-white/50 hover:text-white transition"><i data-lucide="x" size="18"></i></button>
     </div>
 
-    <!-- FORM TAMBAH ANGGOTA BARU (Dengan Efek Hover & Tema Seragam) -->
+    <!-- FORM TAMBAH ANGGOTA BARU -->
     <form id="add-member-form" class="glass-panel p-4 mb-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
         <input type="text" id="newId" required class="input-field font-mono" placeholder="Employee ID">
         <input type="text" id="newName" required class="input-field" placeholder="Full Name">
@@ -102,15 +98,24 @@
         document.getElementById('modal-subtitle').innerText = `${targetUnit} // ${targetCrew}`;
 
         let allUsers = [];
+        let allUnits = [];
+        let allShifts = [];
 
         async function init() {
             try {
-                // ✅ Paksa hapus cache USER agar data terbaru dari spreadsheet langsung terbaca
-                try { if (window.parent && window.parent.clearCache) window.parent.clearCache('USER'); } catch(e) {}
+                try { if (window.parent && window.parent.clearCache) { window.parent.clearCache('USER'); window.parent.clearCache('UNIT'); window.parent.clearCache('SHIFTS'); } } catch(e) {}
                 await API._dbOp("delete", "USER");
 
-                const res = await API.get('USER');
-                allUsers = res.data || [];
+                const [usrRes, unitRes, shiftRes] = await Promise.all([
+                    API.get('USER'),
+                    API.get('UNIT'),
+                    API.get('SHIFTS')
+                ]);
+                
+                allUsers = usrRes.data || [];
+                allUnits = unitRes.data || [];
+                allShifts = shiftRes.data || [];
+                
                 renderMembers();
             } catch (e) {
                 Swal.fire({ icon: 'error', title: 'Error', text: e.message, background: '#151921', color: '#fff' });
@@ -121,8 +126,6 @@
 
         function renderMembers() {
             const listContainer = document.getElementById('member-list');
-            
-            // ✅ Filter aman dengan mencocokkan string trim() dan mengabaikan perbedaan huruf besar/kecil
             const members = allUsers.filter(u => 
                 String(u.UnitCode || '').trim().toLowerCase() === targetUnit.toLowerCase() && 
                 String(u.Crew || '').trim().toLowerCase() === targetCrew.toLowerCase()
@@ -142,40 +145,134 @@
                     <td class="p-3 opacity-70">${m.JobTitle || '-'}</td>
                     <td class="p-3"><span class="bg-white/5 px-2 py-0.5 rounded text-[10px]">${m.Class || 'Employee'}</span></td>
                     <td class="p-3 text-right">
-                        <button onclick="deleteMember('${m.EmployeeId}')" class="p-1.5 hover:bg-red-500/10 text-red-400 rounded-lg transition"><i data-lucide="trash-2" size="14"></i></button>
+                        <button onclick='openActionMenu(${JSON.stringify(m)})' class="p-1.5 bg-white/5 hover:bg-sky-500/20 text-sky-400 rounded-lg transition"><i data-lucide="more-vertical" size="14"></i></button>
                     </td>
                 </tr>
             `).join('');
             lucide.createIcons();
         }
 
+        // MENU TITIK TIGA (ACTION: TRANSFER, RESET PASSWORD, RESET DEVICE, DELETE)
+        async function openActionMenu(member) {
+            const unitOptions = allUnits.map(u => `<option value="${u.UnitCode}" ${u.UnitCode === member.UnitCode ? 'selected' : ''}>${u.UnitCode}</option>`).join('');
+            
+            const actionModal = await Swal.fire({
+                title: `<span style="font-size:16px; color:#fff;">Manage: ${member.Name}</span>`,
+                html: `
+                    <div style="text-align: left; font-size: 12px; display: flex; flex-direction: column; gap: 10px; color: #94a3b8;">
+                        <div>
+                            <label style="font-weight:700; text-transform:uppercase; font-size:9px; display:block; margin-bottom:4px;">Target Unit</label>
+                            <select id="swal-unit" class="input-field" style="background:#0b0e14; color:#fff; border:1px solid rgba(255,255,255,0.1); padding:8px; border-radius:8px; width:100%;">${unitOptions}</select>
+                        </div>
+                        <div>
+                            <label style="font-weight:700; text-transform:uppercase; font-size:9px; display:block; margin-bottom:4px;">Target Crew</label>
+                            <input id="swal-crew" class="input-field" value="${member.Crew || ''}" style="background:#0b0e14; color:#fff; border:1px solid rgba(255,255,255,0.1); padding:8px; border-radius:8px; width:100%;" placeholder="e.g. Crew A">
+                        </div>
+                        <hr style="border-color: rgba(255,255,255,0.1); margin: 5px 0;">
+                        <div style="display:flex; gap:10px;">
+                            <button id="swal-btn-pass" type="button" class="btn-primary" style="flex:1; background:#334155; font-size:10px;">Reset Password</button>
+                            <button id="swal-btn-dev" type="button" class="btn-primary" style="flex:1; background:#334155; font-size:10px;">Unbind Device</button>
+                        </div>
+                        <button id="swal-btn-del" type="button" class="btn-primary" style="background:#ef4444; font-size:10px; margin-top:5px;">Remove From Database</button>
+                    </div>
+                `,
+                background: '#151921',
+                showCancelButton: true,
+                confirmButtonText: 'Save Changes',
+                confirmButtonColor: '#0ea5e9',
+                cancelButtonColor: '#334155',
+                didOpen: () => {
+                    // Event listener untuk tombol reset password
+                    document.getElementById('swal-btn-pass').onclick = async () => {
+                        const defaultPass = `Aeroas1@${String(member.EmployeeId).slice(-2)}`;
+                        loader.style.display = 'flex';
+                        Swal.close();
+                        await API.post({ tab: 'USER', action: 'update', primaryId: member.EmployeeId, Password: defaultPass });
+                        await refreshData();
+                        Swal.fire({ icon: 'success', title: 'Password Reset', text: `Password baru: ${defaultPass}`, background: '#151921', color: '#fff' });
+                    };
+
+                    // Event listener untuk unbind device
+                    document.getElementById('swal-btn-dev').onclick = async () => {
+                        loader.style.display = 'flex';
+                        Swal.close();
+                        await API.post({ tab: 'USER', action: 'update', primaryId: member.EmployeeId, "DeviceId(phone)": "" });
+                        await refreshData();
+                        Swal.fire({ icon: 'success', title: 'Device Unbound', text: 'Perangkat berhasil dilepas.', background: '#151921', color: '#fff' });
+                    };
+
+                    // Event listener untuk hapus member
+                    document.getElementById('swal-btn-del').onclick = async () => {
+                        Swal.close();
+                        deleteMember(member.EmployeeId);
+                    };
+                },
+                preConfirm: () => {
+                    return {
+                        UnitCode: document.getElementById('swal-unit').value,
+                        Crew: document.getElementById('swal-crew').value.trim()
+                    }
+                }
+            });
+
+            // Jika menekan Save Changes (untuk transfer unit/crew)
+            if (actionModal.isConfirmed) {
+                loader.style.display = 'flex';
+                try {
+                    const updates = actionModal.value;
+                    await API.post({
+                        tab: 'USER',
+                        action: 'update',
+                        primaryId: member.EmployeeId,
+                        UnitCode: updates.UnitCode,
+                        Crew: updates.Crew
+                    });
+                    await refreshData();
+                    Swal.fire({ icon: 'success', title: 'Member Transferred', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, background: '#151921', color: '#fff' });
+                } catch (err) {
+                    Swal.fire({ icon: 'error', title: 'Failed', text: err.message, background: '#151921', color: '#fff' });
+                } finally {
+                    loader.style.display = 'none';
+                }
+            }
+        }
+
+        async function refreshData() {
+            try {
+                if (window.parent && window.parent.clearCache) window.parent.clearCache('USER');
+                await API._dbOp("delete", "USER");
+                const usr = await API.get('USER');
+                allUsers = usr.data || [];
+                renderMembers();
+            } catch(e) {}
+        }
+
         document.getElementById('add-member-form').onsubmit = async (e) => {
             e.preventDefault();
             loader.style.display = 'flex';
+
+            const empId = document.getElementById('newId').value.trim();
+            const pass = document.getElementById('newPass').value.trim();
 
             const payload = {
                 tab: 'USER',
                 action: 'add',
                 UnitCode: targetUnit,
                 Crew: targetCrew,
-                EmployeeId: document.getElementById('newId').value.trim(),
+                EmployeeId: empId,
                 Name: document.getElementById('newName').value.trim(),
                 JobTitle: document.getElementById('newJob').value.trim(),
                 Class: document.getElementById('newClass').value,
-                Password: document.getElementById('newPass').value.trim(),
+                Password: pass,
                 "DeviceId(phone)": "" 
             };
 
             try {
                 const res = await API.post(payload);
                 if (res.status === 'success') {
-                    try { if (window.parent && window.parent.clearCache) window.parent.clearCache('USER'); } catch(e) {}
-                    await API._dbOp("delete", "USER");
-
-                    const usr = await API.get('USER');
-                    allUsers = usr.data || [];
-                    renderMembers();
+                    await refreshData();
                     document.getElementById('add-member-form').reset();
+                    // Set default auto password suggestion berbasis 2 digit terakhir id jika mau, atau biarkan kosong
                     Swal.fire({ icon: 'success', title: 'Member Added', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, background: '#151921', color: '#fff' });
                 } else {
                     throw new Error(res.message);
@@ -194,12 +291,7 @@
                 try {
                     const res = await API.post({ tab: 'USER', action: 'delete', primaryId: empId });
                     if (res.status === 'success') {
-                        try { if (window.parent && window.parent.clearCache) window.parent.clearCache('USER'); } catch(e) {}
-                        await API._dbOp("delete", "USER");
-
-                        const usr = await API.get('USER');
-                        allUsers = usr.data || [];
-                        renderMembers();
+                        await refreshData();
                     }
                 } catch (e) {
                     Swal.fire({ icon: 'error', title: 'Error', text: e.message, background: '#151921', color: '#fff' });
