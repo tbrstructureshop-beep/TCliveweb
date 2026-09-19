@@ -197,10 +197,18 @@
         function closeCrewModal() {
             document.getElementById('crew-modal').classList.add('hidden');
             document.getElementById('crew-frame').src = '';
-            // Refresh ulang hitungan manpower saat modal ditutup (jika ada penambahan member baru)
+            
+            // ✅ Refresh ulang hitungan manpower secara otomatis saat modal member ditutup
             const unit = document.getElementById('UnitCode').value;
             const crew = document.getElementById('Crew').value.trim();
-            document.getElementById('TotalManpower').value = calculateManpower(unit, crew);
+            
+            // Ambil data user terbaru dari API agar akurat
+            API.get('USER').then(res => {
+                if (res && res.data) {
+                    allUsersCache = res.data;
+                    document.getElementById('TotalManpower').value = calculateManpower(unit, crew);
+                }
+            }).catch(() => {});
         }
 
         // Update fungsi editData agar otomatis menghitung manpower saat form dibuka
