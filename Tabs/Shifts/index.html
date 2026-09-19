@@ -119,7 +119,17 @@
                     <input id="Crew" name="Crew" placeholder="e.g. Crew A" class="input-field">
                 </div>
                 <div><label class="label-style">Shift Category</label><input id="ShiftCategory" name="ShiftCategory" required class="input-field"></div>
-                <div><label class="label-style">Manpower (Pax)</label><input type="number" id="TotalManpower" name="TotalManpower" required class="input-field"></div>
+                <div>
+                    <div class="flex justify-between items-center mb-0.5">
+                        <label class="label-style mb-0">Manpower (Pax)</label>
+                        <!-- TOMBOL LIHAT ANGGOTA -->
+                        <button type="button" onclick="openCrewModal()" class="text-[10px] text-sky-400 hover:text-sky-300 font-bold uppercase tracking-wider flex items-center gap-1">
+                            <i data-lucide="users" size="12"></i> See Members
+                        </button>
+                    </div>
+                    <!-- Dibuat readonly karena dihitung otomatis dari jumlah data user -->
+                    <input type="number" id="TotalManpower" name="TotalManpower" required readonly class="input-field bg-black/40 cursor-not-allowed font-mono font-bold text-sky-400" title="Dihitung otomatis dari total member di database">
+                </div>
                 <div><label class="label-style">Start (24H)</label><input type="time" id="TimeStart" name="TimeStart" required class="input-field"></div>
                 <div><label class="label-style">End (24H)</label><input type="time" id="TimeEnd" name="TimeEnd" required class="input-field"></div>
                 <div><label class="label-style">From</label><input type="date" id="EffectiveFrom" name="EffectiveFrom" required class="input-field"></div>
@@ -144,19 +154,80 @@
         lucide.createIcons();
         const loader = document.getElementById('local-loader');
         let currentUnits = [], rawShifts = [], currentAction = 'add';
+        let allUsersCache = [];
 
         async function init() {
             loader.style.display = 'flex';
             try {
-                const [unitRes, shiftRes] = await Promise.all([API.get('UNIT'), API.get('SHIFTS')]);
+                const [unitRes, shiftRes, userRes] = await Promise.all([API.get('UNIT'), API.get('SHIFTS'), API.get('USER')]);
                 currentUnits = unitRes.data || [];
                 rawShifts = shiftRes.data || [];
+                allUsersCache = userRes.data || []; // Simpan cache user
+
                 document.getElementById('UnitCode').innerHTML = currentUnits.map(u => `<option value="${u.UnitCode}">${u.UnitCode}</option>`).join('');
                 renderGroupedShifts(rawShifts);
             } catch (e) { 
                 Swal.fire({ title: 'Error', text: e.message, icon: 'error', background: '#151921', color: '#fff' }); 
             } finally { loader.style.display = 'none'; }
         }
+
+        // Fungsi untuk menghitung total pax secara otomatis berdasarkan Unit & Crew
+        function calculateManpower(unitCode, crewName) {
+            if (!unitCode || !crewName) return 0;
+            const matched = allUsersCache.filter(u => String(u.UnitCode).trim() === String(unitCode) && String(u.Crew).trim() === String(crewName));
+            return matched.length;
+        }
+
+        // Buka modal daftar anggota crew
+        function openCrewModal() {
+            const unit = document.getElementById('UnitCode').value;
+            const crew = document.getElementById('Crew').value.trim();
+
+            if (!crew) {
+                Swal.fire({ icon: 'warning', title: 'Isi Nama Crew Terlebih Dahulu', text: 'Masukkan nama crew pada kolom Crew (contoh: Crew A) sebelum melihat member.', background: '#151921', color: '#fff' });
+                return;
+            }
+
+            const frame = document.getElementById('crew-frame');
+            frame.src = `../../modal/crewMember/index.html?unit=${encodeURIComponent(unit)}&crew=${encodeURIComponent(crew)}`;
+            document.getElementById('crew-modal').classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function closeCrewModal() {
+            document.getElementById('crew-modal').classList.add('hidden');
+            document.getElementById('crew-frame').src = '';
+            // Refresh ulang hitungan manpower saat modal ditutup (jika ada penambahan member baru)
+            const unit = document.getElementById('UnitCode').value;
+            const crew = document.getElementById('Crew').value.trim();
+            document.getElementById('TotalManpower').value = calculateManpower(unit, crew);
+        }
+
+        // Update fungsi editData agar otomatis menghitung manpower saat form dibuka
+        function editData(unitCode, shiftCat) {
+            const data = rawShifts.find(s => s.UnitCode === unitCode && s.ShiftCategory === shiftCat);
+            if (!data) return;
+            openModal('update');
+            document.getElementById('primaryId').value = `${data.UnitCode}|${data.ShiftCategory}`;
+            document.getElementById('UnitCode').value = data.UnitCode;
+            document.getElementById('ShiftCategory').value = data.ShiftCategory;
+            document.getElementById('TimeStart').value = formatTime24(data.TimeStart);
+            document.getElementById('TimeEnd').value = formatTime24(data.TimeEnd);
+            document.getElementById('Crew').value = data.Crew || '';
+            document.getElementById('EffectiveFrom').value = data.EffectiveFrom;
+            document.getElementById('EffectiveUntil').value = data.EffectiveUntil;
+            document.getElementById('LeaderName').value = data.LeaderName;
+
+            // Hitung otomatis Pax berdasarkan Unit & Crew dari database USER
+            document.getElementById('TotalManpower').value = calculateManpower(data.UnitCode, data.Crew);
+        }
+
+        // Event listener saat user mengetik nama crew di input, hitungan pax langsung memperbarui diri
+        document.getElementById('Crew').addEventListener('input', (e) => {
+            const unit = document.getElementById('UnitCode').value;
+            const crew = e.target.value.trim();
+            document.getElementById('TotalManpower').value = calculateManpower(unit, crew);
+        });
 
         function renderGroupedShifts(shifts) {
             const grid = document.getElementById('shift-grid');
