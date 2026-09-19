@@ -41,6 +41,7 @@
         <p class="text-[10px] font-mono uppercase tracking-widest text-sky-500">Loading_Crew...</p>
     </div>
 
+    <!-- HEADER -->
     <div class="flex justify-between items-center mb-6">
         <div>
             <h2 id="modal-subtitle" class="text-xs font-mono text-sky-500 uppercase tracking-widest">UNIT // CREW</h2>
@@ -49,18 +50,25 @@
         <button onclick="window.parent.closeCrewModal()" class="p-2 bg-white/5 hover:bg-white/10 rounded-full text-white/50 hover:text-white transition"><i data-lucide="x" size="18"></i></button>
     </div>
 
-    <!-- FORM TAMBAH ANGGOTA BARU -->
-    <form id="add-member-form" class="glass-panel p-4 mb-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <input type="text" id="newId" required class="input-field font-mono" placeholder="Employee ID">
-        <input type="text" id="newName" required class="input-field" placeholder="Full Name">
-        <input type="text" id="newJob" required class="input-field" placeholder="Job Title">
-        <select id="newClass" required class="input-field text-xs">
+    <!-- TOMBOL TOGGLE FORM TAMBAH ANGGOTA -->
+    <div class="mb-4">
+        <button onclick="toggleAddForm()" id="toggle-form-btn" class="w-full py-3 px-4 bg-sky-600/10 hover:bg-sky-600/25 border border-sky-500/20 text-sky-400 rounded-2xl text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition">
+            <i data-lucide="user-plus" size="16"></i> <span id="toggle-text">Show Add New Member Form</span>
+        </button>
+    </div>
+
+    <!-- FORM TAMBAH ANGGOTA BARU (TERSEMBUNYI SECARA DEFAULT) -->
+    <form id="add-member-form" class="glass-panel p-4 mb-6 grid grid-cols-1 sm:grid-cols-3 gap-3 hidden">
+        <input type="text" id="newId" class="input-field font-mono" placeholder="Employee ID">
+        <input type="text" id="newName" class="input-field" placeholder="Full Name">
+        <input type="text" id="newJob" class="input-field" placeholder="Job Title">
+        <select id="newClass" class="input-field text-xs">
             <option value="Employee">Employee</option>
             <option value="OJT">OJT</option>
             <option value="Additional Employee">Additional Employee</option>
         </select>
-        <input type="password" id="newPass" required class="input-field font-mono" placeholder="Password">
-        <button type="submit" class="btn-primary flex items-center justify-center gap-1"><i data-lucide="user-plus" size="14"></i> Add Member</button>
+        <input type="password" id="newPass" class="input-field font-mono" placeholder="Password (Optional)">
+        <button type="submit" class="btn-primary flex items-center justify-center gap-1"><i data-lucide="check" size="14"></i> Commit New Member</button>
     </form>
 
     <!-- TABEL DAFTAR ANGGOTA -->
@@ -124,6 +132,19 @@
             }
         }
 
+        // Toggle Form Tambah Anggota
+        function toggleAddForm() {
+            const form = document.getElementById('add-member-form');
+            const text = document.getElementById('toggle-text');
+            form.classList.toggle('hidden');
+            if (!form.classList.contains('hidden')) {
+                text.innerText = "Hide Form";
+                form.reset(); // Selalu kosong saat dibuka
+            } else {
+                text.innerText = "Show Add New Member Form";
+            }
+        }
+
         function renderMembers() {
             const listContainer = document.getElementById('member-list');
             const members = allUsers.filter(u => 
@@ -152,21 +173,26 @@
             lucide.createIcons();
         }
 
-        // MENU TITIK TIGA (ACTION: TRANSFER, RESET PASSWORD, RESET DEVICE, DELETE)
+        // MENU TITIK TIGA (ACTION: TRANSFER UNIT & CREW YANG TERSEDIA, RESET PASSWORD, RESET DEVICE, DELETE)
         async function openActionMenu(member) {
             const unitOptions = allUnits.map(u => `<option value="${u.UnitCode}" ${u.UnitCode === member.UnitCode ? 'selected' : ''}>${u.UnitCode}</option>`).join('');
             
+            // Ambil daftar crew unik yang ada di database shifts / users untuk unit tersebut
+            const existingCrews = [...new Set(allShifts.concat(allUsers).filter(x => x.Crew).map(x => String(x.Crew).trim()))];
+            const crewOptions = existingCrews.map(c => `<option value="${c}" ${c === member.Crew ? 'selected' : ''}>${c}</option>`).join('');
+
             const actionModal = await Swal.fire({
                 title: `<span style="font-size:16px; color:#fff;">Manage: ${member.Name}</span>`,
                 html: `
                     <div style="text-align: left; font-size: 12px; display: flex; flex-direction: column; gap: 10px; color: #94a3b8;">
                         <div>
-                            <label style="font-weight:700; text-transform:uppercase; font-size:9px; display:block; margin-bottom:4px;">Target Unit</label>
+                            <label style="font-weight:700; text-transform:uppercase; font-size:9px; display:block; margin-bottom:4px;">Transfer to Unit</label>
                             <select id="swal-unit" class="input-field" style="background:#0b0e14; color:#fff; border:1px solid rgba(255,255,255,0.1); padding:8px; border-radius:8px; width:100%;">${unitOptions}</select>
                         </div>
                         <div>
-                            <label style="font-weight:700; text-transform:uppercase; font-size:9px; display:block; margin-bottom:4px;">Target Crew</label>
-                            <input id="swal-crew" class="input-field" value="${member.Crew || ''}" style="background:#0b0e14; color:#fff; border:1px solid rgba(255,255,255,0.1); padding:8px; border-radius:8px; width:100%;" placeholder="e.g. Crew A">
+                            <label style="font-weight:700; text-transform:uppercase; font-size:9px; display:block; margin-bottom:4px;">Transfer to Crew (Select or Type)</label>
+                            <input list="crew-list" id="swal-crew" class="input-field" value="${member.Crew || ''}" style="background:#0b0e14; color:#fff; border:1px solid rgba(255,255,255,0.1); padding:8px; border-radius:8px; width:100%;" placeholder="Select or type crew...">
+                            <datalist id="crew-list">${crewOptions}</datalist>
                         </div>
                         <hr style="border-color: rgba(255,255,255,0.1); margin: 5px 0;">
                         <div style="display:flex; gap:10px;">
@@ -182,7 +208,6 @@
                 confirmButtonColor: '#0ea5e9',
                 cancelButtonColor: '#334155',
                 didOpen: () => {
-                    // Event listener untuk tombol reset password
                     document.getElementById('swal-btn-pass').onclick = async () => {
                         const defaultPass = `Aeroas1@${String(member.EmployeeId).slice(-2)}`;
                         loader.style.display = 'flex';
@@ -192,7 +217,6 @@
                         Swal.fire({ icon: 'success', title: 'Password Reset', text: `Password baru: ${defaultPass}`, background: '#151921', color: '#fff' });
                     };
 
-                    // Event listener untuk unbind device
                     document.getElementById('swal-btn-dev').onclick = async () => {
                         loader.style.display = 'flex';
                         Swal.close();
@@ -201,7 +225,6 @@
                         Swal.fire({ icon: 'success', title: 'Device Unbound', text: 'Perangkat berhasil dilepas.', background: '#151921', color: '#fff' });
                     };
 
-                    // Event listener untuk hapus member
                     document.getElementById('swal-btn-del').onclick = async () => {
                         Swal.close();
                         deleteMember(member.EmployeeId);
@@ -215,7 +238,6 @@
                 }
             });
 
-            // Jika menekan Save Changes (untuk transfer unit/crew)
             if (actionModal.isConfirmed) {
                 loader.style.display = 'flex';
                 try {
@@ -272,7 +294,7 @@
                 if (res.status === 'success') {
                     await refreshData();
                     document.getElementById('add-member-form').reset();
-                    // Set default auto password suggestion berbasis 2 digit terakhir id jika mau, atau biarkan kosong
+                    toggleAddForm(); // Otomatis menutup form setelah sukses
                     Swal.fire({ icon: 'success', title: 'Member Added', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, background: '#151921', color: '#fff' });
                 } else {
                     throw new Error(res.message);
