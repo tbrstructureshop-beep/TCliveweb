@@ -335,30 +335,40 @@
         document.getElementById('shift-form').onsubmit = async (e) => {
             e.preventDefault();
             loader.style.display = 'flex';
-            const formData = new FormData(e.target);
             
+            const formData = new FormData(e.target);
             const unitCode = formData.get('UnitCode');
             const crewName = formData.get('Crew');
+            const shiftCategory = formData.get('ShiftCategory');
 
-            // Hitung otomatis pax aktual berdasarkan data user di database
-            const actualPax = allUsersCache.filter(u => String(u.UnitCode).trim() === String(unitCode) && String(u.Crew).trim() === String(crewName)).length;
+            // 1. Hitung jumlah PAX aktual berdasarkan database USER
+            const actualPax = allUsersCache.filter(u => 
+                String(u.UnitCode || '').trim().toLowerCase() === String(unitCode).trim().toLowerCase() && 
+                String(u.Crew || '').trim().toLowerCase() === String(crewName).trim().toLowerCase()
+            ).length;
 
+            // 2. Susun payload dengan menyertakan TotalManpower secara eksplisit
             const payload = {
                 tab: 'SHIFTS',
                 action: currentAction,
-                primaryId: document.getElementById('primaryId').value || `${unitCode}|${formData.get('ShiftCategory')}`,
-                TotalManpower: actualPax // ✅ Otomatis memperbarui TotalManpower ke Google Sheet
+                primaryId: document.getElementById('primaryId').value || `${unitCode}|${shiftCategory}`,
+                UnitCode: unitCode,
+                Crew: crewName,
+                ShiftCategory: shiftCategory,
+                TotalManpower: actualPax, // 👈 Nilai Pax riil dipastikan masuk ke payload
+                TimeStart: formData.get('TimeStart'),
+                TimeEnd: formData.get('TimeEnd'),
+                EffectiveFrom: formData.get('EffectiveFrom'),
+                EffectiveUntil: formData.get('EffectiveUntil'),
+                LeaderName: formData.get('LeaderName')
             };
-            
-            formData.forEach((v, k) => { if(k !== 'primaryId') payload[k] = v; });
-            payload.TotalManpower = actualPax; // Pastikan nilai pax ter-overwrite dengan data real
 
             try {
                 const res = await API.post(payload);
                 if (res.status === 'success') {
                     closeModal();
                     Swal.fire({ icon: 'success', title: 'Committed', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, background: '#151921', color: '#fff' });
-                    await init();
+                    await init(); // Refresh halaman shifts
                 } else {
                     throw new Error(res.message || 'Transaction failed');
                 }
