@@ -41,7 +41,6 @@
         <p class="text-[10px] font-mono uppercase tracking-widest text-sky-500">Loading_Crew...</p>
     </div>
 
-    <!-- HEADER -->
     <div class="flex justify-between items-center mb-6">
         <div>
             <h2 id="modal-subtitle" class="text-xs font-mono text-sky-500 uppercase tracking-widest">UNIT // CREW</h2>
@@ -111,25 +110,38 @@
 
         async function init() {
             try {
-                try { if (window.parent && window.parent.clearCache) { window.parent.clearCache('USER'); window.parent.clearCache('UNIT'); window.parent.clearCache('SHIFTS'); } } catch(e) {}
-                await API._dbOp("delete", "USER");
-
-                const [usrRes, unitRes, shiftRes] = await Promise.all([
+                // 1. Ambil data dari cache lokal (IndexedDB) terlebih dahulu agar instan (0 detik)
+                const [cachedUsr, cachedUnit, cachedShift] = await Promise.all([
                     API.get('USER'),
                     API.get('UNIT'),
                     API.get('SHIFTS')
                 ]);
                 
+                if (cachedUsr && cachedUsr.data) {
+                    allUsers = cachedUsr.data;
+                    allUnits = cachedUnit?.data || [];
+                    allShifts = cachedShift?.data || [];
+                    renderMembers();
+                }
+            } catch (e) {
+                console.error(e);
+            } finally {
+                // Matikan loader secepat kilat agar modal langsung terbuka
+                loader.style.display = 'none';
+            }
+
+            // 2. Tarik data terbaru dari server di background secara senyap
+            try {
+                const [usrRes, unitRes, shiftRes] = await Promise.all([
+                    API.get('USER'),
+                    API.get('UNIT'),
+                    API.get('SHIFTS')
+                ]);
                 allUsers = usrRes.data || [];
                 allUnits = unitRes.data || [];
                 allShifts = shiftRes.data || [];
-                
                 renderMembers();
-            } catch (e) {
-                Swal.fire({ icon: 'error', title: 'Error', text: e.message, background: '#151921', color: '#fff' });
-            } finally {
-                loader.style.display = 'none';
-            }
+            } catch (e) {}
         }
 
         // Toggle Form Tambah Anggota
@@ -139,7 +151,7 @@
             form.classList.toggle('hidden');
             if (!form.classList.contains('hidden')) {
                 text.innerText = "Hide Form";
-                form.reset(); // Selalu kosong saat dibuka
+                form.reset(); 
             } else {
                 text.innerText = "Show Add New Member Form";
             }
@@ -173,12 +185,11 @@
             lucide.createIcons();
         }
 
-        // MENU TITIK TIGA (ACTION: TRANSFER UNIT & CREW, RESET PASSWORD, RESET DEVICE, DELETE)
+        // MENU TITIK TIGA (ACTION)
         async function openActionMenu(member) {
             const unitOptions = allUnits.map(u => `<option value="${u.UnitCode}" ${u.UnitCode === member.UnitCode ? 'selected' : ''}>${u.UnitCode}</option>`).join('');
             
-            // Ambil daftar crew unik yang ada di database shifts / users
-            const existingCrews = [...new Set(allShifts.concat(allUsers).filter(x => x.Crew).map(x => String(x.Crew).trim())].sort();
+            const existingCrews = [...new Set(allShifts.concat(allUsers).filter(x => x.Crew).map(x => String(x.Crew).trim()))].sort();
             const crewOptions = existingCrews.map(c => `<option value="${c}" ${c === member.Crew ? 'selected' : ''}>${c}</option>`).join('');
     
             const actionModal = await Swal.fire({
@@ -249,7 +260,6 @@
                         Crew: updates.Crew
                     });
                     
-                    // Update TotalManpower di tab SHIFTS untuk unit asal & unit tujuan
                     await updateShiftManpower(member.UnitCode, member.Crew);
                     if (updates.UnitCode !== member.UnitCode || updates.Crew !== member.Crew) {
                         await updateShiftManpower(updates.UnitCode, updates.Crew);
@@ -264,9 +274,7 @@
                 }
             }
         }
-
         
-        // Fungsi otomatis untuk menghitung ulang jumlah user dan meng-update kolom TotalManpower di tab SHIFTS
         async function updateShiftManpower(uCode, cName) {
             try {
                 const shiftRes = await API.get('SHIFTS');
@@ -274,7 +282,6 @@
                 const usersRes = await API.get('USER');
                 const users = usersRes.data || [];
     
-                // Cari semua shift yang cocok dengan UnitCode & Crew ini
                 const targetShifts = shifts.filter(s => String(s.UnitCode).trim() === String(uCode) && String(s.Crew).trim() === String(cName));
                 const realPaxCount = users.filter(u => String(u.UnitCode).trim() === String(uCode) && String(u.Crew).trim() === String(cName)).length;
     
@@ -298,7 +305,6 @@
                     window.parent.clearCache('SHIFTS');
                 }
                 await API._dbOp("delete", "USER");
-                await API._dbOp("delete", "SHIFTS");
                 const usr = await API.get('USER');
                 allUsers = usr.data || [];
                 renderMembers();
@@ -325,9 +331,10 @@
             try {
                 const res = await API.post(payload);
                 if (res.status === 'success') {
-                    await updateShiftManpower(targetUnit, targetCrew); // Update total manpower di shifts
+                    await updateShiftManpower(targetUnit, targetCrew); 
                     await refreshData();
                     document.getElementById('add-member-form').reset();
+                    toggleAddForm(); 
                     Swal.fire({ icon: 'success', title: 'Member Added', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, background: '#151921', color: '#fff' });
                 } else {
                     throw new Error(res.message);
@@ -346,7 +353,7 @@
                 try {
                     const res = await API.post({ tab: 'USER', action: 'delete', primaryId: empId });
                     if (res.status === 'success') {
-                        await updateShiftManpower(uCode, cName); // Update total manpower di shifts
+                        await updateShiftManpower(uCode, cName); 
                         await refreshData();
                     }
                 } catch (e) {
