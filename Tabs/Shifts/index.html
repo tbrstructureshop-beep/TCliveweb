@@ -194,21 +194,35 @@
             lucide.createIcons();
         }
 
-        function closeCrewModal() {
+        async function closeCrewModal() {
             document.getElementById('crew-modal').classList.add('hidden');
             document.getElementById('crew-frame').src = '';
             
-            // ✅ Refresh ulang hitungan manpower secara otomatis saat modal member ditutup
-            const unit = document.getElementById('UnitCode').value;
-            const crew = document.getElementById('Crew').value.trim();
-            
-            // Ambil data user terbaru dari API agar akurat
-            API.get('USER').then(res => {
+            // ✅ Bersihkan cache lokal agar mengambil data aktual terbaru dari server
+            try {
+                if (window.parent && window.parent.clearCache) window.parent.clearCache('USER');
+                await API._dbOp("delete", "USER");
+            } catch(e) {}
+
+            // Ambil data user terbaru dari API secara paksa
+            try {
+                const res = await API.get('USER');
                 if (res && res.data) {
                     allUsersCache = res.data;
+                    
+                    // Update otomatis input manpower di modal form jika sedang dibuka
+                    const unit = document.getElementById('UnitCode').value;
+                    const crew = document.getElementById('Crew').value.trim();
                     document.getElementById('TotalManpower').value = calculateManpower(unit, crew);
                 }
-            }).catch(() => {});
+            } catch(e) {}
+
+            // Refresh ulang data shifts agar card di halaman utama ikut ter-update angkanya
+            try {
+                const shiftRes = await API.get('SHIFTS');
+                rawShifts = shiftRes.data || [];
+                renderGroupedShifts(rawShifts);
+            } catch(e) {}
         }
 
         // Update fungsi editData agar otomatis menghitung manpower saat form dibuka
