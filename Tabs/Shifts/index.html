@@ -300,7 +300,10 @@
                                         </div>
                                         <div class="grid grid-cols-2 gap-4 text-white mb-3">
                                             <div><span class="text-[9px] opacity-40 uppercase block">Time Block</span><span class="text-sm font-mono font-bold">${s.TimeStart} - ${s.TimeEnd}</span></div>
-                                            <div><span class="text-[9px] opacity-40 uppercase block">Personnel</span><span class="text-sm font-bold">${s.TotalManpower} PAX</span></div>
+                                            
+                                            <!-- 🚀 INI YANG DIUBAH: Panggil calculateManpower secara LIVE, hiraukan data mati dari DB SHIFTS -->
+                                            <div><span class="text-[9px] opacity-40 uppercase block">Personnel</span><span class="text-sm font-bold">${calculateManpower(s.UnitCode, s.Crew)} PAX</span></div>
+                                            
                                         </div>
                                         <div class="border-t border-white/5 pt-3">
                                             <span class="text-[9px] opacity-40 uppercase block">Leader</span>
