@@ -277,19 +277,40 @@
         
         async function updateShiftManpower(uCode, cName) {
             try {
+                // Bersihkan cache shifts dan user agar mengambil data mentah paling akurat dari sheet
+                if (window.parent && window.parent.clearCache) {
+                    window.parent.clearCache('SHIFTS');
+                    window.parent.clearCache('USER');
+                }
+                await API._dbOp("delete", "SHIFTS");
+                await API._dbOp("delete", "USER");
+
                 const shiftRes = await API.get('SHIFTS');
                 const shifts = shiftRes.data || [];
                 const usersRes = await API.get('USER');
                 const users = usersRes.data || [];
     
-                const targetShifts = shifts.filter(s => String(s.UnitCode).trim() === String(uCode) && String(s.Crew).trim() === String(cName));
-                const realPaxCount = users.filter(u => String(u.UnitCode).trim() === String(uCode) && String(u.Crew).trim() === String(cName)).length;
+                // 1. Cari SEMUA shift (bisa ada Morning, Afternoon, Night) yang milik Unit & Crew ini
+                const targetShifts = shifts.filter(s => 
+                    String(s.UnitCode || '').trim().toLowerCase() === String(uCode).trim().toLowerCase() && 
+                    String(s.Crew || '').trim().toLowerCase() === String(cName).trim().toLowerCase()
+                );
     
+                // 2. Hitung jumlah user riil di database USER berdasarkan Unit & Crew
+                const realPaxCount = users.filter(u => 
+                    String(u.UnitCode || '').trim().toLowerCase() === String(uCode).trim().toLowerCase() && 
+                    String(u.Crew || '').trim().toLowerCase() === String(cName).trim().toLowerCase()
+                ).length;
+    
+                // 3. Update setiap shift yang ditemukan dengan primaryId yang tepat: "UnitCode|ShiftCategory"
                 for (const shift of targetShifts) {
+                    const shiftCategory = String(shift.ShiftCategory || '').trim();
+                    if (!shiftCategory) continue;
+
                     await API.post({
                         tab: 'SHIFTS',
                         action: 'update',
-                        primaryId: `${shift.UnitCode}|${shift.ShiftCategory}`,
+                        primaryId: `${shift.UnitCode}|${shiftCategory}`, // 👈 Format kunci unik wajib: UnitCode|ShiftCategory
                         TotalManpower: realPaxCount
                     });
                 }
@@ -297,7 +318,7 @@
                 console.error("Failed to update shift manpower:", e);
             }
         }
-    
+        
         async function refreshData() {
             try {
                 if (window.parent && window.parent.clearCache) {
