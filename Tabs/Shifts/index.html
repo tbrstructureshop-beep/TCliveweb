@@ -76,6 +76,16 @@
             align-items: center; justify-content: center;
         }
 
+        select.input-field {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%230ea5e9'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.85rem center;
+            background-size: 1rem;
+            padding-right: 2.5rem;
+        }
+        select option { background-color: #151921; color: #fff; padding: 8px; }
+
         .light .bg-sky-500\/10 { background-color: rgba(2, 132, 199, 0.1); border-color: rgba(2, 132, 199, 0.2); }
         .light .text-sky-400 { color: #0369a1 !important; }
         h1, h2, h3, h4, .text-white { color: var(--text-bright) !important; }
@@ -134,7 +144,12 @@
                 <div><label class="label-style">End (24H)</label><input type="time" id="TimeEnd" name="TimeEnd" required class="input-field"></div>
                 <div><label class="label-style">From</label><input type="date" id="EffectiveFrom" name="EffectiveFrom" required class="input-field"></div>
                 <div><label class="label-style">Until</label><input type="date" id="EffectiveUntil" name="EffectiveUntil" required class="input-field"></div>
-                <div class="sm:col-span-2"><label class="label-style">Shift Leader</label><input id="LeaderName" name="LeaderName" required class="input-field"></div>
+                <div class="sm:col-span-2">
+                    <label class="label-style">Shift Leader</label>
+                    <select id="LeaderName" name="LeaderName" required class="input-field cursor-pointer">
+                        <option value="">-- Select Shift Leader --</option>
+                    </select>
+                </div>
                 <div class="sm:col-span-2 pt-4 border-t border-white/5 flex gap-3">
                     <button type="submit" class="flex-1 bg-sky-600 py-4 rounded-2xl font-bold text-white uppercase tracking-widest text-xs">Commit Cycle</button>
                     <button type="button" onclick="closeModal()" class="flex-1 bg-white/5 py-4 rounded-2xl font-bold text-white/50 uppercase tracking-widest text-xs">Cancel</button>
@@ -246,7 +261,9 @@
             document.getElementById('Crew').value = data.Crew || '';
             document.getElementById('EffectiveFrom').value = data.EffectiveFrom;
             document.getElementById('EffectiveUntil').value = data.EffectiveUntil;
-            document.getElementById('LeaderName').value = data.LeaderName;
+
+            // 🚀 Isi Dropdown Leader & Pilih nama leader yang bersangkutan
+            populateLeaderDropdown(data.UnitCode, data.LeaderName);
 
             // Hitung otomatis Pax berdasarkan Unit & Crew dari database USER
             document.getElementById('TotalManpower').value = calculateManpower(data.UnitCode, data.Crew);
@@ -256,6 +273,14 @@
         document.getElementById('Crew').addEventListener('input', (e) => {
             const unit = document.getElementById('UnitCode').value;
             const crew = e.target.value.trim();
+            document.getElementById('TotalManpower').value = calculateManpower(unit, crew);
+        });
+
+        // Jika UnitCode diganti saat input baru, refresh daftar Shift Leader & Manpower
+        document.getElementById('UnitCode').addEventListener('change', (e) => {
+            const unit = e.target.value;
+            const crew = document.getElementById('Crew').value.trim();
+            populateLeaderDropdown(unit);
             document.getElementById('TotalManpower').value = calculateManpower(unit, crew);
         });
 
@@ -318,11 +343,50 @@
             lucide.createIcons();
         }
 
+        // Fungsi mengisi dropdown Shift Leader dari personil dengan UnitCode yang sama
+        function populateLeaderDropdown(targetUnit, selectedLeader = '') {
+            const select = document.getElementById('LeaderName');
+            if (!select) return;
+
+            // Ambil semua personil yang UnitCode-nya sama
+            const unitPersonnel = allUsersCache.filter(u => 
+                String(u.UnitCode || '').trim().toLowerCase() === String(targetUnit || '').trim().toLowerCase()
+            );
+
+            if (unitPersonnel.length === 0) {
+                select.innerHTML = `<option value="">-- No Personnel Found in ${targetUnit} --</option>`;
+                return;
+            }
+
+            // Urutkan nama sesuai abjad
+            unitPersonnel.sort((a, b) => String(a.Name || '').localeCompare(String(b.Name || '')));
+
+            let options = `<option value="">-- Select Shift Leader --</option>`;
+            options += unitPersonnel.map(u => {
+                const name = String(u.Name || '').trim();
+                const isSelected = (name.toLowerCase() === String(selectedLeader || '').trim().toLowerCase()) ? 'selected' : '';
+                return `<option value="${name}" ${isSelected}>${name} (${u.Crew || 'No Crew'})</option>`;
+            }).join('');
+
+            // Antisipasi jika Shift Leader lama tidak terdaftar di database personil
+            if (selectedLeader && !unitPersonnel.some(u => String(u.Name || '').trim().toLowerCase() === selectedLeader.toLowerCase())) {
+                options = `<option value="${selectedLeader}" selected>${selectedLeader} (Current)</option>` + options;
+            }
+
+            select.innerHTML = options;
+        }
+
         function openModal(action) {
             currentAction = action;
             document.getElementById('shift-modal').classList.remove('hidden');
             document.getElementById('modal-title').innerText = action === 'add' ? 'New Shift Entry' : 'Update Shift Config';
             document.getElementById('UnitCode').disabled = (action !== 'add');
+
+            // 🚀 Jika 'add', isi otomatis daftar leader dari UnitCode yang sedang aktif terpilih
+            if (action === 'add') {
+                const initialUnit = document.getElementById('UnitCode').value;
+                populateLeaderDropdown(initialUnit);
+            }
         }
 
         function closeModal() { document.getElementById('shift-modal').classList.add('hidden'); document.getElementById('shift-form').reset(); }
