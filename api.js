@@ -11,9 +11,6 @@ const CONFIG = {
 };
 
 const API = {
-    /**
-     * INTERNAL: Get/Set Persistent Storage
-     */
     async _dbOp(action, tab, payload = null) {
         return new Promise((resolve) => {
             const req = indexedDB.open(CONFIG.DB_NAME, CONFIG.DB_VERSION);
@@ -38,47 +35,49 @@ const API = {
         });
     },
 
+    async clearLocalCache(tab) {
+        try {
+            if (window.parent && window.parent.GLOBAL_CACHE) delete window.parent.GLOBAL_CACHE[tab];
+            if (window.GLOBAL_CACHE) delete window.GLOBAL_CACHE[tab];
+            if (window.parent && typeof window.parent.clearCache === 'function') window.parent.clearCache(tab);
+            await this._dbOp("delete", tab);
+            console.log(`%c[CACHE_PURGED] ${tab} Destroyed from RAM & Disk`, "color: #ef4444; font-weight: bold;");
+        } catch(e) {}
+    },
+
     /**
      * SMART GET: Memory -> Disk (IndexedDB) -> Remote Server
      */
     async get(tab) {
         let cacheStore = null;
-        try {
-            cacheStore = (window.parent && window.parent.GLOBAL_CACHE) ? window.parent.GLOBAL_CACHE : null;
-        } catch (e) { cacheStore = null; }
+        try { cacheStore = (window.parent && window.parent.GLOBAL_CACHE) ? window.parent.GLOBAL_CACHE : null; } catch (e) {}
 
-        // 1. HIT LEVEL 1: RAM (Instan 0ms - Session Only)
+        // 1. HIT LEVEL 1: RAM
         if (cacheStore && cacheStore[tab]) {
             console.log(`%c[RAM_CACHE] ${tab} Restored`, "color: #0ea5e9; font-weight: bold;");
             return { status: 'success', data: cacheStore[tab] };
         }
 
-        // 2. HIT LEVEL 2: IndexedDB (Instan <10ms - Persistent)
+        // 2. HIT LEVEL 2: IndexedDB
         const localData = await this._dbOp("get", tab);
         if (localData) {
             console.log(`%c[DISK_CACHE] ${tab} Restored from IndexedDB`, "color: #10b981; font-weight: bold;");
-            if (cacheStore) cacheStore[tab] = localData; // Sync ke RAM
+            if (cacheStore) cacheStore[tab] = localData; 
             return { status: 'success', data: localData };
         }
 
-        // 3. MISS: Fetch dari Google Apps Script
+        // 3. MISS: Fetch Server
         try {
             console.log(`%c[API_FETCH] ${tab} from Server...`, "color: #f59e0b; font-weight: bold;");
             const resp = await fetch(`${CONFIG.API_URL}?action=read&tab=${tab}`);
             const result = await resp.json();
 
             if (result.status === 'success') {
-                // Simpan ke RAM
                 if (cacheStore) cacheStore[tab] = result.data;
-                // Simpan ke Disk (IndexedDB)
                 await this._dbOp("set", tab, result.data);
             }
-
             return result;
-        } catch (e) {
-            console.error(`[SYSTEM_ERROR] Fetch failed for ${tab}:`, e);
-            return { status: 'error' };
-        }
+        } catch (e) { return { status: 'error' }; }
     },
 
     /**
@@ -94,15 +93,8 @@ const API = {
             const result = await resp.json();
 
             if (result.status === 'success') {
-                // Invalidate RAM
-                try {
-                    if (window.parent && window.parent.clearCache) {
-                        window.parent.clearCache(payload.tab);
-                    }
-                } catch (e) {}
-
-                // Invalidate Disk (IndexedDB) agar fetch ulang data terbaru
-                await this._dbOp("delete", payload.tab);
+                // 🚀 PAKSA EKSEKUSI PEMBUNUH CACHE SETELAH POST BERHASIL
+                await this.clearLocalCache(payload.tab);
                 console.log(`%c[CACHE_PURGE] ${payload.tab} Cache invalidated`, "color: #ef4444; font-style: italic;");
             }
 
