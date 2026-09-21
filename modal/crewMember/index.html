@@ -173,14 +173,14 @@
             lucide.createIcons();
         }
 
-        // MENU TITIK TIGA (ACTION: TRANSFER UNIT & CREW YANG TERSEDIA, RESET PASSWORD, RESET DEVICE, DELETE)
+        // MENU TITIK TIGA (ACTION: TRANSFER UNIT & CREW, RESET PASSWORD, RESET DEVICE, DELETE)
         async function openActionMenu(member) {
             const unitOptions = allUnits.map(u => `<option value="${u.UnitCode}" ${u.UnitCode === member.UnitCode ? 'selected' : ''}>${u.UnitCode}</option>`).join('');
             
-            // Ambil daftar crew unik yang ada di database shifts / users untuk unit tersebut
-            const existingCrews = [...new Set(allShifts.concat(allUsers).filter(x => x.Crew).map(x => String(x.Crew).trim()))];
+            // Ambil daftar crew unik yang ada di database shifts / users
+            const existingCrews = [...new Set(allShifts.concat(allUsers).filter(x => x.Crew).map(x => String(x.Crew).trim())].sort();
             const crewOptions = existingCrews.map(c => `<option value="${c}" ${c === member.Crew ? 'selected' : ''}>${c}</option>`).join('');
-
+    
             const actionModal = await Swal.fire({
                 title: `<span style="font-size:16px; color:#fff;">Manage: ${member.Name}</span>`,
                 html: `
@@ -190,9 +190,8 @@
                             <select id="swal-unit" class="input-field" style="background:#0b0e14; color:#fff; border:1px solid rgba(255,255,255,0.1); padding:8px; border-radius:8px; width:100%;">${unitOptions}</select>
                         </div>
                         <div>
-                            <label style="font-weight:700; text-transform:uppercase; font-size:9px; display:block; margin-bottom:4px;">Transfer to Crew (Select or Type)</label>
-                            <input list="crew-list" id="swal-crew" class="input-field" value="${member.Crew || ''}" style="background:#0b0e14; color:#fff; border:1px solid rgba(255,255,255,0.1); padding:8px; border-radius:8px; width:100%;" placeholder="Select or type crew...">
-                            <datalist id="crew-list">${crewOptions}</datalist>
+                            <label style="font-weight:700; text-transform:uppercase; font-size:9px; display:block; margin-bottom:4px;">Transfer to Crew</label>
+                            <select id="swal-crew" class="input-field" style="background:#0b0e14; color:#fff; border:1px solid rgba(255,255,255,0.1); padding:8px; border-radius:8px; width:100%;">${crewOptions}</select>
                         </div>
                         <hr style="border-color: rgba(255,255,255,0.1); margin: 5px 0;">
                         <div style="display:flex; gap:10px;">
@@ -216,7 +215,7 @@
                         await refreshData();
                         Swal.fire({ icon: 'success', title: 'Password Reset', text: `Password baru: ${defaultPass}`, background: '#151921', color: '#fff' });
                     };
-
+    
                     document.getElementById('swal-btn-dev').onclick = async () => {
                         loader.style.display = 'flex';
                         Swal.close();
@@ -224,10 +223,10 @@
                         await refreshData();
                         Swal.fire({ icon: 'success', title: 'Device Unbound', text: 'Perangkat berhasil dilepas.', background: '#151921', color: '#fff' });
                     };
-
+    
                     document.getElementById('swal-btn-del').onclick = async () => {
                         Swal.close();
-                        deleteMember(member.EmployeeId);
+                        deleteMember(member.EmployeeId, member.UnitCode, member.Crew);
                     };
                 },
                 preConfirm: () => {
@@ -237,7 +236,7 @@
                     }
                 }
             });
-
+    
             if (actionModal.isConfirmed) {
                 loader.style.display = 'flex';
                 try {
@@ -249,6 +248,13 @@
                         UnitCode: updates.UnitCode,
                         Crew: updates.Crew
                     });
+                    
+                    // Update TotalManpower di tab SHIFTS untuk unit asal & unit tujuan
+                    await updateShiftManpower(member.UnitCode, member.Crew);
+                    if (updates.UnitCode !== member.UnitCode || updates.Crew !== member.Crew) {
+                        await updateShiftManpower(updates.UnitCode, updates.Crew);
+                    }
+    
                     await refreshData();
                     Swal.fire({ icon: 'success', title: 'Member Transferred', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, background: '#151921', color: '#fff' });
                 } catch (err) {
@@ -259,42 +265,69 @@
             }
         }
 
+        
+        // Fungsi otomatis untuk menghitung ulang jumlah user dan meng-update kolom TotalManpower di tab SHIFTS
+        async function updateShiftManpower(uCode, cName) {
+            try {
+                const shiftRes = await API.get('SHIFTS');
+                const shifts = shiftRes.data || [];
+                const usersRes = await API.get('USER');
+                const users = usersRes.data || [];
+    
+                // Cari semua shift yang cocok dengan UnitCode & Crew ini
+                const targetShifts = shifts.filter(s => String(s.UnitCode).trim() === String(uCode) && String(s.Crew).trim() === String(cName));
+                const realPaxCount = users.filter(u => String(u.UnitCode).trim() === String(uCode) && String(u.Crew).trim() === String(cName)).length;
+    
+                for (const shift of targetShifts) {
+                    await API.post({
+                        tab: 'SHIFTS',
+                        action: 'update',
+                        primaryId: `${shift.UnitCode}|${shift.ShiftCategory}`,
+                        TotalManpower: realPaxCount
+                    });
+                }
+            } catch (e) {
+                console.error("Failed to update shift manpower:", e);
+            }
+        }
+    
         async function refreshData() {
             try {
-                if (window.parent && window.parent.clearCache) window.parent.clearCache('USER');
+                if (window.parent && window.parent.clearCache) {
+                    window.parent.clearCache('USER');
+                    window.parent.clearCache('SHIFTS');
+                }
                 await API._dbOp("delete", "USER");
+                await API._dbOp("delete", "SHIFTS");
                 const usr = await API.get('USER');
                 allUsers = usr.data || [];
                 renderMembers();
             } catch(e) {}
         }
-
+    
         document.getElementById('add-member-form').onsubmit = async (e) => {
             e.preventDefault();
             loader.style.display = 'flex';
-
-            const empId = document.getElementById('newId').value.trim();
-            const pass = document.getElementById('newPass').value.trim();
-
+    
             const payload = {
                 tab: 'USER',
                 action: 'add',
                 UnitCode: targetUnit,
                 Crew: targetCrew,
-                EmployeeId: empId,
+                EmployeeId: document.getElementById('newId').value.trim(),
                 Name: document.getElementById('newName').value.trim(),
                 JobTitle: document.getElementById('newJob').value.trim(),
                 Class: document.getElementById('newClass').value,
-                Password: pass,
+                Password: document.getElementById('newPass').value.trim(),
                 "DeviceId(phone)": "" 
             };
-
+    
             try {
                 const res = await API.post(payload);
                 if (res.status === 'success') {
+                    await updateShiftManpower(targetUnit, targetCrew); // Update total manpower di shifts
                     await refreshData();
                     document.getElementById('add-member-form').reset();
-                    toggleAddForm(); // Otomatis menutup form setelah sukses
                     Swal.fire({ icon: 'success', title: 'Member Added', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, background: '#151921', color: '#fff' });
                 } else {
                     throw new Error(res.message);
@@ -305,14 +338,15 @@
                 loader.style.display = 'none';
             }
         };
-
-        async function deleteMember(empId) {
+    
+        async function deleteMember(empId, uCode = targetUnit, cName = targetCrew) {
             const confirm = await Swal.fire({ title: 'Remove Member?', text: `Hapus employee ID ${empId} dari database?`, icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', background: '#151921', color: '#fff' });
             if (confirm.isConfirmed) {
                 loader.style.display = 'flex';
                 try {
                     const res = await API.post({ tab: 'USER', action: 'delete', primaryId: empId });
                     if (res.status === 'success') {
+                        await updateShiftManpower(uCode, cName); // Update total manpower di shifts
                         await refreshData();
                     }
                 } catch (e) {
