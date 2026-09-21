@@ -198,10 +198,13 @@
             document.getElementById('crew-modal').classList.add('hidden');
             document.getElementById('crew-frame').src = '';
             
-            // ✅ Bersihkan cache lokal agar mengambil data aktual terbaru dari server
             try {
-                if (window.parent && window.parent.clearCache) window.parent.clearCache('USER');
+                if (window.parent && window.parent.clearCache) {
+                    window.parent.clearCache('USER');
+                    window.parent.clearCache('SHIFTS'); // <-- TAMBAHKAN INI
+                }
                 await API._dbOp("delete", "USER");
+                await API._dbOp("delete", "SHIFTS"); // <-- TAMBAHKAN INI
             } catch(e) {}
 
             // Ambil data user terbaru dari API secara paksa
@@ -316,38 +319,23 @@
 
         function closeModal() { document.getElementById('shift-modal').classList.add('hidden'); document.getElementById('shift-form').reset(); }
 
-        function editData(unitCode, shiftCat) {
-            const data = rawShifts.find(s => s.UnitCode === unitCode && s.ShiftCategory === shiftCat);
-            if (!data) return;
-            openModal('update');
-            document.getElementById('primaryId').value = `${data.UnitCode}|${data.ShiftCategory}`;
-            document.getElementById('UnitCode').value = data.UnitCode;
-            document.getElementById('ShiftCategory').value = data.ShiftCategory;
-            document.getElementById('TotalManpower').value = data.TotalManpower;
-            document.getElementById('TimeStart').value = formatTime24(data.TimeStart);
-            document.getElementById('TimeEnd').value = formatTime24(data.TimeEnd);
-            document.getElementById('Crew').value = data.Crew || '';
-            document.getElementById('EffectiveFrom').value = data.EffectiveFrom;
-            document.getElementById('EffectiveUntil').value = data.EffectiveUntil;
-            document.getElementById('LeaderName').value = data.LeaderName;
-        }
-
         document.getElementById('shift-form').onsubmit = async (e) => {
             e.preventDefault();
             loader.style.display = 'flex';
             
             const formData = new FormData(e.target);
-            const unitCode = formData.get('UnitCode');
+            
+            // UBAH: Ambil UnitCode langsung dari elemen, bukan dari formData
+            const unitCode = document.getElementById('UnitCode').value; 
             const crewName = formData.get('Crew');
             const shiftCategory = formData.get('ShiftCategory');
 
-            // 1. Hitung jumlah PAX aktual berdasarkan database USER
             const actualPax = allUsersCache.filter(u => 
                 String(u.UnitCode || '').trim().toLowerCase() === String(unitCode).trim().toLowerCase() && 
                 String(u.Crew || '').trim().toLowerCase() === String(crewName).trim().toLowerCase()
             ).length;
 
-            // 2. Susun payload dengan menyertakan TotalManpower secara eksplisit
+            // UBAH: Susun payload eksplisit agar TotalManpower dan UnitCode pasti terkirim
             const payload = {
                 tab: 'SHIFTS',
                 action: currentAction,
@@ -355,13 +343,15 @@
                 UnitCode: unitCode,
                 Crew: crewName,
                 ShiftCategory: shiftCategory,
-                TotalManpower: actualPax, // 👈 Nilai Pax riil dipastikan masuk ke payload
+                TotalManpower: actualPax,
                 TimeStart: formData.get('TimeStart'),
                 TimeEnd: formData.get('TimeEnd'),
                 EffectiveFrom: formData.get('EffectiveFrom'),
                 EffectiveUntil: formData.get('EffectiveUntil'),
                 LeaderName: formData.get('LeaderName')
             };
+
+            // ... (sisa kode try-catch biarkan sama)
 
             try {
                 const res = await API.post(payload);
