@@ -195,19 +195,24 @@
         }
 
         async function closeCrewModal() {
+            // 1. Tampilkan loader saat menutup modal agar user tahu sistem sedang sinkronisasi
+            loader.style.display = 'flex';
             document.getElementById('crew-modal').classList.add('hidden');
             document.getElementById('crew-frame').src = '';
             
             try {
                 if (window.parent && window.parent.clearCache) {
                     window.parent.clearCache('USER');
-                    window.parent.clearCache('SHIFTS'); // <-- TAMBAHKAN INI
+                    window.parent.clearCache('SHIFTS'); 
                 }
                 await API._dbOp("delete", "USER");
-                await API._dbOp("delete", "SHIFTS"); // <-- TAMBAHKAN INI
+                await API._dbOp("delete", "SHIFTS"); 
             } catch(e) {}
-
-            // Ambil data user terbaru dari API secara paksa
+        
+            // 2. BERIKAN JEDA 1.5 DETIK agar Google Sheet selesai nge-save data manpower dari modal
+            await new Promise(resolve => setTimeout(resolve, 1500));
+        
+            // 3. Ambil data user terbaru
             try {
                 const res = await API.get('USER');
                 if (res && res.data) {
@@ -216,16 +221,21 @@
                     // Update otomatis input manpower di modal form jika sedang dibuka
                     const unit = document.getElementById('UnitCode').value;
                     const crew = document.getElementById('Crew').value.trim();
-                    document.getElementById('TotalManpower').value = calculateManpower(unit, crew);
+                    if (unit && crew) {
+                        document.getElementById('TotalManpower').value = calculateManpower(unit, crew);
+                    }
                 }
             } catch(e) {}
-
-            // Refresh ulang data shifts agar card di halaman utama ikut ter-update angkanya
+        
+            // 4. Refresh ulang data shifts (Sekarang pasti menarik data terbaru yang sudah disave)
             try {
                 const shiftRes = await API.get('SHIFTS');
                 rawShifts = shiftRes.data || [];
                 renderGroupedShifts(rawShifts);
             } catch(e) {}
+            
+            // 5. Matikan loader
+            loader.style.display = 'none';
         }
 
         // Update fungsi editData agar otomatis menghitung manpower saat form dibuka
