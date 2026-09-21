@@ -113,12 +113,7 @@
             </div>
             <form id="shift-form" class="p-8 grid grid-cols-1 sm:grid-cols-2 gap-5 overflow-y-auto">
                 <input type="hidden" id="primaryId" name="primaryId">
-                <div class="sm:col-span-2">
-                    <label class="label-style">Shift Leader</label>
-                    <select id="LeaderName" name="LeaderName" required class="input-field text-white">
-                        <option value="" disabled selected>-- Select Shift Leader --</option>
-                    </select>
-                </div>
+                <div class="sm:col-span-2"><label class="label-style">Target Node</label><select id="UnitCode" name="UnitCode" required class="input-field"></select></div>
                 <div>
                     <label class="label-style">Crew</label>
                     <input id="Crew" name="Crew" placeholder="e.g. Crew A" class="input-field">
@@ -182,40 +177,6 @@
             const matched = allUsersCache.filter(u => String(u.UnitCode).trim() === String(unitCode) && String(u.Crew).trim() === String(crewName));
             return matched.length;
         }
-
-        // Fungsi untuk mengisi opsi Shift Leader sesuai UnitCode
-        function updateLeaderDropdown(unitCode, selectedLeader = '') {
-            const leaderSelect = document.getElementById('LeaderName');
-            if (!leaderSelect) return;
-
-            // Filter personil dari tabel USER berdasarkan UnitCode
-            const unitMembers = allUsersCache.filter(u => 
-                String(u.UnitCode || '').trim().toLowerCase() === String(unitCode || '').trim().toLowerCase()
-            );
-
-            if (unitMembers.length === 0) {
-                leaderSelect.innerHTML = '<option value="" disabled selected>No personnel found in this unit</option>';
-                return;
-            }
-
-            let options = '<option value="" disabled selected>-- Select Shift Leader --</option>';
-            options += unitMembers.map(m => {
-                const isSelected = String(m.Name || '').trim().toLowerCase() === String(selectedLeader || '').trim().toLowerCase() ? 'selected' : '';
-                return `<option value="${m.Name}" ${isSelected}>${m.Name} ${m.JobTitle ? `(${m.JobTitle})` : ''}</option>`;
-            }).join('');
-
-            // Antisipasi jika nama leader lama tidak terdaftar di database USER
-            if (selectedLeader && !unitMembers.some(m => String(m.Name || '').trim().toLowerCase() === String(selectedLeader || '').trim().toLowerCase())) {
-                options = `<option value="${selectedLeader}" selected>${selectedLeader} (Unregistered)</option>` + options;
-            }
-
-            leaderSelect.innerHTML = options;
-        }
-
-        // Listener: Jika UnitCode diganti saat Add Shift, opsi Shift Leader langsung berganti
-        document.getElementById('UnitCode').addEventListener('change', (e) => {
-            updateLeaderDropdown(e.target.value);
-        });
 
         // Buka modal daftar anggota crew
         function openCrewModal() {
@@ -285,9 +246,7 @@
             document.getElementById('Crew').value = data.Crew || '';
             document.getElementById('EffectiveFrom').value = data.EffectiveFrom;
             document.getElementById('EffectiveUntil').value = data.EffectiveUntil;
-
-            // 🚀 ISI DROPDOWN DENGAN PERSONIL UNIT INI DAN PILIH LEADER YANG AKTIF
-            updateLeaderDropdown(data.UnitCode, data.LeaderName);
+            document.getElementById('LeaderName').value = data.LeaderName;
 
             // Hitung otomatis Pax berdasarkan Unit & Crew dari database USER
             document.getElementById('TotalManpower').value = calculateManpower(data.UnitCode, data.Crew);
@@ -364,11 +323,6 @@
             document.getElementById('shift-modal').classList.remove('hidden');
             document.getElementById('modal-title').innerText = action === 'add' ? 'New Shift Entry' : 'Update Shift Config';
             document.getElementById('UnitCode').disabled = (action !== 'add');
-
-            // 🚀 POPULATE LEADER UNTUK FORM TAMBAH BARU
-            if (action === 'add') {
-                updateLeaderDropdown(document.getElementById('UnitCode').value);
-            }
         }
 
         function closeModal() { document.getElementById('shift-modal').classList.add('hidden'); document.getElementById('shift-form').reset(); }
