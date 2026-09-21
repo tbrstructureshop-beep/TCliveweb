@@ -113,7 +113,12 @@
             </div>
             <form id="shift-form" class="p-8 grid grid-cols-1 sm:grid-cols-2 gap-5 overflow-y-auto">
                 <input type="hidden" id="primaryId" name="primaryId">
-                <div class="sm:col-span-2"><label class="label-style">Target Node</label><select id="UnitCode" name="UnitCode" required class="input-field"></select></div>
+                <div class="sm:col-span-2">
+                    <label class="label-style">Shift Leader</label>
+                    <select id="LeaderName" name="LeaderName" required class="input-field text-sky-400 font-bold">
+                        <option value="">-- Select Leader --</option>
+                    </select>
+                </div>
                 <div>
                     <label class="label-style">Crew</label>
                     <input id="Crew" name="Crew" placeholder="e.g. Crew A" class="input-field">
@@ -246,7 +251,7 @@
             document.getElementById('Crew').value = data.Crew || '';
             document.getElementById('EffectiveFrom').value = data.EffectiveFrom;
             document.getElementById('EffectiveUntil').value = data.EffectiveUntil;
-            document.getElementById('LeaderName').value = data.LeaderName;
+            updateLeaderDropdown(data.UnitCode, data.LeaderName);
 
             // Hitung otomatis Pax berdasarkan Unit & Crew dari database USER
             document.getElementById('TotalManpower').value = calculateManpower(data.UnitCode, data.Crew);
@@ -323,6 +328,12 @@
             document.getElementById('shift-modal').classList.remove('hidden');
             document.getElementById('modal-title').innerText = action === 'add' ? 'New Shift Entry' : 'Update Shift Config';
             document.getElementById('UnitCode').disabled = (action !== 'add');
+            
+            // Jika tambah data baru, otomatis load list nama berdasarkan unit pertama yang muncul
+            if (action === 'add') {
+                const firstUnit = document.getElementById('UnitCode').value;
+                updateLeaderDropdown(firstUnit);
+            }
         }
 
         function closeModal() { document.getElementById('shift-modal').classList.add('hidden'); document.getElementById('shift-form').reset(); }
@@ -384,6 +395,32 @@
             }
             return t;
         }
+
+        // 🚀 FUNGSI BARU: Update dropdown Leader berdasarkan UnitCode
+        function updateLeaderDropdown(selectedUnit, currentLeader = '') {
+            const leaderSelect = document.getElementById('LeaderName');
+            leaderSelect.innerHTML = '<option value="">-- Select Leader --</option>';
+            
+            if (!selectedUnit) return;
+
+            // Filter user yang UnitCode-nya sama
+            const unitUsers = allUsersCache.filter(u => String(u.UnitCode).trim() === String(selectedUnit).trim());
+            
+            // Masukkan ke dalam option dropdown
+            unitUsers.forEach(u => {
+                const isSelected = (currentLeader && String(u.Name).trim() === String(currentLeader).trim()) ? 'selected' : '';
+                leaderSelect.innerHTML += `<option value="${u.Name}" ${isSelected}>${u.Name} (${u.JobTitle || 'Member'})</option>`;
+            });
+        }
+
+        // 🚀 EVENT LISTENER: Jika UnitCode diubah saat mau Add New Shift, List Leader otomatis ganti
+        document.getElementById('UnitCode').addEventListener('change', (e) => {
+            updateLeaderDropdown(e.target.value);
+            
+            // Sekalian update hitungan Manpower jika Crew sudah diisi
+            const crew = document.getElementById('Crew').value.trim();
+            document.getElementById('TotalManpower').value = calculateManpower(e.target.value, crew);
+        });
 
         async function deleteData(unitCode, shiftCategory) {
             const res = await Swal.fire({ 
