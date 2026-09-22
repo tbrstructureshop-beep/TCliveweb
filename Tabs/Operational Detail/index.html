@@ -178,20 +178,22 @@
             const unitDesc = activeUnitData.UnitDesc || 'No Description';
             const unitLeader = activeUnitData.UnitLeader || 'Unassigned';
 
+            // Ambil daftar order TCP-9 yang tersimpan di LocalStorage
+            const tcp9CheckedList = getTCP9CheckedOrders();
+
             if (sMap) {
                 // --- LOGIKA SUPABASE (TCR & TCP-9) ---
-                // Fallback otomatis jika key belum diset
                 const reportKey = sMap.reportKey || (activeUnit === 'TCR-2' ? 'report_cs1' : activeUnit === 'TCR-3' ? 'report_sm4' : activeUnit === 'TCR-4' ? 'report_cs4' : activeUnit === 'TCR-5' ? 'report_mw' : 'report_sm1');
                 const remarkKey = sMap.remarkKey || (activeUnit === 'TCP-9' ? 'remark' : activeUnit === 'TCR-2' ? 'remark_cs1' : activeUnit === 'TCR-3' ? 'remark_sm4' : activeUnit === 'TCR-4' ? 'remark_cs4' : activeUnit === 'TCR-5' ? 'remark_mw' : 'remark_sm1');
             
                 fullData = supabaseData
                     .filter(item => {
-                        const isReported = (item[reportKey] === true || item[reportKey] === '1' || item[reportKey] === 'checked');
-                        
-                        // 🚀 KHUSUS TCP-9: Jangan sembunyikan data jika belum dicentang (tampilkan semua data unarchived)
-                        const matchReport = (activeUnit === 'TCP-9') 
-                            ? (showOnlyReported ? true : true) // Selalu tampilkan data aktif TCP-9
-                            : (showOnlyReported ? isReported : true);
+                        // Khusus TCP-9: Cek dari LocalStorage, unit TCR: Cek dari Supabase
+                        const isReported = (activeUnit === 'TCP-9')
+                            ? tcp9CheckedList.includes(String(item.order))
+                            : (item[reportKey] === true || item[reportKey] === '1' || item[reportKey] === 'checked');
+
+                        const matchReport = showOnlyReported ? isReported : true;
                         
                         const matchSearch = (
                             (item.ac_reg || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -199,15 +201,17 @@
                             (item.description || '').toLowerCase().includes(searchQuery.toLowerCase())
                         );
                         
-                        // TCR 1-5 wajib cek 'red'. Untuk TCP-9 (filterCek null), loloskan semua data aktif
+                        // TCR 1-5 wajib cek 'red'. Untuk TCP-9 loloskan semua data aktif
                         const matchCek = sMap.filterCek ? (item[sMap.filterCek] === 'red') : true;
 
                         return matchCek && matchReport && matchSearch;
                     })
                     .map(item => {
-                        const isReported = (item[reportKey] === true || item[reportKey] === '1' || item[reportKey] === 'checked');
+                        const isReported = (activeUnit === 'TCP-9')
+                            ? tcp9CheckedList.includes(String(item.order))
+                            : (item[reportKey] === true || item[reportKey] === '1' || item[reportKey] === 'checked');
                         
-                        // 🚀 FORMAT KHUSUS TCP-9 DENGAN DUA BARIS (SUB-LINE)
+                        // 🚀 FORMAT KHUSUS TCP-9
                         if (activeUnit === 'TCP-9') {
                             return {
                                 ACReg: item.ac_reg || '-',
@@ -224,13 +228,23 @@
                                         </div>
                                     </div>`,
                                 Status: formatStatus(item.status_job || item.status_pe || 'Open'),
+                                // Remark dengan label jelas: Remark, Remark from Shop, Mat, Doc
                                 Remark: `
-                                    <div class="py-0.5">
-                                        <div class="text-white/90 font-medium">${item.remark || '-'}</div>
-                                        <div class="text-[10px] text-white/40 font-mono mt-1 flex items-center gap-1.5 flex-wrap">
-                                            <span class="text-emerald-400/80 font-bold">${item.remark_mat || '-'}</span>
+                                    <div class="py-0.5 space-y-1">
+                                        <div class="text-white/90 text-xs">
+                                            <span class="text-[9px] font-bold text-sky-400 uppercase tracking-wider block">Remark:</span>
+                                            <span>${item.remark || '-'}</span>
+                                        </div>
+                                        ${item.remark_pro ? `
+                                            <div class="text-white/70 text-[10px]">
+                                                <span class="text-[8px] font-bold text-purple-400 uppercase tracking-wider block">Remark from Shop:</span>
+                                                <span class="italic text-white/80">${item.remark_pro}</span>
+                                            </div>
+                                        ` : ''}
+                                        <div class="text-[10px] text-white/50 font-mono flex items-center gap-1.5 flex-wrap pt-0.5 border-t border-white/5">
+                                            <span>Mat: <span class="text-emerald-400 font-bold">${item.remark_mat || '-'}</span></span>
                                             <span class="opacity-30">|</span>
-                                            <span class="text-amber-400/80">${item.doc_status || '-'}</span>
+                                            <span>Doc: <span class="text-amber-400 font-semibold">${item.doc_status || '-'}</span></span>
                                         </div>
                                     </div>`,
                                 UnitCode: activeUnit,
@@ -371,21 +385,28 @@
                                                 <input type="checkbox" 
                                                     ${item.isReported ? 'checked' : ''} 
                                                     onchange="toggleReportStatus('${item.OrderNo}', this.checked)"
-                                                    title="Centang untuk tandai reported"
+                                                    title="Centang untuk simpan report"
                                                     class="w-4 h-4 rounded bg-white/5 border-white/20 accent-sky-500 cursor-pointer">
                                             </td>` : ''}
                                         <td class="font-black text-white uppercase">${item.ACReg}</td>
                                         <td class="font-mono text-sky-400">${item.OrderNo}</td>
                                         <td class="text-white/80 leading-tight pr-4">${item.Description}</td>
                                         <td>
-                                            <select 
-                                                onchange="handleUpdateStatus('${activeUnit}', '${item.OrderNo}', this.value)" 
-                                                class="px-2 py-1 rounded-full border text-[10px] font-bold outline-none cursor-pointer ${getStatusBadgeClass(item.Status)}"
-                                            >
-                                                ${['Top Urgent', 'Highlighted', 'Open', 'Progress', 'Closed'].map(s => 
-                                                    `<option value="${s}" ${item.Status === s ? 'selected' : ''}>${s}</option>`
-                                                ).join('')}
-                                            </select>
+                                            ${activeUnit === 'TCP-9' ? `
+                                                <!-- 🚀 STATUS TCP-9 READ-ONLY (NON-EDITABLE) -->
+                                                <span class="px-2.5 py-1 rounded-full border text-[10px] font-bold inline-block ${getStatusBadgeClass(item.Status)}">
+                                                    ${item.Status}
+                                                </span>
+                                            ` : `
+                                                <select 
+                                                    onchange="handleUpdateStatus('${activeUnit}', '${item.OrderNo}', this.value)" 
+                                                    class="px-2 py-1 rounded-full border text-[10px] font-bold outline-none cursor-pointer ${getStatusBadgeClass(item.Status)}"
+                                                >
+                                                    ${['Top Urgent', 'Highlighted', 'Open', 'Progress', 'Closed'].map(s => 
+                                                        `<option value="${s}" ${item.Status === s ? 'selected' : ''}>${s}</option>`
+                                                    ).join('')}
+                                                </select>
+                                            `}
                                         </td>
                                         <td class="text-white/70">${item.Remark}</td>
                                         <td class="text-right">
@@ -403,15 +424,42 @@
             lucide.createIcons();
         }
 
-        // 🚀 FUNGSI CENTANG REPORT REAL-TIME KE SUPABASE
+        // 🚀 HELPER LOCAL STORAGE KHUSUS CENTANG TCP-9
+        function getTCP9CheckedOrders() {
+            try {
+                return JSON.parse(localStorage.getItem('tcp9_checked_orders') || '[]');
+            } catch (e) { return []; }
+        }
+
+        function setTCP9CheckedOrders(orders) {
+            localStorage.setItem('tcp9_checked_orders', JSON.stringify(orders));
+        }
+
+        // 🚀 FUNGSI CENTANG REPORT (TCP-9 KE LOCALSTORAGE, TCR KE SUPABASE)
         async function toggleReportStatus(orderNo, isChecked) {
             const sMap = SUPABASE_UNITS[activeUnit];
-            if (!sMap || !sMap.reportKey) return;
+            if (!sMap) return;
 
+            // 1. JIKA TCP-9: SIMPAN KE LOCALSTORAGE (PERSISTEN & BEBAS ERROR)
+            if (activeUnit === 'TCP-9') {
+                let checkedList = getTCP9CheckedOrders();
+                const strOrder = String(orderNo);
+
+                if (isChecked) {
+                    if (!checkedList.includes(strOrder)) checkedList.push(strOrder);
+                } else {
+                    checkedList = checkedList.filter(o => o !== strOrder);
+                }
+
+                setTCP9CheckedOrders(checkedList);
+                renderCards(); // Refresh instan tanpa fetch ulang
+                return;
+            }
+
+            // 2. JIKA UNIT TCR: SIMPAN KE DATABASE SUPABASE
             const targetRow = supabaseData.find(d => String(d.order) === String(orderNo));
-            if (!targetRow || !targetRow.id) return;
+            if (!targetRow || !targetRow.id || !sMap.reportKey) return;
 
-            // Simpan format 'checked' atau '' persis seperti di DailyMenuWS1
             const val = isChecked ? 'checked' : '';
             targetRow[sMap.reportKey] = val; // update lokal agar responsif
 
@@ -488,29 +536,49 @@
             const sMap = SUPABASE_UNITS[activeUnit];
             const res = await Swal.fire({ 
                 title: 'Purge Item?', 
-                text: sMap ? 'Remove assigned tag? (This item will return to unassigned list)' : 'Delete from storage?',
-                icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', background: '#151921', color: '#fff' 
+                text: `Order akan dihilangkan dari dashboard ${activeUnit}`, // 👈 Pesan konfirmasi dinamis sesuai unit
+                icon: 'warning', 
+                showCancelButton: true, 
+                confirmButtonColor: '#ef4444', 
+                background: '#151921', 
+                color: '#fff' 
             });
             
-            if(res.isConfirmed) {
+            if (res.isConfirmed) {
                 loader.style.display = 'flex';
                 try {
                     if (sMap) {
                         // --- LOGIKA SUPABASE (TCR & TCP-9) ---
-                        const payload = {}; 
-                        if (sMap.filterCek) {
-                            payload[sMap.filterCek] = ''; // TCR 1-5 lepas tag warna
-                        } else if (sMap.reportKey) {
-                            payload[sMap.reportKey] = ''; // TCP-9 lepas centang report
-                        }
-                        
-                        const targetRow = supabaseData.find(d => String(d.order) === String(orderNo));
-                        if (!targetRow || !targetRow.id) throw new Error("Row ID not found for order: " + orderNo);
+                        if (activeUnit === 'TCP-9') {
+                            // Lepas dari daftar centang TCP-9
+                            let checkedList = getTCP9CheckedOrders().filter(o => o !== String(orderNo));
+                            setTCP9CheckedOrders(checkedList);
+                        } else {
+                            // TCR 1-5 lepas tag warna di database
+                            const payload = {}; 
+                            if (sMap.filterCek) payload[sMap.filterCek] = '';
+                            if (sMap.reportKey) payload[sMap.reportKey] = '';
 
-                        const { error } = await supabaseClient.from('mntp_tcr').update(payload).eq('id', targetRow.id);
-                        if (error) throw error;
+                            const targetRow = supabaseData.find(d => String(d.order) === String(orderNo));
+                            if (!targetRow || !targetRow.id) throw new Error("Row ID not found for order: " + orderNo);
+
+                            const { error } = await supabaseClient.from('mntp_tcr').update(payload).eq('id', targetRow.id);
+                            if (error) throw error;
+                        }
+
+                        // 🚀 SWEETALERT NOTIFIKASI HIJAU SESUAI PERMINTAAN
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Order Dihilangkan',
+                            text: `Order ${orderNo} berhasil dihilangkan dari dashboard ${activeUnit}`,
+                            timer: 1500,
+                            showConfirmButton: false,
+                            background: '#151921',
+                            color: '#fff'
+                        });
+
                     } else {
-                        // --- LOGIKA GOOGLE SHEET (Unit lainnya seperti TCP-10) ---
+                        // --- LOGIKA GOOGLE SHEET (Unit lainnya) ---
                         const apiRes = await API.post({ 
                             tab: TAB_NAME, 
                             action: 'delete', 
