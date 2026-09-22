@@ -1,1 +1,478 @@
+<div id="hobModal" class="fixed inset-0 z-[999] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 no-print">
+    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-[95vw] max-h-[95vh] flex flex-col overflow-hidden border border-white/20">
+        
+        <!-- Action Bar Atas -->
+        <div class="p-4 border-b bg-slate-50 flex justify-between items-center no-print">
+            <div class="flex flex-wrap gap-2">
+                <button onclick="initHoBConfig(true)" class="px-4 py-2 bg-slate-700 text-white rounded-xl font-bold text-xs shadow hover:bg-slate-800 transition-all flex items-center gap-1.5">
+                    <i data-lucide="settings" size="14"></i> EDIT CONFIG
+                </button>
+                <button onclick="executePrintPdf()" class="px-4 py-2 bg-sky-600 text-white rounded-xl font-bold text-xs shadow hover:bg-sky-700 transition-all flex items-center gap-1.5">
+                    <i data-lucide="printer" size="14"></i> PRINT PDF
+                </button>
+                <button onclick="executeWaSend()" class="px-4 py-2 bg-emerald-600 text-white rounded-xl font-bold text-xs shadow hover:bg-emerald-700 transition-all flex items-center gap-1.5">
+                    <i data-lucide="send" size="14"></i> BROADCAST WA
+                </button>
+            </div>
+            <button onclick="closeHoBModal()" class="text-slate-400 hover:text-red-500 p-1.5 rounded-lg transition-colors">
+                <i data-lucide="x" size="22"></i>
+            </button>
+        </div>
 
+        <!-- Scrollable Preview Area -->
+        <div class="flex-1 overflow-y-auto bg-slate-300/60 p-6 custom-scrollbar">
+            <div id="hobPagesContainer" class="flex flex-col gap-8 items-center">
+                <!-- Halaman lembar HoB di-generate di sini -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    @page { size: A4 landscape; margin: 0; }
+    #hobPagesContainer * { -webkit-print-color-adjust: exact; box-sizing: border-box; }
+    .page-container { width: 297mm; height: 210mm; padding: 8mm 10mm; background-color: white; margin: auto; display: flex; flex-direction: column; font-family: Arial, Helvetica, sans-serif; color: black; box-shadow: 0 10px 25px rgba(0,0,0,0.15); }
+    .main-title { text-align: center; font-weight: bold; font-size: 13px; border: 2px solid black; padding: 5px; background-color: #eeeeee !important; }
+    .header-info { display: grid; grid-template-columns: 1fr 1fr; border-left: 2px solid black; border-right: 2px solid black; border-bottom: 1px solid black; }
+    .header-column { display: grid; grid-template-columns: 130px 10px 1fr; }
+    .header-column:first-child { border-right: 2px solid black; }
+    .info-cell { padding: 2px 6px; border-bottom: 1px solid black; display: flex; align-items: center; height: 18px; font-size: 10px; }
+    .info-cell.label { font-weight: bold; }
+    .header-column .info-cell:nth-last-child(-n+3) { border-bottom: none; }
+    table.maintenance-table { width: 100%; border-collapse: collapse; border-left: 2px solid black; border-right: 2px solid black; border-bottom: 2px solid black; table-layout: fixed; }
+    table.maintenance-table th, table.maintenance-table td { border: 1px solid black; padding: 2px 4px; vertical-align: middle; word-wrap: break-word; font-size: 9.5px; }
+    .center { text-align: center; }
+    .bg-gray { background-color: #eeeeee !important; }
+    .signature-section { display: grid; grid-template-columns: 1fr 1fr; border-left: 2px solid black; border-right: 2px solid black; border-bottom: 2px solid black; }
+    .crew-block { display: flex; flex-direction: column; }
+    .crew-block:first-child { border-right: 2px solid black; }
+    .crew-header { text-align: center; font-weight: bold; background-color: #eeeeee !important; border-bottom: 1px solid black; padding: 3px; font-size: 10px; }
+    .signature-grid { display: grid; grid-template-columns: 1fr 1fr; }
+    .sign-box { display: flex; flex-direction: column; border-right: 1px solid black; }
+    .sign-box:last-child { border-right: none; }
+    .sign-title { text-align: center; font-weight: bold; border-bottom: 1px solid black; padding: 2px; font-size: 9.5px; }
+    .sign-content { display: grid; grid-template-columns: 50px 10px 1fr; grid-auto-rows: 16px; padding: 3px 5px; font-size: 9px; align-items: center; }
+    .footer-info { display: flex; justify-content: space-between; margin-top: 4px; font-size: 9px; font-weight: bold; }
+
+    @media print {
+        body > *:not(#hobModal) { display: none !important; }
+        #hobModal { position: absolute !important; inset: 0 !important; background: white !important; padding: 0 !important; margin: 0 !important; }
+        #hobModal > div { box-shadow: none !important; max-width: none !important; max-height: none !important; width: 297mm !important; border: none !important; }
+        .no-print { display: none !important; }
+        .page-container { margin: 0 !important; box-shadow: none !important; page-break-after: always !important; }
+    }
+</style>
+
+<script>
+(function() {
+    lucide.createIcons();
+    const activeUnit = window.shiftReportInfo?.unit || 'TCP-9';
+    const items = window.selectedHoBItems || [];
+    const ITEMS_PER_PAGE = 12;
+
+    window.closeHoBModal = function() {
+        const modal = document.getElementById('hobModal');
+        if (modal) modal.remove();
+    };
+
+    window.initHoBConfig = async function(forceModal = false) {
+        let users = [];
+        try {
+            const usrRes = await API.get('USER');
+            users = usrRes.data || [];
+        } catch(e) {}
+
+        const storageKey = `hob_cfg_${activeUnit}`;
+        let savedCfg = {};
+        try {
+            savedCfg = JSON.parse(localStorage.getItem(storageKey) || '{}');
+        } catch(e) {}
+
+        if (!forceModal && savedCfg.isInitialized) {
+            renderAllPages(savedCfg);
+            return;
+        }
+
+        openConfigDialog(users, savedCfg);
+    };
+
+    async function openConfigDialog(users, c) {
+        const findUser = (id) => users.find(u => String(u.EmployeeId) === String(id)) 
+            || { Name: "________________", EmployeeId: "________" };
+
+        const unitUsers = users.filter(u => !u.UnitCode || u.UnitCode === activeUnit || u.UnitCode.startsWith('TC'));
+        const crewList = [...new Set(unitUsers.map(u => u.Crew).filter(Boolean))].sort();
+
+        const userOpts = (selId) => unitUsers.map(u => 
+            `<option value="${u.EmployeeId}" ${String(u.EmployeeId) === String(selId) ? 'selected' : ''}>${u.Name} (${u.Crew || '-'})</option>`
+        ).join('');
+
+        const crewOpts = (selCrew) => (crewList.length ? crewList : ['Crew A', 'Crew B', 'Crew C', 'Day Shift']).map(cr => 
+            `<option value="${cr}" ${cr === selCrew ? 'selected' : ''}>${cr}</option>`
+        ).join('');
+
+        const now = new Date();
+        const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+        const currentDate = now.toISOString().split('T')[0];
+
+        const { value: form } = await Swal.fire({
+            title: `<span style="font-size:16px; color:#fff;">HoB Config (${activeUnit})</span>`,
+            width: '850px',
+            background: '#151921',
+            html: `
+                <div style="text-align: left; font-size: 11px; display: flex; flex-direction: column; gap: 12px; color: #94a3b8;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px;">
+                        <div>
+                            <span style="font-weight:700; color:#38bdf8; text-transform:uppercase; display:block; margin-bottom:6px;">1. Maintenance Header</span>
+                            <div style="display: flex; flex-direction: column; gap: 6px;">
+                                <div><label>A/C REG</label><input id="sw-ac" class="input-field" value="${c.acReg || items[0]?.acReg || 'ALL A/C'}" style="background:#0b0e14; padding:6px; border-radius:6px; width:100%; color:#fff; border:1px solid #334155;"></div>
+                                <div><label>INSPECTION TYPE</label><input id="sw-insp" class="input-field" value="${c.insp || 'DAILY / TRANSIT'}" style="background:#0b0e14; padding:6px; border-radius:6px; width:100%; color:#fff; border:1px solid #334155;"></div>
+                                <div><label>WORK ORDER NO</label><input id="sw-wo" class="input-field" value="${c.woNo || items[0]?.orderNo || 'MULTIPLE'}" style="background:#0b0e14; padding:6px; border-radius:6px; width:100%; color:#fff; border:1px solid #334155;"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <span style="font-weight:700; color:#fb923c; text-transform:uppercase; display:block; margin-bottom:6px;">2. Shift & Crew</span>
+                            <div style="display: flex; flex-direction: column; gap: 6px;">
+                                <div><label>REPORT DATE</label><input type="date" id="sw-date" class="input-field" value="${c.rawDate || currentDate}" style="background:#0b0e14; padding:6px; border-radius:6px; width:100%; color:#fff; border:1px solid #334155;"></div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+                                    <div><label>OUT CREW</label><select id="sw-out-crew" style="background:#0b0e14; padding:6px; border-radius:6px; width:100%; color:#fff; border:1px solid #334155;">${crewOpts(c.outCrew)}</select></div>
+                                    <div><label>IN CREW</label><select id="sw-in-crew" style="background:#0b0e14; padding:6px; border-radius:6px; width:100%; color:#fff; border:1px solid #334155;">${crewOpts(c.inCrew)}</select></div>
+                                </div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+                                    <div><label>OUT SHIFT</label><select id="sw-out-shift" style="background:#0b0e14; padding:6px; border-radius:6px; width:100%; color:#fff; border:1px solid #334155;">
+                                        <option value="MORNING SHIFT" ${c.outShift === 'MORNING SHIFT' ? 'selected' : ''}>MORNING</option>
+                                        <option value="AFTERNOON SHIFT" ${c.outShift === 'AFTERNOON SHIFT' ? 'selected' : ''}>AFTERNOON</option>
+                                        <option value="NIGHT SHIFT" ${c.outShift === 'NIGHT SHIFT' ? 'selected' : ''}>NIGHT</option>
+                                    </select></div>
+                                    <div><label>IN SHIFT</label><select id="sw-in-shift" style="background:#0b0e14; padding:6px; border-radius:6px; width:100%; color:#fff; border:1px solid #334155;">
+                                        <option value="MORNING SHIFT" ${c.inShift === 'MORNING SHIFT' ? 'selected' : ''}>MORNING</option>
+                                        <option value="AFTERNOON SHIFT" ${c.inShift === 'AFTERNOON SHIFT' ? 'selected' : ''}>AFTERNOON</option>
+                                        <option value="NIGHT SHIFT" ${c.inShift === 'NIGHT SHIFT' ? 'selected' : ''}>NIGHT</option>
+                                    </select></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <span style="font-weight:700; color:#4ade80; text-transform:uppercase; display:block; margin-bottom:6px;">3. Personnel In Charge</span>
+                        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;">
+                            <div>
+                                <label style="font-size:9px;">SUP OUT</label>
+                                <select id="sw-out-sup" style="background:#0b0e14; padding:5px; border-radius:6px; width:100%; color:#fff; border:1px solid #334155; font-size:10px;">${userOpts(c.outSupId)}</select>
+                                <input type="time" id="sw-out-sup-t" value="${c.rawOutSupT || currentTime}" style="background:#0b0e14; padding:4px; border-radius:6px; width:100%; color:#fff; border:1px solid #334155; margin-top:3px; font-size:10px;">
+                            </div>
+                            <div>
+                                <label style="font-size:9px;">MGR OUT</label>
+                                <select id="sw-out-mgr" style="background:#0b0e14; padding:5px; border-radius:6px; width:100%; color:#fff; border:1px solid #334155; font-size:10px;">${userOpts(c.outMgrId)}</select>
+                                <input type="time" id="sw-out-mgr-t" value="${c.rawOutMgrT || currentTime}" style="background:#0b0e14; padding:4px; border-radius:6px; width:100%; color:#fff; border:1px solid #334155; margin-top:3px; font-size:10px;">
+                            </div>
+                            <div>
+                                <label style="font-size:9px;">SUP IN</label>
+                                <select id="sw-in-sup" style="background:#0b0e14; padding:5px; border-radius:6px; width:100%; color:#fff; border:1px solid #334155; font-size:10px;">${userOpts(c.inSupId)}</select>
+                                <input type="time" id="sw-in-sup-t" value="${c.rawInSupT || ''}" style="background:#0b0e14; padding:4px; border-radius:6px; width:100%; color:#fff; border:1px solid #334155; margin-top:3px; font-size:10px;">
+                            </div>
+                            <div>
+                                <label style="font-size:9px;">MGR IN</label>
+                                <select id="sw-in-mgr" style="background:#0b0e14; padding:5px; border-radius:6px; width:100%; color:#fff; border:1px solid #334155; font-size:10px;">${userOpts(c.inMgrId)}</select>
+                                <input type="time" id="sw-in-mgr-t" value="${c.rawInMgrT || ''}" style="background:#0b0e14; padding:4px; border-radius:6px; width:100%; color:#fff; border:1px solid #334155; margin-top:3px; font-size:10px;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonText: 'Generate HoB',
+            confirmButtonColor: '#0ea5e9',
+            cancelButtonColor: '#334155',
+            preConfirm: () => {
+                const outSupId = document.getElementById('sw-out-sup').value;
+                const outMgrId = document.getElementById('sw-out-mgr').value;
+                const inSupId = document.getElementById('sw-in-sup').value;
+                const inMgrId = document.getElementById('sw-in-mgr').value;
+
+                const formatGmfDate = (val) => {
+                    if (!val) return "N/A";
+                    const d = new Date(val);
+                    if (isNaN(d)) return "N/A";
+                    const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+                    const days = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"];
+                    return `${days[d.getDay()]}, ${d.getDate().toString().padStart(2, '0')} ${months[d.getMonth()]} ${d.getFullYear()}`;
+                };
+
+                return {
+                    acReg: document.getElementById('sw-ac').value,
+                    insp: document.getElementById('sw-insp').value,
+                    woNo: document.getElementById('sw-wo').value,
+                    fullDate: formatGmfDate(document.getElementById('sw-date').value),
+                    rawDate: document.getElementById('sw-date').value,
+                    outCrew: document.getElementById('sw-out-crew').value,
+                    inCrew: document.getElementById('sw-in-crew').value,
+                    outShift: document.getElementById('sw-out-shift').value,
+                    inShift: document.getElementById('sw-in-shift').value,
+                    outSup: findUser(outSupId),
+                    outMgr: findUser(outMgrId),
+                    inSup: findUser(inSupId),
+                    inMgr: findUser(inMgrId),
+                    outSupId, outMgrId, inSupId, inMgrId,
+                    outSupT: (document.getElementById('sw-out-sup-t').value || '________').replace(':', '.'),
+                    outMgrT: (document.getElementById('sw-out-mgr-t').value || '________').replace(':', '.'),
+                    inSupT: (document.getElementById('sw-in-sup-t').value || '________').replace(':', '.'),
+                    inMgrT: (document.getElementById('sw-in-mgr-t').value || '________').replace(':', '.'),
+                    rawOutSupT: document.getElementById('sw-out-sup-t').value,
+                    rawOutMgrT: document.getElementById('sw-out-mgr-t').value,
+                    rawInSupT: document.getElementById('sw-in-sup-t').value,
+                    rawInMgrT: document.getElementById('sw-in-mgr-t').value,
+                    isInitialized: true
+                };
+            }
+        });
+
+        if (form) {
+            localStorage.setItem(storageKey, JSON.stringify(form));
+            renderAllPages(form);
+        }
+    }
+
+    function renderAllPages(f) {
+        window.currentHoBConfig = f;
+        const container = document.getElementById('hobPagesContainer');
+        container.innerHTML = '';
+        const totalPages = Math.ceil(items.length / ITEMS_PER_PAGE) || 1;
+
+        for (let i = 0; i < totalPages; i++) {
+            const pageData = items.slice(i * ITEMS_PER_PAGE, (i + 1) * ITEMS_PER_PAGE);
+            container.appendChild(createPageElement(i + 1, totalPages, pageData, f));
+        }
+    }
+
+    function createPageElement(num, total, pItems, f) {
+        const pageDiv = document.createElement('div');
+        pageDiv.className = "page-container";
+
+        let rowsHtml = '';
+        for (let i = 0; i < ITEMS_PER_PAGE; i++) {
+            const it = pItems[i];
+            const s = it?.status?.toUpperCase();
+
+            let descriptionContent = '';
+            if (it) {
+                const meta = [
+                    it.partNo ? `PN: ${it.partNo}` : '',
+                    it.serialNo ? `SN: ${it.serialNo}` : '',
+                    it.batchNo ? `BN: ${it.batchNo}` : ''
+                ].filter(Boolean).join(' | ');
+
+                descriptionContent = `
+                    <div style="font-weight: bold; line-height: 1.1;">(${it.acReg || 'N/A'}) ${it.Description}</div>
+                    ${meta ? `<div style="font-size: 7.5px; color: #444; margin-top: 1px;">${meta}</div>` : ''}
+                `;
+            }
+
+            rowsHtml += `
+            <tr style="height: 26px;">
+                <td class="center">${((num - 1) * ITEMS_PER_PAGE) + i + 1}.</td>
+                <td class="center" style="font-size: 9px; font-weight: bold;">${it?.orderNo || '-'}</td>
+                <td style="padding: 2px 4px; overflow: hidden; vertical-align: top;">${descriptionContent}</td>
+                <td class="center font-bold">${s === 'OPEN' ? 'X' : ''}</td>
+                <td class="center font-bold">${s === 'PROGRESS' ? 'X' : ''}</td>
+                <td class="center font-bold">${s === 'CLOSED' ? 'X' : ''}</td>
+                <td style="font-size: 8.5px; line-height: 1.1; overflow: hidden; vertical-align: top;">${it?.note || ''}</td>
+            </tr>`;
+        }
+
+        pageDiv.innerHTML = `
+            <div class="main-title">HAND OVER MAINTENANCE STATUS</div>
+            
+            <div class="header-info">
+                <div class="header-column">
+                    <div class="info-cell label">Date</div><div class="info-cell">:</div><div class="info-cell">${f.fullDate}</div>
+                    <div class="info-cell label">Outgoing Crew</div><div class="info-cell">:</div><div class="info-cell">${f.outCrew}</div>
+                    <div class="info-cell label">Shift</div><div class="info-cell">:</div><div class="info-cell">${f.outShift}</div>
+                    <div class="info-cell label">Incoming Crew</div><div class="info-cell">:</div><div class="info-cell">${f.inCrew}</div>
+                    <div class="info-cell label">Shift</div><div class="info-cell">:</div><div class="info-cell">${f.inShift}</div>
+                </div>
+                <div class="header-column">
+                    <div class="info-cell label">Aircraft Registration</div><div class="info-cell">:</div><div class="info-cell">${f.acReg}</div>
+                    <div class="info-cell label">Type of Inspection</div><div class="info-cell">:</div><div class="info-cell">${f.insp}</div>
+                    <div class="info-cell label">Work Order No</div><div class="info-cell">:</div><div class="info-cell">${f.woNo}</div>
+                    <div class="info-cell label">Unit / Station</div><div class="info-cell">:</div><div class="info-cell">${activeUnit}</div>
+                    <div class="info-cell label">Report Scope</div><div class="info-cell">:</div><div class="info-cell">Production Control</div>
+                </div>
+            </div>
+
+            <table class="maintenance-table">
+                <colgroup>
+                    <col style="width: 35px;">
+                    <col style="width: 105px;">
+                    <col style="width: 380px;">
+                    <col style="width: 45px;">
+                    <col style="width: 45px;">
+                    <col style="width: 50px;">
+                    <col style="width: 380px;">
+                </colgroup>
+                <thead>
+                    <tr class="bg-gray"><th rowspan="2" class="center">No.</th><th rowspan="2" class="center">Order No.</th><th rowspan="2" class="center">Work Description</th><th colspan="3" class="center">Status</th><th rowspan="2" class="center">Remarks</th></tr>
+                    <tr class="bg-gray"><th class="center">O</th><th class="center">P</th><th class="center">C</th></tr>
+                </thead>
+                <tbody>${rowsHtml}</tbody>
+            </table>
+
+            <div class="signature-section">
+                <div class="crew-block">
+                    <div class="crew-header">Outgoing Crew</div>
+                    <div class="signature-grid">
+                        <div class="sign-box">
+                            <div class="sign-title">Supervisor</div>
+                            <div class="sign-content">
+                                <div>Name</div><div>:</div><div style="font-weight:bold; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${f.outSup.Name || f.outSup.EmployeeName || '-'}</div>
+                                <div>Id No.</div><div>:</div><div>${f.outSup.EmployeeId || '-'}</div>
+                                <div>Time</div><div>:</div><div>${f.outSupT}</div>
+                                <div>Sign</div><div>:</div><div>__________</div>
+                            </div>
+                        </div>
+                        <div class="sign-box">
+                            <div class="sign-title">Manager</div>
+                            <div class="sign-content">
+                                <div>Name</div><div>:</div><div style="font-weight:bold; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${f.outMgr.Name || f.outMgr.EmployeeName || '-'}</div>
+                                <div>Id No.</div><div>:</div><div>${f.outMgr.EmployeeId || '-'}</div>
+                                <div>Time</div><div>:</div><div>${f.outMgrT}</div>
+                                <div>Sign</div><div>:</div><div>__________</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="crew-block">
+                    <div class="crew-header">Incoming Crew</div>
+                    <div class="signature-grid">
+                        <div class="sign-box">
+                            <div class="sign-title">Supervisor</div>
+                            <div class="sign-content">
+                                <div>Name</div><div>:</div><div style="font-weight:bold; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${f.inSup.Name || f.inSup.EmployeeName || '-'}</div>
+                                <div>Id No.</div><div>:</div><div>${f.inSup.EmployeeId || '-'}</div>
+                                <div>Time</div><div>:</div><div>${f.inSupT}</div>
+                                <div>Sign</div><div>:</div><div>__________</div>
+                            </div>
+                        </div>
+                        <div class="sign-box">
+                            <div class="sign-title">Manager</div>
+                            <div class="sign-content">
+                                <div>Name</div><div>:</div><div style="font-weight:bold; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${f.inMgr.Name || f.inMgr.EmployeeName || '-'}</div>
+                                <div>Id No.</div><div>:</div><div>${f.inMgr.EmployeeId || '-'}</div>
+                                <div>Time</div><div>:</div><div>${f.inMgrT}</div>
+                                <div>Sign</div><div>:</div><div>__________</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-info"><div>Form No: GMF/Q-392</div><div>Page ${num} of ${total}</div></div>
+        `;
+        return pageDiv;
+    }
+
+    window.executePrintPdf = function() {
+        const content = document.getElementById('hobPagesContainer').innerHTML;
+        const printWin = window.open('', '_blank', 'width=1100,height=800');
+        printWin.document.write(`
+            <html>
+                <head>
+                    <title>HAND OVER MAINTENANCE STATUS - PRINT</title>
+                    <style>
+                        @page { size: A4 landscape; margin: 0; }
+                        body { margin: 0; padding: 0; background: white !important; font-family: Arial, sans-serif; }
+                        .page-container { width: 297mm; height: 210mm; padding: 8mm 10mm; background-color: white; margin: 0 auto; display: flex; flex-direction: column; page-break-after: always; box-sizing: border-box; }
+                        .main-title { text-align: center; font-weight: bold; font-size: 13px; border: 2px solid black; padding: 5px; background-color: #eeeeee !important; }
+                        .header-info { display: grid; grid-template-columns: 1fr 1fr; border-left: 2px solid black; border-right: 2px solid black; border-bottom: 1px solid black; }
+                        .header-column { display: grid; grid-template-columns: 130px 10px 1fr; }
+                        .header-column:first-child { border-right: 2px solid black; }
+                        .info-cell { padding: 2px 6px; border-bottom: 1px solid black; display: flex; align-items: center; height: 18px; font-size: 10px; }
+                        .info-cell.label { font-weight: bold; }
+                        .header-column .info-cell:nth-last-child(-n+3) { border-bottom: none; }
+                        table.maintenance-table { width: 100%; border-collapse: collapse; border-left: 2px solid black; border-right: 2px solid black; border-bottom: 2px solid black; table-layout: fixed; }
+                        table.maintenance-table th, table.maintenance-table td { border: 1px solid black; padding: 2px 4px; vertical-align: middle; word-wrap: break-word; font-size: 9.5px; }
+                        .center { text-align: center; }
+                        .bg-gray { background-color: #eeeeee !important; }
+                        .signature-section { display: grid; grid-template-columns: 1fr 1fr; border-left: 2px solid black; border-right: 2px solid black; border-bottom: 2px solid black; }
+                        .crew-block { display: flex; flex-direction: column; }
+                        .crew-block:first-child { border-right: 2px solid black; }
+                        .crew-header { text-align: center; font-weight: bold; background-color: #eeeeee !important; border-bottom: 1px solid black; padding: 3px; font-size: 10px; }
+                        .signature-grid { display: grid; grid-template-columns: 1fr 1fr; }
+                        .sign-box { display: flex; flex-direction: column; border-right: 1px solid black; }
+                        .sign-box:last-child { border-right: none; }
+                        .sign-title { text-align: center; font-weight: bold; border-bottom: 1px solid black; padding: 2px; font-size: 9.5px; }
+                        .sign-content { display: grid; grid-template-columns: 50px 10px 1fr; grid-auto-rows: 16px; padding: 3px 5px; font-size: 9px; align-items: center; }
+                        .footer-info { display: flex; justify-content: space-between; margin-top: 4px; font-size: 9px; font-weight: bold; }
+                        * { -webkit-print-color-adjust: exact; box-sizing: border-box; }
+                    </style>
+                </head>
+                <body>
+                    ${content}
+                    <script>
+                        window.onload = function() { window.print(); };
+                    <\/script>
+                </body>
+            </html>
+        `);
+        printWin.document.close();
+    };
+
+    window.executeWaSend = async function() {
+        const f = window.currentHoBConfig;
+        if (!f || !items.length) {
+            Swal.fire('Error', 'Data order atau konfigurasi belum siap.', 'error');
+            return;
+        }
+
+        const counts = items.reduce((acc, it) => {
+            const s = it.status?.toUpperCase() || 'OPEN';
+            acc[s] = (acc[s] || 0) + 1;
+            return acc;
+        }, {});
+        const summaryStr = Object.entries(counts).map(([k, v]) => `${v} ORDER ${k}`).join(' | ');
+
+        let msg = `*DAILY HAND OVER REPORT - ${activeUnit}*\n`;
+        msg += `CREW: ${f.outCrew} ➔ ${f.inCrew}\n`;
+        msg += `SHIFT: ${f.outShift}\n`;
+        msg += `DATE: ${f.fullDate}\n\n`;
+        msg += `*💡 SUMMARY: ${items.length} ORDERS*\n${summaryStr}\n\n`;
+
+        items.forEach((it, idx) => {
+            const st = (it.status || '').toLowerCase();
+            const emoji = st === 'closed' ? '🟢' : st === 'progress' ? '🟡' : '🔴';
+            msg += `${idx + 1}. [${it.acReg || 'N/A'}] ${it.orderNo || '-'}\n`;
+            msg += `*${it.Description}*\n`;
+            msg += `STATUS: ${emoji} ${(it.status || 'OPEN').toUpperCase()}\n`;
+            if (it.note) msg += `NOTE: ${it.note}\n`;
+            msg += `\n`;
+        });
+
+        msg += `*BEST REGARDS*\n`;
+        msg += `${f.outSup.Name || f.outSup.EmployeeName || 'Supervisor'} | ${activeUnit} | ${f.outCrew}`;
+
+        const { isConfirmed } = await Swal.fire({
+            title: 'Preview Pesan WhatsApp',
+            width: '600px',
+            background: '#151921',
+            html: `
+                <textarea id="final-wa-msg" style="width:100%; height:320px; font-size:11px; font-family:monospace; background:#0b0e14; color:#fff; border:1px solid #334155; padding:8px; border-radius:8px;">${msg}</textarea>
+            `,
+            showCancelButton: true,
+            confirmButtonText: '📋 Copy & Buka WhatsApp',
+            confirmButtonColor: '#25D366',
+            cancelButtonColor: '#334155'
+        });
+
+        if (isConfirmed) {
+            const finalMsg = document.getElementById('final-wa-msg').value;
+            await navigator.clipboard.writeText(finalMsg);
+            const isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
+            const waUrl = isMobile ? "whatsapp://send" : "https://web.whatsapp.com/";
+            window.open(waUrl, '_blank');
+        }
+    };
+
+    initHoBConfig(false);
+})();
+</script>
