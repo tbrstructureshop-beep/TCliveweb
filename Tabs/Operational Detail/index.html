@@ -62,6 +62,10 @@
             <button onclick="init()" class="bg-white/5 border border-white/10 hover:bg-white/10 text-white px-5 py-2.5 rounded-xl font-bold text-[10px] uppercase transition-all flex items-center gap-2">
                 <i data-lucide="refresh-cw" size="14"></i> Sync All
             </button>
+            <!-- 🚀 TOMBOL CREATE HOB (TAMPIL DI SEMUA UNIT) -->
+            <button onclick="openHoBModal()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2.5 rounded-xl font-bold text-[10px] uppercase transition-all flex items-center gap-2 shadow-lg shadow-emerald-600/20 active:scale-95">
+                <i data-lucide="file-text" size="14"></i> Create HoB
+            </button>
             <button id="btn-bulk" onclick="openModal('bulk')" class="bg-white/5 border border-white/10 hover:bg-white/10 text-white px-5 py-2.5 rounded-xl font-bold text-[10px] uppercase transition-all">
                 <i data-lucide="layout-grid" class="inline-block mr-1" size="14"></i> Bulk Table
             </button>
@@ -150,6 +154,9 @@
             </div>
         </div>
     </div>
+
+    <!-- Penampung Modal HoB Eksternal -->
+    <div id="hobModalPlaceholder"></div>
 
     <script>
         lucide.createIcons();
@@ -307,23 +314,28 @@
                     });
             } else {
                 // --- LOGIKA GOOGLE SHEET (TCP-10, dll) ---
+                const localChecked = getUnitCheckedOrders(activeUnit);
                 fullData = rawOpData
                     .filter(item => {
+                        const isReported = localChecked.includes(String(item.OrderNo));
+                        const matchReport = showOnlyReported ? isReported : true;
                         const matchUnit = item.UnitCode === activeUnit;
                         const matchSearch = (
                             (item.ACReg || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
                             (String(item.OrderNo) || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
                             (item.Description || '').toLowerCase().includes(searchQuery.toLowerCase())
                         );
-                        return matchUnit && matchSearch;
+                        return matchUnit && matchReport && matchSearch;
                     })
                     .map(item => ({
                         ...item,
                         Status: formatStatus(item.Status),
-                        Remark: item.Remark || item.Remarks || '-'
+                        Remark: item.Remark || item.Remarks || '-',
+                        isReported: localChecked.includes(String(item.OrderNo))
                     }));
             }
 
+            window.currentRenderedData = fullData; // 👈 Tambahkan baris ini
             fullData.sort((a, b) => PRIORITY[a.Status] - PRIORITY[b.Status]);
 
             // Summary Stats Lengkap
@@ -408,7 +420,7 @@
                         <table class="master-table">
                             <thead>
                                 <tr>
-                                    ${sMap ? '<th class="w-12 text-center">Rep.</th>' : ''}
+                                    <th class="w-12 text-center">Rep.</th>
                                     <th>AC Reg</th>
                                     <th>Order No</th>
                                     <th>Description</th>
@@ -420,14 +432,13 @@
                             <tbody>
                                 ${paginatedItems.map(item => `
                                     <tr class="group hover:bg-white/[0.02] transition-all">
-                                        ${sMap ? `
-                                            <td class="text-center">
-                                                <input type="checkbox" 
-                                                    ${item.isReported ? 'checked' : ''} 
-                                                    onchange="toggleReportStatus('${item.OrderNo}', this.checked)"
-                                                    title="Centang untuk simpan report"
-                                                    class="w-4 h-4 rounded bg-white/5 border-white/20 accent-sky-500 cursor-pointer">
-                                            </td>` : ''}
+                                        <td class="text-center">
+                                            <input type="checkbox" 
+                                                ${item.isReported ? 'checked' : ''} 
+                                                onchange="toggleReportStatus('${item.OrderNo}', this.checked)"
+                                                title="Centang untuk simpan report HoB"
+                                                class="w-4 h-4 rounded bg-white/5 border-white/20 accent-sky-500 cursor-pointer">
+                                        </td>
                                         <td class="font-black text-white uppercase">${item.ACReg}</td>
                                         <td class="font-mono text-sky-400">${item.OrderNo}</td>
                                         <td class="text-white/80 leading-tight pr-4">${item.Description}</td>
@@ -475,14 +486,123 @@
             localStorage.setItem('tcp9_checked_orders', JSON.stringify(orders));
         }
 
-        // 🚀 FUNGSI CENTANG REPORT (TCP-9 KE LOCALSTORAGE, TCR KE SUPABASE)
+        // 🚀 HELPER CENTANG UNIVERSAL (TCP-9 & UNIT GOOGLE SHEET MENGGUNAKAN LOCALSTORAGE)
+        function getUnitCheckedOrders(unit) {
+            if (unit === 'TCP-9') {
+                try { return JSON.parse(localStorage.getItem('tcp9_checked_orders') || '[]'); } catch(e) { return []; }
+            }
+            try { return JSON.parse(localStorage.getItem(`checked_orders_${unit}`) || '[]'); } catch(e) { return []; }
+        }
+
+        function setUnitCheckedOrders(unit, orders) {
+            if (unit === 'TCP-9') {
+                localStorage.setItem('tcp9_checked_orders', JSON.stringify(orders));
+            } else {
+                localStorage.setItem(`checked_orders_${unit}`, JSON.stringify(orders));
+            }
+        }
+
+        // 🚀 FUNGSI BUKA MODAL HOB (HANYA MEMBAWA DATA YANG DICENTANG)
+        async function openHoBModal() {
+            // Ambil semua item yang sedang dicentang di unit aktif
+            const checkedItems = (window.currentRenderedData || []).filter(item => item.isReported);
+
+            // Validasi: Wajib centang minimal 1
+            if (!checkedItems || checkedItems.length === 0) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Item Belum Dipilih',
+                    text: 'Silakan centang (kolom Rep.) minimal 1 order terlebih dahulu untuk membuat lembar HoB!',
+                    background: '#151921',
+                    color: '#fff',
+                    confirmButtonColor: '#0ea5e9'
+                });
+                return;
+            }
+
+            // Format data agar sesuai dengan template HoB
+            window.selectedHoBItems = checkedItems.map(item => {
+                const rawSup = supabaseData.find(d => String(d.order) === String(item.OrderNo));
+                const rawSheet = rawOpData.find(d => String(d.OrderNo) === String(item.OrderNo));
+                const raw = rawSup || rawSheet || {};
+
+                return {
+                    orderNo: item.OrderNo || raw.order || raw.OrderNo || '-',
+                    acReg: raw.ac_reg || raw.ACReg || item.ACReg || 'N/A',
+                    Description: raw.description || raw.Description || (item.Description ? item.Description.replace(/<[^>]*>?/gm, '').trim() : '-'),
+                    status: (item.Status || raw.status_job || 'OPEN').toUpperCase(),
+                    partNo: raw.pn || raw.partNo || '',
+                    serialNo: raw.sn || raw.serialNo || '',
+                    batchNo: raw.bn || raw.batchNo || '',
+                    note: raw.remark || raw.Remark || raw.remark_pro || '',
+                    unit: activeUnit
+                };
+            });
+
+            window.shiftReportInfo = {
+                unit: activeUnit,
+                date: new Date().toISOString().split('T')[0]
+            };
+
+            // Muat modal/HoB/index.html
+            await loadHoBFragment();
+        }
+
+        async function loadHoBFragment() {
+            const placeholder = document.getElementById('hobModalPlaceholder');
+            if (!placeholder) return;
+            placeholder.innerHTML = '';
+            loader.style.display = 'flex';
+
+            try {
+                const res = await fetch('modal/HoB/index.html');
+                if (!res.ok) throw new Error('File modal/HoB/index.html tidak ditemukan.');
+                const html = await res.text();
+                placeholder.innerHTML = html;
+
+                // Jalankan script di dalam modal
+                const scripts = placeholder.querySelectorAll('script');
+                scripts.forEach(oldScript => {
+                    const newScript = document.createElement('script');
+                    newScript.textContent = oldScript.textContent;
+                    document.body.appendChild(newScript);
+                });
+                lucide.createIcons();
+            } catch (err) {
+                Swal.fire({ title: 'Gagal Memuat HoB', text: err.message, icon: 'error', background: '#151921', color: '#fff' });
+            } finally {
+                loader.style.display = 'none';
+            }
+        }
+
+        // 🚀 FUNGSI CENTANG REPORT (HYBRID: SUPABASE UNTUK TCR, LOCALSTORAGE UNTUK TCP-9 & SHEET)
         async function toggleReportStatus(orderNo, isChecked) {
             const sMap = SUPABASE_UNITS[activeUnit];
-            if (!sMap) return;
+            const isSupabaseLiveUnit = sMap && activeUnit !== 'TCP-9';
 
-            // 1. JIKA TCP-9: SIMPAN KE LOCALSTORAGE (PERSISTEN & BEBAS ERROR)
-            if (activeUnit === 'TCP-9') {
-                let checkedList = getTCP9CheckedOrders();
+            // 1. UNIT TCR 1 s/d 5: SIMPAN KE SUPABASE
+            if (isSupabaseLiveUnit) {
+                const targetRow = supabaseData.find(d => String(d.order) === String(orderNo));
+                if (!targetRow || !targetRow.id || !sMap.reportKey) return;
+
+                const val = isChecked ? 'checked' : '';
+                targetRow[sMap.reportKey] = val;
+
+                try {
+                    const { error } = await supabaseClient
+                        .from('mntp_tcr')
+                        .update({ [sMap.reportKey]: val })
+                        .eq('id', targetRow.id);
+                    if (error) throw error;
+                } catch (err) {
+                    console.error("Gagal update centang:", err);
+                    Swal.fire({ title: 'Update Gagal', text: err.message, icon: 'error', background: '#151921', color: '#fff' });
+                    init();
+                    return;
+                }
+            } else {
+                // 2. TCP-9 & UNIT GOOGLE SHEET: SIMPAN DI LOCALSTORAGE
+                let checkedList = getUnitCheckedOrders(activeUnit);
                 const strOrder = String(orderNo);
 
                 if (isChecked) {
@@ -491,30 +611,23 @@
                     checkedList = checkedList.filter(o => o !== strOrder);
                 }
 
-                setTCP9CheckedOrders(checkedList);
-                renderCards(); // Refresh instan tanpa fetch ulang
-                return;
+                setUnitCheckedOrders(activeUnit, checkedList);
             }
 
-            // 2. JIKA UNIT TCR: SIMPAN KE DATABASE SUPABASE
-            const targetRow = supabaseData.find(d => String(d.order) === String(orderNo));
-            if (!targetRow || !targetRow.id || !sMap.reportKey) return;
+            // 🚀 SWEETALERT TOAST NOTIFIKASI (CHECKED / UNCHECKED)
+            Swal.fire({
+                icon: isChecked ? 'success' : 'info',
+                title: isChecked ? 'Order Checked' : 'Order Unchecked',
+                text: `Order ${orderNo} ${isChecked ? 'ditambahkan ke' : 'dihilangkan dari'} reported item`,
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 1200,
+                background: '#151921',
+                color: '#fff'
+            });
 
-            const val = isChecked ? 'checked' : '';
-            targetRow[sMap.reportKey] = val; // update lokal agar responsif
-
-            try {
-                const { error } = await supabaseClient
-                    .from('mntp_tcr')
-                    .update({ [sMap.reportKey]: val })
-                    .eq('id', targetRow.id);
-
-                if (error) throw error;
-            } catch (err) {
-                console.error("Gagal update centang:", err);
-                Swal.fire({ title: 'Update Gagal', text: err.message, icon: 'error', background: '#151921', color: '#fff' });
-                init();
-            }
+            renderCards(); // Refresh tampilan instan
         }
 
         async function handleUpdateStatus(uCode, oNo, status) {
