@@ -36,7 +36,7 @@
     .page-container { 
         width: 297mm; 
         height: 210mm; 
-        padding: 9mm 12mm; 
+        padding: 9mm 10mm; 
         background-color: white; 
         margin: auto; 
         display: flex; 
@@ -45,51 +45,57 @@
         font-family: Arial, Helvetica, sans-serif; 
         color: black; 
         box-shadow: 0 10px 25px rgba(0,0,0,0.15); 
+        box-sizing: border-box;
     }
     
-    /* Semua garis konsisten 1px */
+    /* 1. Main Title: 1px border keliling */
     .main-title { 
         text-align: center; 
         font-weight: bold; 
         font-size: 13px; 
         border: 1px solid black; 
-        padding: 6px; 
+        padding: 5px; 
         background-color: #eeeeee !important; 
         letter-spacing: 0.5px;
     }
     
+    /* 2. Header Info: border-top NONE agar tidak dobel dengan garis bawah main-title */
     .header-info { 
         display: grid; 
         grid-template-columns: 1fr 1fr; 
         border-left: 1px solid black; 
         border-right: 1px solid black; 
         border-bottom: 1px solid black; 
+        border-top: none;
     }
     .header-column { display: grid; grid-template-columns: 130px 10px 1fr; }
     .header-column:first-child { border-right: 1px solid black; }
     
     .info-cell { 
-        padding: 3px 6px; 
+        padding: 2px 6px; 
         border-bottom: 1px solid black; 
         display: flex; 
         align-items: center; 
-        height: 21px; 
+        height: 20px; 
         font-size: 9.5px; 
     }
     .info-cell.label { font-weight: bold; }
     .header-column .info-cell:nth-last-child(-n+3) { border-bottom: none; }
     
-    /* Tabel dengan garis seragam 1px dan vertikal rata tengah */
+    /* 3. Maintenance Table: border-top NONE agar menyambung lurus tanpa dobel dari header-info */
     table.maintenance-table { 
         width: 100%; 
         border-collapse: collapse; 
-        border: 1px solid black; 
+        border-left: 1px solid black; 
+        border-right: 1px solid black; 
+        border-bottom: 1px solid black; 
+        border-top: none;
         table-layout: fixed; 
     }
     table.maintenance-table th, 
     table.maintenance-table td { 
         border: 1px solid black; 
-        padding: 4px 6px; 
+        padding: 3px 6px; 
         vertical-align: middle !important; 
         word-wrap: break-word; 
         font-size: 9.5px; 
@@ -98,12 +104,14 @@
     .center { text-align: center; }
     .bg-gray { background-color: #eeeeee !important; }
     
+    /* 4. Signature Section: border-top NONE agar menyambung lurus dari tabel */
     .signature-section { 
         display: grid; 
         grid-template-columns: 1fr 1fr; 
         border-left: 1px solid black; 
         border-right: 1px solid black; 
         border-bottom: 1px solid black; 
+        border-top: none;
     }
     .crew-block { display: flex; flex-direction: column; }
     .crew-block:first-child { border-right: 1px solid black; }
@@ -112,8 +120,8 @@
         font-weight: bold; 
         background-color: #eeeeee !important; 
         border-bottom: 1px solid black; 
-        padding: 4px; 
-        font-size: 10px; 
+        padding: 3px; 
+        font-size: 9.5px; 
     }
     
     .signature-grid { display: grid; grid-template-columns: 1fr 1fr; }
@@ -123,14 +131,14 @@
         text-align: center; 
         font-weight: bold; 
         border-bottom: 1px solid black; 
-        padding: 3px; 
-        font-size: 9.5px; 
+        padding: 2.5px; 
+        font-size: 9px; 
     }
     .sign-content { 
         display: grid; 
         grid-template-columns: 50px 10px 1fr; 
-        grid-auto-rows: 18px; 
-        padding: 4px 6px; 
+        grid-auto-rows: 17px; 
+        padding: 3px 6px; 
         font-size: 9px; 
         align-items: center; 
     }
@@ -189,12 +197,10 @@
         const findUser = (id) => users.find(u => String(u.EmployeeId) === String(id)) 
             || { Name: "________________", EmployeeId: "________" };
 
-        // Filter ketat personil per unit aktif
         const unitUsers = users.filter(u => 
             String(u.UnitCode || '').trim().toLowerCase() === activeUnit.toLowerCase()
         );
 
-        // Filter ketat crew per unit aktif
         const crewList = [...new Set(unitUsers.map(u => String(u.Crew || '').trim()).filter(cr => cr && cr !== '-' && cr !== 'undefined'))].sort();
 
         const userOpts = (selId) => {
@@ -313,7 +319,7 @@
                 const formatGmfDate = (val) => {
                     if (!val) return "-";
                     const d = new Date(val);
-                    if (isNaN(d)) return val; // biarkan teks bebas jika bukan tanggal valid
+                    if (isNaN(d)) return val;
                     const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
                     const days = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"];
                     return `${days[d.getDay()]}, ${d.getDate().toString().padStart(2, '0')} ${months[d.getMonth()]} ${d.getFullYear()}`;
@@ -390,20 +396,22 @@
 
                 descriptionContent = `
                     <div style="font-weight: bold; line-height: 1.2;">(${it.acReg || '-'}) ${it.Description}</div>
-                    ${meta ? `<div style="font-size: 8px; color: #444; margin-top: 2px;">${meta}</div>` : ''}
+                    ${meta ? `<div style="font-size: 7.5px; color: #444; line-height: 1.1; margin-top: 1px; font-weight: normal;">${meta}</div>` : ''}
                 `;
             }
 
-            // Tinggi baris 32px agar seimbang dan teks vertikal rata tengah sempurna
+            let remarksContent = it ? (it.note || '') : '';
+
+            // Tinggi baris 31px seragam, vertikal rata tengah penuh
             rowsHtml += `
-            <tr style="height: 32px;">
+            <tr style="height: 31px;">
                 <td class="center font-mono">${((num - 1) * ITEMS_PER_PAGE) + i + 1}.</td>
-                <td class="center font-mono" style="font-size: 9.5px; font-weight: bold;">${it?.orderNo || '-'}</td>
-                <td style="padding: 3px 6px; overflow: hidden;">${descriptionContent}</td>
-                <td class="center font-bold" style="font-size: 11px;">${s === 'OPEN' ? 'X' : ''}</td>
-                <td class="center font-bold" style="font-size: 11px;">${s === 'PROGRESS' ? 'X' : ''}</td>
-                <td class="center font-bold" style="font-size: 11px;">${s === 'CLOSED' ? 'X' : ''}</td>
-                <td style="font-size: 8.5px; line-height: 1.2; overflow: hidden;">${it?.note || ''}</td>
+                <td class="center font-mono" style="font-size: 9px; overflow: hidden;">${it?.orderNo || '-'}</td>
+                <td style="padding: 2px 5px; overflow: hidden; vertical-align: middle;">${descriptionContent}</td>
+                <td class="center font-bold" style="font-size: 10px;">${s === 'OPEN' ? 'X' : ''}</td>
+                <td class="center font-bold" style="font-size: 10px;">${s === 'PROGRESS' ? 'X' : ''}</td>
+                <td class="center font-bold" style="font-size: 10px;">${s === 'CLOSED' ? 'X' : ''}</td>
+                <td style="font-size: 8.5px; line-height: 1.1; overflow: hidden; vertical-align: middle;">${remarksContent}</td>
             </tr>`;
         }
 
@@ -423,28 +431,27 @@
                         <div class="info-cell label">Aircraft Registration</div><div class="info-cell">:</div><div class="info-cell">${f.acReg}</div>
                         <div class="info-cell label">Type of Inspection</div><div class="info-cell">:</div><div class="info-cell">${f.insp}</div>
                         <div class="info-cell label">Work Order No</div><div class="info-cell">:</div><div class="info-cell">${f.woNo}</div>
-                        
-                        <!-- Header Hangar In / Out Date -->
                         <div class="info-cell label">Hangar In Date</div><div class="info-cell">:</div><div class="info-cell">${f.hIn}</div>
                         <div class="info-cell label">Hangar Out Date</div><div class="info-cell">:</div><div class="info-cell" style="justify-content: space-between;">
                             <span>${f.hOut}</span>
-                            ${f.hOutTag ? `<span style="font-weight: normal; font-size: 8.5px; opacity: 0.75;">${f.hOutTag}</span>` : ''}
+                            ${f.hOutTag ? `<span style="font-weight: normal; font-size: 8.5px; opacity: 0.8;">${f.hOutTag}</span>` : ''}
                         </div>
                     </div>
                 </div>
 
+                <!-- Kolom persis template master storages (Total 1043px) -->
                 <table class="maintenance-table">
                     <colgroup>
-                        <col style="width: 36px;">
-                        <col style="width: 105px;">
-                        <col style="width: 380px;">
-                        <col style="width: 44px;">
-                        <col style="width: 44px;">
+                        <col style="width: 40px;">
+                        <col style="width: 110px;">
+                        <col style="width: 370px;">
                         <col style="width: 48px;">
-                        <col style="width: 380px;">
+                        <col style="width: 47px;">
+                        <col style="width: 54px;">
+                        <col style="width: 374px;">
                     </colgroup>
                     <thead>
-                        <tr class="bg-gray"><th rowspan="2" class="center">No.</th><th rowspan="2" class="center">Order No.</th><th rowspan="2" class="center">Work Description</th><th colspan="3" class="center">Status</th><th rowspan="2" class="center">Remarks</th></tr>
+                        <tr class="bg-gray"><th rowspan="2" class="center">No.</th><th rowspan="2" class="center">Reference No.</th><th rowspan="2" class="center">Description</th><th colspan="3" class="center">Status</th><th rowspan="2" class="center">Remarks</th></tr>
                         <tr class="bg-gray"><th class="center">O</th><th class="center">P</th><th class="center">C</th></tr>
                     </thead>
                     <tbody>${rowsHtml}</tbody>
@@ -467,7 +474,7 @@
                                 <div class="sign-title">Manager</div>
                                 <div class="sign-content">
                                     <div>Name</div><div>:</div><div style="font-weight:bold; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${f.outMgr.Name || f.outMgr.EmployeeName || '-'}</div>
-                                    <div>Id No.</div><div>:</div><div>${f.outMgr.EmployeeId || '-'}</div>
+                                    <div>Id No</div><div>:</div><div>${f.outMgr.EmployeeId || '-'}</div>
                                     <div>Time</div><div>:</div><div>${f.outMgrT}</div>
                                     <div>Sign</div><div>:</div><div>__________</div>
                                 </div>
@@ -491,7 +498,7 @@
                                 <div class="sign-title">Manager</div>
                                 <div class="sign-content">
                                     <div>Name</div><div>:</div><div style="font-weight:bold; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${f.inMgr.Name || f.inMgr.EmployeeName || '-'}</div>
-                                    <div>Id No.</div><div>:</div><div>${f.inMgr.EmployeeId || '-'}</div>
+                                    <div>Id No</div><div>:</div><div>${f.inMgr.EmployeeId || '-'}</div>
                                     <div>Time</div><div>:</div><div>${f.inMgrT}</div>
                                     <div>Sign</div><div>:</div><div>__________</div>
                                 </div>
@@ -517,31 +524,31 @@
                         @page { size: A4 landscape; margin: 0; }
                         body { margin: 0; padding: 0; background: white !important; font-family: Arial, sans-serif; }
                         .page-container { 
-                            width: 297mm; height: 210mm; padding: 9mm 12mm; 
+                            width: 297mm; height: 210mm; padding: 9mm 10mm; 
                             background-color: white; margin: 0 auto; 
                             display: flex; flex-direction: column; justify-content: space-between;
                             page-break-after: always; box-sizing: border-box; 
                         }
-                        .main-title { text-align: center; font-weight: bold; font-size: 13px; border: 1px solid black; padding: 6px; background-color: #eeeeee !important; }
-                        .header-info { display: grid; grid-template-columns: 1fr 1fr; border-left: 1px solid black; border-right: 1px solid black; border-bottom: 1px solid black; }
+                        .main-title { text-align: center; font-weight: bold; font-size: 13px; border: 1px solid black; padding: 5px; background-color: #eeeeee !important; }
+                        .header-info { display: grid; grid-template-columns: 1fr 1fr; border-left: 1px solid black; border-right: 1px solid black; border-bottom: 1px solid black; border-top: none; }
                         .header-column { display: grid; grid-template-columns: 130px 10px 1fr; }
                         .header-column:first-child { border-right: 1px solid black; }
-                        .info-cell { padding: 3px 6px; border-bottom: 1px solid black; display: flex; align-items: center; height: 21px; font-size: 9.5px; }
+                        .info-cell { padding: 2px 6px; border-bottom: 1px solid black; display: flex; align-items: center; height: 20px; font-size: 9.5px; }
                         .info-cell.label { font-weight: bold; }
                         .header-column .info-cell:nth-last-child(-n+3) { border-bottom: none; }
-                        table.maintenance-table { width: 100%; border-collapse: collapse; border: 1px solid black; table-layout: fixed; }
-                        table.maintenance-table th, table.maintenance-table td { border: 1px solid black; padding: 4px 6px; vertical-align: middle !important; word-wrap: break-word; font-size: 9.5px; }
+                        table.maintenance-table { width: 100%; border-collapse: collapse; border-left: 1px solid black; border-right: 1px solid black; border-bottom: 1px solid black; border-top: none; table-layout: fixed; }
+                        table.maintenance-table th, table.maintenance-table td { border: 1px solid black; padding: 3px 6px; vertical-align: middle !important; word-wrap: break-word; font-size: 9.5px; }
                         .center { text-align: center; }
                         .bg-gray { background-color: #eeeeee !important; }
-                        .signature-section { display: grid; grid-template-columns: 1fr 1fr; border-left: 1px solid black; border-right: 1px solid black; border-bottom: 1px solid black; }
+                        .signature-section { display: grid; grid-template-columns: 1fr 1fr; border-left: 1px solid black; border-right: 1px solid black; border-bottom: 1px solid black; border-top: none; }
                         .crew-block { display: flex; flex-direction: column; }
                         .crew-block:first-child { border-right: 1px solid black; }
-                        .crew-header { text-align: center; font-weight: bold; background-color: #eeeeee !important; border-bottom: 1px solid black; padding: 4px; font-size: 10px; }
+                        .crew-header { text-align: center; font-weight: bold; background-color: #eeeeee !important; border-bottom: 1px solid black; padding: 3px; font-size: 9.5px; }
                         .signature-grid { display: grid; grid-template-columns: 1fr 1fr; }
                         .sign-box { display: flex; flex-direction: column; border-right: 1px solid black; }
                         .sign-box:last-child { border-right: none; }
-                        .sign-title { text-align: center; font-weight: bold; border-bottom: 1px solid black; padding: 3px; font-size: 9.5px; }
-                        .sign-content { display: grid; grid-template-columns: 50px 10px 1fr; grid-auto-rows: 18px; padding: 4px 6px; font-size: 9px; align-items: center; }
+                        .sign-title { text-align: center; font-weight: bold; border-bottom: 1px solid black; padding: 2.5px; font-size: 9px; }
+                        .sign-content { display: grid; grid-template-columns: 50px 10px 1fr; grid-auto-rows: 17px; padding: 3px 6px; font-size: 9px; align-items: center; }
                         .footer-info { display: flex; justify-content: space-between; margin-top: 4px; font-size: 9px; font-weight: bold; }
                         * { -webkit-print-color-adjust: exact; box-sizing: border-box; }
                     </style>
@@ -613,7 +620,6 @@
         }
     };
 
-    // Jalankan dengan forceModal = true agar Form Config langsung muncul
     initHoBConfig(true);
 })();
 </script>
