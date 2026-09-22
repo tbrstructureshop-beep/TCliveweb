@@ -134,7 +134,8 @@
             'TCR-2': { colStatus: 'status_cs1', colDate: 'date_closed_cs1', filterCek: 'cek_cs1' },
             'TCR-5': { colStatus: 'status_mw',  colDate: 'date_closed_mw',  filterCek: 'cek_mw' },
             'TCR-3': { colStatus: 'status_sm4', colDate: 'date_closed_sm4', filterCek: 'cek_sm4' },
-            'TCR-4': { colStatus: 'status_cs4', colDate: 'date_closed_cs4', filterCek: 'cek_cs4' } // Tambahkan ini
+            'TCR-4': { colStatus: 'status_cs4', colDate: 'date_closed_cs4', filterCek: 'cek_cs4' }, // Tambahkan ini
+            'TCP-9': { colStatus: 'status_job', colDate: null,              filterCek: null,       reportKey: 'report_pe',  remarkKey: 'remark' }
         };
         
         async function init() {
@@ -178,23 +179,9 @@
             const unitLeader = activeUnitData.UnitLeader || 'Unassigned';
 
             if (sMap) {
-                // --- LOGIKA SUPABASE (TCR 1-5) ---
-                let reportKey = 'report_sm1';
-                let remarkKey = 'remark_sm1';
-            
-                if (activeUnit === 'TCR-2') {
-                    reportKey = 'report_cs1';
-                    remarkKey = 'remark_cs1';
-                } else if (activeUnit === 'TCR-5') {
-                    reportKey = 'report_mw';
-                    remarkKey = 'remark_mw';
-                } else if (activeUnit === 'TCR-3') {
-                    reportKey = 'report_sm4';
-                    remarkKey = 'remark_sm4';
-                } else if (activeUnit === 'TCR-4') {
-                    reportKey = 'report_cs4';
-                    remarkKey = 'remark_cs4';
-                }
+                // --- LOGIKA SUPABASE (TCR & TCP-9) ---
+                const reportKey = sMap.reportKey;
+                const remarkKey = sMap.remarkKey;
             
                 fullData = supabaseData
                     .filter(item => {
@@ -206,18 +193,59 @@
                             (String(item.order) || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
                             (item.description || '').toLowerCase().includes(searchQuery.toLowerCase())
                         );
-            
-                        return item[sMap.filterCek] === 'red' && matchReport && matchSearch;
+                        
+                        // TCR 1-5 wajib cek 'red'. Untuk TCP-9 (filterCek null), loloskan semua (tampilkan semua non-archived)
+                        const matchCek = sMap.filterCek ? (item[sMap.filterCek] === 'red') : true;
+
+                        return matchCek && matchReport && matchSearch;
                     })
-                    .map(item => ({
-                        ACReg: item.ac_reg || '-',
-                        OrderNo: item.order ? String(item.order) : '-', 
-                        Description: item.description || '-',
-                        Status: formatStatus(item[sMap.colStatus]),
-                        Remark: item[remarkKey] || '-',
-                        UnitCode: activeUnit,
-                        isLive: true
-                    }));
+                    .map(item => {
+                        const isReported = (item[reportKey] === true || item[reportKey] === '1' || item[reportKey] === 'checked');
+                        
+                        // 🚀 FORMAT KHUSUS TCP-9 DENGAN DUA BARIS (SUB-LINE)
+                        if (activeUnit === 'TCP-9') {
+                            return {
+                                ACReg: item.ac_reg || '-',
+                                OrderNo: item.order ? String(item.order) : '-', 
+                                Description: `
+                                    <div class="py-0.5">
+                                        <div class="font-bold text-white leading-tight">${item.description || '-'}</div>
+                                        <div class="text-[10px] text-sky-400 font-mono mt-1 flex items-center gap-1.5 flex-wrap">
+                                            <span class="bg-sky-500/15 border border-sky-500/30 px-1 py-0.5 rounded text-[9px] font-bold text-sky-300">${item.doc_type || 'DOC'}</span>
+                                            <span class="opacity-30">|</span>
+                                            <span>P/N: <span class="text-white/80">${item.pn || '-'}</span></span>
+                                            <span class="opacity-30">|</span>
+                                            <span>S/N: <span class="text-white/80">${item.sn || '-'}</span></span>
+                                        </div>
+                                    </div>`,
+                                Status: formatStatus(item.status_job || item.status_pe || 'Open'),
+                                Remark: `
+                                    <div class="py-0.5">
+                                        <div class="text-white/90 font-medium">${item.remark || '-'}</div>
+                                        <div class="text-[10px] text-white/40 font-mono mt-1 flex items-center gap-1.5 flex-wrap">
+                                            <span class="text-emerald-400/80 font-bold">${item.remark_mat || '-'}</span>
+                                            <span class="opacity-30">|</span>
+                                            <span class="text-amber-400/80">${item.doc_status || '-'}</span>
+                                        </div>
+                                    </div>`,
+                                UnitCode: activeUnit,
+                                isLive: true,
+                                isReported: isReported
+                            };
+                        }
+
+                        // Format reguler TCR
+                        return {
+                            ACReg: item.ac_reg || '-',
+                            OrderNo: item.order ? String(item.order) : '-', 
+                            Description: item.description || '-',
+                            Status: formatStatus(item[sMap.colStatus]),
+                            Remark: item[remarkKey] || '-',
+                            UnitCode: activeUnit,
+                            isLive: true,
+                            isReported: isReported
+                        };
+                    });
             } else {
                 // --- LOGIKA GOOGLE SHEET (TCP-10, dll) ---
                 fullData = rawOpData
@@ -233,7 +261,7 @@
                     .map(item => ({
                         ...item,
                         Status: formatStatus(item.Status),
-                        Remark: item.Remark || item.Remarks || '-' // ✅ BACA BAIK 'Remark' ATAU 'Remarks'
+                        Remark: item.Remark || item.Remarks || '-'
                     }));
             }
 
@@ -319,12 +347,31 @@
 
                     <div class="overflow-x-auto">
                         <table class="master-table">
-                            <thead><tr><th>AC Reg</th><th>Order No</th><th>Description</th><th class="w-32">Live Status</th><th>Remark</th><th class="text-right">Action</th></tr></thead>
+                            <thead>
+                                <tr>
+                                    ${sMap ? '<th class="w-12 text-center">Rep.</th>' : ''}
+                                    <th>AC Reg</th>
+                                    <th>Order No</th>
+                                    <th>Description</th>
+                                    <th class="w-32">Live Status</th>
+                                    <th>Remark</th>
+                                    <th class="text-right">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
                                 ${paginatedItems.map(item => `
                                     <tr class="group hover:bg-white/[0.02] transition-all">
+                                        ${sMap ? `
+                                            <td class="text-center">
+                                                <input type="checkbox" 
+                                                    ${item.isReported ? 'checked' : ''} 
+                                                    onchange="toggleReportStatus('${item.OrderNo}', this.checked)"
+                                                    title="Centang untuk tandai reported"
+                                                    class="w-4 h-4 rounded bg-white/5 border-white/20 accent-sky-500 cursor-pointer">
+                                            </td>` : ''}
                                         <td class="font-black text-white uppercase">${item.ACReg}</td>
                                         <td class="font-mono text-sky-400">${item.OrderNo}</td>
-                                        <td class="text-white/60 leading-tight pr-4">${item.Description}</td>
+                                        <td class="text-white/80 leading-tight pr-4">${item.Description}</td>
                                         <td>
                                             <select 
                                                 onchange="handleUpdateStatus('${activeUnit}', '${item.OrderNo}', this.value)" 
@@ -335,7 +382,7 @@
                                                 ).join('')}
                                             </select>
                                         </td>
-                                        <td class="text-white/60">${item.Remark}</td>
+                                        <td class="text-white/70">${item.Remark}</td>
                                         <td class="text-right">
                                             <div class="flex gap-4 justify-end opacity-0 group-hover:opacity-100 transition-all">
                                                 <button onclick="editOrder('${item.OrderNo}')" class="text-sky-500/50 hover:text-sky-400"><i data-lucide="edit-3" size="14"></i></button>
@@ -343,7 +390,7 @@
                                             </div>
                                         </td>
                                     </tr>`).join('')}
-                                ${paginatedItems.length === 0 ? '<tr><td colspan="5" class="text-center py-20 opacity-20 italic tracking-widest font-mono">NODE_EMPTY // NO_ACTIVE_TASKS</td></tr>' : ''}
+                                ${paginatedItems.length === 0 ? `<tr><td colspan="${sMap ? 7 : 6}" class="text-center py-20 opacity-20 italic tracking-widest font-mono">NODE_EMPTY // NO_ACTIVE_TASKS</td></tr>` : ''}
                             </tbody>
                         </table>
                     </div>
@@ -351,32 +398,64 @@
             lucide.createIcons();
         }
 
+        // 🚀 FUNGSI CENTANG REPORT REAL-TIME KE SUPABASE
+        async function toggleReportStatus(orderNo, isChecked) {
+            const sMap = SUPABASE_UNITS[activeUnit];
+            if (!sMap || !sMap.reportKey) return;
+
+            const targetRow = supabaseData.find(d => String(d.order) === String(orderNo));
+            if (!targetRow || !targetRow.id) return;
+
+            // Simpan format 'checked' atau '' persis seperti di DailyMenuWS1
+            const val = isChecked ? 'checked' : '';
+            targetRow[sMap.reportKey] = val; // update lokal agar responsif
+
+            try {
+                const { error } = await supabaseClient
+                    .from('mntp_tcr')
+                    .update({ [sMap.reportKey]: val })
+                    .eq('id', targetRow.id);
+
+                if (error) throw error;
+            } catch (err) {
+                console.error("Gagal update centang:", err);
+                Swal.fire({ title: 'Update Gagal', text: err.message, icon: 'error', background: '#151921', color: '#fff' });
+                init();
+            }
+        }
+
         async function handleUpdateStatus(uCode, oNo, status) {
             loader.style.display = 'flex';
             const sMap = SUPABASE_UNITS[uCode];
             try {
                 if (sMap) {
-                    // --- LOGIKA SUPABASE (TCR 1-5) ---
+                    // --- LOGIKA SUPABASE (TCR & TCP-9) ---
                     const payload = {};
-                    // Gunakan pemetaan key berdasarkan unit
-                    const statusKey = (uCode === 'TCR-4') ? 'status_cs4' : 
+                    
+                    // 🚀 Pemetaan statusKey dinamis (termasuk TCP-9)
+                    const statusKey = (uCode === 'TCP-9') ? 'status_job' :
+                                      (uCode === 'TCR-4') ? 'status_cs4' : 
                                       (uCode === 'TCR-3') ? 'status_sm4' : 
                                       (uCode === 'TCR-5') ? 'status_mw' : 
                                       (uCode === 'TCR-2') ? 'status_cs1' : 'status_sm1';
                                       
-                    const dateKey = (uCode === 'TCR-4') ? 'date_closed_cs4' : 
+                    const dateKey = (uCode === 'TCP-9') ? null :
+                                    (uCode === 'TCR-4') ? 'date_closed_cs4' : 
                                     (uCode === 'TCR-3') ? 'date_closed_sm4' : 
                                     (uCode === 'TCR-5') ? 'date_closed_mw' : 
                                     (uCode === 'TCR-2') ? 'date_closed_cs1' : 'date_closed_sm1';
                     
                     payload[statusKey] = status.toUpperCase();
                     
-                    if (status.toUpperCase() === 'CLOSED') {
-                        const now = new Date();
-                        const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-                        payload[dateKey] = `${now.getDate().toString().padStart(2,'0')}-${months[now.getMonth()]}-${now.getFullYear()}`;
-                    } else {
-                        payload[dateKey] = null;
+                    // Update tanggal closed jika unit memiliki kolom dateKey
+                    if (dateKey) {
+                        if (status.toUpperCase() === 'CLOSED') {
+                            const now = new Date();
+                            const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+                            payload[dateKey] = `${now.getDate().toString().padStart(2,'0')}-${months[now.getMonth()]}-${now.getFullYear()}`;
+                        } else {
+                            payload[dateKey] = null;
+                        }
                     }
         
                     const targetRow = supabaseData.find(d => String(d.order) === String(oNo));
@@ -399,7 +478,6 @@
                 Swal.fire('Update Error', e.message, 'error');
             }
         }
-
         async function deleteOrder(orderNo) {
             const sMap = SUPABASE_UNITS[activeUnit];
             const res = await Swal.fire({ 
@@ -461,9 +539,10 @@
                     payload[sMap.colStatus] = status.toUpperCase();
                     
                     // Tentukan key remark dinamis
-                    const rKey = (unit === 'TCR-2') ? 'remark_cs1' : 
-                                 (unit === 'TCR-5') ? 'remark_mw' : 
-                                 (unit === 'TCR-3') ? 'remark_sm4' : 'remark_sm1';
+                    const rKey = (unit === 'TCP-9') ? 'remark' :
+                               (unit === 'TCR-2') ? 'remark_cs1' : 
+                               (unit === 'TCR-5') ? 'remark_mw' : 
+                               (unit === 'TCR-3') ? 'remark_sm4' : 'remark_sm1';
                     
                     payload[rKey] = remark; // Simpan remark
                     
