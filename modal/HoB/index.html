@@ -66,7 +66,7 @@
 <script>
 (function() {
     lucide.createIcons();
-    const activeUnit = window.shiftReportInfo?.unit || 'TCP-9';
+    const activeUnit = (window.shiftReportInfo?.unit || 'TCP-9').trim();
     const items = window.selectedHoBItems || [];
     const ITEMS_PER_PAGE = 12;
 
@@ -75,7 +75,8 @@
         if (modal) modal.remove();
     };
 
-    window.initHoBConfig = async function(forceModal = false) {
+    // 🚀 SELALU BUKA FORM KONFIGURASI SAAT CREATE HOB
+    window.initHoBConfig = async function(forceModal = true) {
         let users = [];
         try {
             const usrRes = await API.get('USER');
@@ -100,23 +101,38 @@
         const findUser = (id) => users.find(u => String(u.EmployeeId) === String(id)) 
             || { Name: "________________", EmployeeId: "________" };
 
-        const unitUsers = users.filter(u => !u.UnitCode || u.UnitCode === activeUnit || u.UnitCode.startsWith('TC'));
-        const crewList = [...new Set(unitUsers.map(u => u.Crew).filter(Boolean))].sort();
+        // 🚀 1. FILTER KETAT PERSONIL HANYA BERDASARKAN UNIT AKTIF
+        const unitUsers = users.filter(u => 
+            String(u.UnitCode || '').trim().toLowerCase() === activeUnit.toLowerCase()
+        );
 
-        const userOpts = (selId) => unitUsers.map(u => 
-            `<option value="${u.EmployeeId}" ${String(u.EmployeeId) === String(selId) ? 'selected' : ''}>${u.Name} (${u.Crew || '-'})</option>`
-        ).join('');
+        // 🚀 2. FILTER KETAT CREW HANYA DARI UNIT AKTIF TERSEBUT
+        const crewList = [...new Set(unitUsers.map(u => String(u.Crew || '').trim()).filter(cr => cr && cr !== '-' && cr !== 'undefined'))].sort();
 
-        const crewOpts = (selCrew) => (crewList.length ? crewList : ['Crew A', 'Crew B', 'Crew C', 'Day Shift']).map(cr => 
-            `<option value="${cr}" ${cr === selCrew ? 'selected' : ''}>${cr}</option>`
-        ).join('');
+        const userOpts = (selId) => {
+            if (unitUsers.length === 0) return `<option value="">-- No Personnel in ${activeUnit} --</option>`;
+            let opts = `<option value="">-- Select Personnel --</option>`;
+            opts += unitUsers.map(u => 
+                `<option value="${u.EmployeeId}" ${String(u.EmployeeId) === String(selId) ? 'selected' : ''}>${u.Name} (${u.Crew || '-'})</option>`
+            ).join('');
+            return opts;
+        };
+
+        const crewOpts = (selCrew) => {
+            if (crewList.length === 0) return `<option value="">-- No Crew in ${activeUnit} --</option>`;
+            let opts = `<option value="">-- Select Crew --</option>`;
+            opts += crewList.map(cr => 
+                `<option value="${cr}" ${cr === selCrew ? 'selected' : ''}>${cr}</option>`
+            ).join('');
+            return opts;
+        };
 
         const now = new Date();
         const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
         const currentDate = now.toISOString().split('T')[0];
 
         const { value: form } = await Swal.fire({
-            title: `<span style="font-size:16px; color:#fff;">HoB Config (${activeUnit})</span>`,
+            title: `<span style="font-size:16px; color:#fff;">HoB Configuration - Node: ${activeUnit}</span>`,
             width: '850px',
             background: '#151921',
             html: `
@@ -125,13 +141,14 @@
                         <div>
                             <span style="font-weight:700; color:#38bdf8; text-transform:uppercase; display:block; margin-bottom:6px;">1. Maintenance Header</span>
                             <div style="display: flex; flex-direction: column; gap: 6px;">
-                                <div><label>A/C REG</label><input id="sw-ac" class="input-field" value="${c.acReg || items[0]?.acReg || 'ALL A/C'}" style="background:#0b0e14; padding:6px; border-radius:6px; width:100%; color:#fff; border:1px solid #334155;"></div>
-                                <div><label>INSPECTION TYPE</label><input id="sw-insp" class="input-field" value="${c.insp || 'DAILY / TRANSIT'}" style="background:#0b0e14; padding:6px; border-radius:6px; width:100%; color:#fff; border:1px solid #334155;"></div>
-                                <div><label>WORK ORDER NO</label><input id="sw-wo" class="input-field" value="${c.woNo || items[0]?.orderNo || 'MULTIPLE'}" style="background:#0b0e14; padding:6px; border-radius:6px; width:100%; color:#fff; border:1px solid #334155;"></div>
+                                <!-- 🚀 INPUT DIKOSONGKAN SECARA DEFAULT -->
+                                <div><label>A/C REG</label><input id="sw-ac" class="input-field" value="${c.acReg || ''}" placeholder="e.g. PK-GFA" style="background:#0b0e14; padding:6px; border-radius:6px; width:100%; color:#fff; border:1px solid #334155;"></div>
+                                <div><label>INSPECTION TYPE</label><input id="sw-insp" class="input-field" value="${c.insp || ''}" placeholder="e.g. C-Check / Daily" style="background:#0b0e14; padding:6px; border-radius:6px; width:100%; color:#fff; border:1px solid #334155;"></div>
+                                <div><label>WORK ORDER NO</label><input id="sw-wo" class="input-field" value="${c.woNo || ''}" placeholder="e.g. WO-123456" style="background:#0b0e14; padding:6px; border-radius:6px; width:100%; color:#fff; border:1px solid #334155;"></div>
                             </div>
                         </div>
                         <div>
-                            <span style="font-weight:700; color:#fb923c; text-transform:uppercase; display:block; margin-bottom:6px;">2. Shift & Crew</span>
+                            <span style="font-weight:700; color:#fb923c; text-transform:uppercase; display:block; margin-bottom:6px;">2. Shift & Crew (${activeUnit})</span>
                             <div style="display: flex; flex-direction: column; gap: 6px;">
                                 <div><label>REPORT DATE</label><input type="date" id="sw-date" class="input-field" value="${c.rawDate || currentDate}" style="background:#0b0e14; padding:6px; border-radius:6px; width:100%; color:#fff; border:1px solid #334155;"></div>
                                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
@@ -142,10 +159,10 @@
                                     <div><label>OUT SHIFT</label><select id="sw-out-shift" style="background:#0b0e14; padding:6px; border-radius:6px; width:100%; color:#fff; border:1px solid #334155;">
                                         <option value="MORNING SHIFT" ${c.outShift === 'MORNING SHIFT' ? 'selected' : ''}>MORNING</option>
                                         <option value="AFTERNOON SHIFT" ${c.outShift === 'AFTERNOON SHIFT' ? 'selected' : ''}>AFTERNOON</option>
-                                        <option value="NIGHT SHIFT" ${c.outShift === 'NIGHT SHIFT' ? 'selected' : ''}>NIGHT</option>
+                                        <option value="NIGHT SHIFT" ${(!c.outShift || c.outShift === 'NIGHT SHIFT') ? 'selected' : ''}>NIGHT</option>
                                     </select></div>
                                     <div><label>IN SHIFT</label><select id="sw-in-shift" style="background:#0b0e14; padding:6px; border-radius:6px; width:100%; color:#fff; border:1px solid #334155;">
-                                        <option value="MORNING SHIFT" ${c.inShift === 'MORNING SHIFT' ? 'selected' : ''}>MORNING</option>
+                                        <option value="MORNING SHIFT" ${(!c.inShift || c.inShift === 'MORNING SHIFT') ? 'selected' : ''}>MORNING</option>
                                         <option value="AFTERNOON SHIFT" ${c.inShift === 'AFTERNOON SHIFT' ? 'selected' : ''}>AFTERNOON</option>
                                         <option value="NIGHT SHIFT" ${c.inShift === 'NIGHT SHIFT' ? 'selected' : ''}>NIGHT</option>
                                     </select></div>
@@ -155,7 +172,7 @@
                     </div>
 
                     <div>
-                        <span style="font-weight:700; color:#4ade80; text-transform:uppercase; display:block; margin-bottom:6px;">3. Personnel In Charge</span>
+                        <span style="font-weight:700; color:#4ade80; text-transform:uppercase; display:block; margin-bottom:6px;">3. Personnel In Charge (${activeUnit})</span>
                         <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;">
                             <div>
                                 <label style="font-size:9px;">SUP OUT</label>
@@ -182,7 +199,7 @@
                 </div>
             `,
             showCancelButton: true,
-            confirmButtonText: 'Generate HoB',
+            confirmButtonText: 'Generate HoB Sheet',
             confirmButtonColor: '#0ea5e9',
             cancelButtonColor: '#334155',
             preConfirm: () => {
@@ -192,22 +209,22 @@
                 const inMgrId = document.getElementById('sw-in-mgr').value;
 
                 const formatGmfDate = (val) => {
-                    if (!val) return "N/A";
+                    if (!val) return "-";
                     const d = new Date(val);
-                    if (isNaN(d)) return "N/A";
+                    if (isNaN(d)) return "-";
                     const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
                     const days = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"];
                     return `${days[d.getDay()]}, ${d.getDate().toString().padStart(2, '0')} ${months[d.getMonth()]} ${d.getFullYear()}`;
                 };
 
                 return {
-                    acReg: document.getElementById('sw-ac').value,
-                    insp: document.getElementById('sw-insp').value,
-                    woNo: document.getElementById('sw-wo').value,
+                    acReg: document.getElementById('sw-ac').value.trim() || '-',
+                    insp: document.getElementById('sw-insp').value.trim() || '-',
+                    woNo: document.getElementById('sw-wo').value.trim() || '-',
                     fullDate: formatGmfDate(document.getElementById('sw-date').value),
                     rawDate: document.getElementById('sw-date').value,
-                    outCrew: document.getElementById('sw-out-crew').value,
-                    inCrew: document.getElementById('sw-in-crew').value,
+                    outCrew: document.getElementById('sw-out-crew').value || '-',
+                    inCrew: document.getElementById('sw-in-crew').value || '-',
                     outShift: document.getElementById('sw-out-shift').value,
                     inShift: document.getElementById('sw-in-shift').value,
                     outSup: findUser(outSupId),
@@ -229,8 +246,11 @@
         });
 
         if (form) {
+            const storageKey = `hob_cfg_${activeUnit}`;
             localStorage.setItem(storageKey, JSON.stringify(form));
             renderAllPages(form);
+        } else if (!c.isInitialized) {
+            closeHoBModal(); // Tutup jika dibatalkan dan belum ada data tersimpan
         }
     }
 
@@ -264,7 +284,7 @@
                 ].filter(Boolean).join(' | ');
 
                 descriptionContent = `
-                    <div style="font-weight: bold; line-height: 1.1;">(${it.acReg || 'N/A'}) ${it.Description}</div>
+                    <div style="font-weight: bold; line-height: 1.1;">(${it.acReg || '-'}) ${it.Description}</div>
                     ${meta ? `<div style="font-size: 7.5px; color: #444; margin-top: 1px;">${meta}</div>` : ''}
                 `;
             }
@@ -441,7 +461,7 @@
         items.forEach((it, idx) => {
             const st = (it.status || '').toLowerCase();
             const emoji = st === 'closed' ? '🟢' : st === 'progress' ? '🟡' : '🔴';
-            msg += `${idx + 1}. [${it.acReg || 'N/A'}] ${it.orderNo || '-'}\n`;
+            msg += `${idx + 1}. [${it.acReg || '-'}] ${it.orderNo || '-'}\n`;
             msg += `*${it.Description}*\n`;
             msg += `STATUS: ${emoji} ${(it.status || 'OPEN').toUpperCase()}\n`;
             if (it.note) msg += `NOTE: ${it.note}\n`;
@@ -473,6 +493,7 @@
         }
     };
 
-    initHoBConfig(false);
+    // 🚀 Jalankan dengan forceModal = true agar Form Config langsung muncul
+    initHoBConfig(true);
 })();
 </script>
