@@ -28,7 +28,40 @@
         .nav-arrow { background: var(--panel); border: 1px solid var(--border); border-radius: 50%; width: 32px; height: 32px; display: flex; items-center; justify-content: center; color: var(--accent); cursor: pointer; transition: 0.2s; flex-shrink: 0; }
 
         .eq-card { background: var(--panel) !important; border: 1px solid var(--border) !important; border-radius: 2.5rem; padding: 2rem; margin-bottom: 2rem; box-shadow: 0 15px 35px -10px rgba(0,0,0,0.3); }
-        .stat-box { flex: 1; min-width: 90px; padding: 12px 8px; border-radius: 1.25rem; border: 1px solid var(--border); text-align: center; background: var(--input-bg); }
+        /* 🚀 PERBAIKAN STYLING KOTAK SUMMARY */
+        .stat-box { 
+            flex: 1; 
+            min-width: 90px; 
+            padding: 12px 10px; 
+            border-radius: 1.25rem; 
+            border: 1px solid var(--border); 
+            text-align: center; 
+            background: var(--input-bg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+        .stat-box:hover {
+            transform: translateY(-2px);
+        }
+        .stat-val { 
+            display: block; 
+            font-size: 1.35rem; 
+            font-weight: 900; 
+            line-height: 1; 
+            margin-bottom: 4px; 
+            font-variant-numeric: tabular-nums;
+        }
+        .stat-lab { 
+            font-size: 8px; 
+            font-weight: 800; 
+            text-transform: uppercase; 
+            opacity: 0.5; 
+            letter-spacing: 1px; 
+            display: block;
+        }
         
         .input-field, .st-select { width: 100%; background: var(--input-bg) !important; border: 1px solid var(--border) !important; color: var(--text-bold) !important; border-radius: 0.75rem; padding: 0.75rem; outline: none; font-size: 0.875rem; }
         select option { background-color: #ffffff !important; color: #1e293b !important; }
@@ -151,10 +184,10 @@
                     <div class="flex flex-col xl:flex-row justify-between items-center gap-6 mb-8">
                         <div class="w-full xl:w-auto"><span class="label-style">Active Node</span><h2 class="text-4xl font-black text-white tracking-tighter">${activeUnit}</h2></div>
                         <div class="flex flex-wrap gap-2 w-full xl:w-auto">
-                            <div class="stat-box"><span class="stat-val">${stats.total}</span><span class="stat-lab">Total</span></div>
-                            <div class="stat-box border-emerald-500/20"><span class="stat-val text-emerald-400">${stats.srv}</span><span class="stat-lab">Good</span></div>
-                            <div class="stat-box border-blue-500/20"><span class="stat-val text-blue-400">${stats.insrv}</span><span class="stat-lab">Calib</span></div>
-                            <div class="stat-box border-red-500/30 ${stats.unsrv > 0 ? 'animate-pulse' : ''}"><span class="stat-val text-red-500">${stats.unsrv}</span><span class="stat-lab">Damaged</span></div>
+                            <div class="stat-box"><span class="stat-val text-white">${stats.total}</span><span class="stat-lab">Total</span></div>
+                            <div class="stat-box border-emerald-500/30 bg-emerald-500/5"><span class="stat-val text-emerald-400">${stats.srv}</span><span class="stat-lab text-emerald-400">Good</span></div>
+                            <div class="stat-box border-blue-500/30 bg-blue-500/5"><span class="stat-val text-blue-400">${stats.insrv}</span><span class="stat-lab text-blue-400">Calib</span></div>
+                            <div class="stat-box border-red-500/40 bg-red-500/5 ${stats.unsrv > 0 ? 'animate-pulse' : ''}"><span class="stat-val text-red-500">${stats.unsrv}</span><span class="stat-lab text-red-400">Damaged</span></div>
                         </div>
                     </div>
                     <div class="overflow-x-auto">
