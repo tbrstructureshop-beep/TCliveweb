@@ -191,7 +191,7 @@
                 rawOpData = opRes.data || [];
                 supabaseData = sData || [];
 
-                document.getElementById('UnitCode').innerHTML = unitList.map(u => `<option value="${u.UnitCode}">${u.UnitCode}</option>`).join('');
+                populateAssignedNode('single');
                 if(!activeUnit && unitList.length > 0) activeUnit = unitList[0].UnitCode;
                 
                 updateActionButtons();
@@ -756,12 +756,37 @@
             document.getElementById('single-container').classList.toggle('hidden', mode === 'bulk');
             document.getElementById('s-order').disabled = (mode === 'edit');
             
+            // 🚀 ISI DROPDOWN ASSIGNED NODE (TCR OTOMATIS DIBUANG)
+            populateAssignedNode(mode);
+
             if (mode === 'bulk') {
                 renderBulkTable();
                 setTimeout(() => {
                     const grid = document.getElementById('bulk-grid-wrapper');
                     if (grid) grid.focus();
                 }, 100);
+            }
+        }
+
+        // 🚀 HILANGKAN UNIT TCR DARI DROPDOWN ASSIGNED NODE PADA BULK & SINGLE INPUT
+        function populateAssignedNode(mode, currentUnit = '') {
+            const select = document.getElementById('UnitCode');
+            if (!select) return;
+
+            const isTCR = (code) => ['TCR-1', 'TCR-2', 'TCR-3', 'TCR-4', 'TCR-5'].includes(code);
+
+            // Jika Bulk atau Single Add: Saring hanya unit non-TCR (seperti TCP-9, TCP-10, dll)
+            let filteredUnits = (mode === 'bulk' || mode === 'single')
+                ? unitList.filter(u => !isTCR(u.UnitCode))
+                : unitList;
+
+            select.innerHTML = filteredUnits.map(u => `<option value="${u.UnitCode}">${u.UnitCode}</option>`).join('');
+
+            // Pilih otomatis unit aktif jika valid (bukan TCR)
+            if (currentUnit) {
+                select.value = currentUnit;
+            } else if (!isTCR(activeUnit)) {
+                select.value = activeUnit;
             }
         }
         
@@ -939,7 +964,7 @@
             
             if(!item) return;
             openModal('edit');
-            document.getElementById('UnitCode').value = item.UnitCode;
+            populateAssignedNode('edit', item.UnitCode); // 👈 Tambahkan ini agar saat edit tetap
             document.getElementById('s-ac').value = item.ACReg;
             document.getElementById('s-order').value = item.OrderNo;
             document.getElementById('s-desc').value = item.Description;
