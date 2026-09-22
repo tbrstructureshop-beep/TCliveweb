@@ -31,28 +31,117 @@
 <style>
     @page { size: A4 landscape; margin: 0; }
     #hobPagesContainer * { -webkit-print-color-adjust: exact; box-sizing: border-box; }
-    .page-container { width: 297mm; height: 210mm; padding: 8mm 10mm; background-color: white; margin: auto; display: flex; flex-direction: column; font-family: Arial, Helvetica, sans-serif; color: black; box-shadow: 0 10px 25px rgba(0,0,0,0.15); }
-    .main-title { text-align: center; font-weight: bold; font-size: 13px; border: 2px solid black; padding: 5px; background-color: #eeeeee !important; }
-    .header-info { display: grid; grid-template-columns: 1fr 1fr; border-left: 2px solid black; border-right: 2px solid black; border-bottom: 1px solid black; }
+    
+    /* Ukuran presisi A4 Landscape & tata letak seimbang */
+    .page-container { 
+        width: 297mm; 
+        height: 210mm; 
+        padding: 9mm 12mm; 
+        background-color: white; 
+        margin: auto; 
+        display: flex; 
+        flex-direction: column; 
+        justify-content: space-between;
+        font-family: Arial, Helvetica, sans-serif; 
+        color: black; 
+        box-shadow: 0 10px 25px rgba(0,0,0,0.15); 
+    }
+    
+    /* Semua garis konsisten 1px */
+    .main-title { 
+        text-align: center; 
+        font-weight: bold; 
+        font-size: 13px; 
+        border: 1px solid black; 
+        padding: 6px; 
+        background-color: #eeeeee !important; 
+        letter-spacing: 0.5px;
+    }
+    
+    .header-info { 
+        display: grid; 
+        grid-template-columns: 1fr 1fr; 
+        border-left: 1px solid black; 
+        border-right: 1px solid black; 
+        border-bottom: 1px solid black; 
+    }
     .header-column { display: grid; grid-template-columns: 130px 10px 1fr; }
-    .header-column:first-child { border-right: 2px solid black; }
-    .info-cell { padding: 2px 6px; border-bottom: 1px solid black; display: flex; align-items: center; height: 18px; font-size: 10px; }
+    .header-column:first-child { border-right: 1px solid black; }
+    
+    .info-cell { 
+        padding: 3px 6px; 
+        border-bottom: 1px solid black; 
+        display: flex; 
+        align-items: center; 
+        height: 21px; 
+        font-size: 9.5px; 
+    }
     .info-cell.label { font-weight: bold; }
     .header-column .info-cell:nth-last-child(-n+3) { border-bottom: none; }
-    table.maintenance-table { width: 100%; border-collapse: collapse; border-left: 2px solid black; border-right: 2px solid black; border-bottom: 2px solid black; table-layout: fixed; }
-    table.maintenance-table th, table.maintenance-table td { border: 1px solid black; padding: 2px 4px; vertical-align: middle; word-wrap: break-word; font-size: 9.5px; }
+    
+    /* Tabel dengan garis seragam 1px dan vertikal rata tengah */
+    table.maintenance-table { 
+        width: 100%; 
+        border-collapse: collapse; 
+        border: 1px solid black; 
+        table-layout: fixed; 
+    }
+    table.maintenance-table th, 
+    table.maintenance-table td { 
+        border: 1px solid black; 
+        padding: 4px 6px; 
+        vertical-align: middle !important; 
+        word-wrap: break-word; 
+        font-size: 9.5px; 
+    }
+    
     .center { text-align: center; }
     .bg-gray { background-color: #eeeeee !important; }
-    .signature-section { display: grid; grid-template-columns: 1fr 1fr; border-left: 2px solid black; border-right: 2px solid black; border-bottom: 2px solid black; }
+    
+    .signature-section { 
+        display: grid; 
+        grid-template-columns: 1fr 1fr; 
+        border-left: 1px solid black; 
+        border-right: 1px solid black; 
+        border-bottom: 1px solid black; 
+    }
     .crew-block { display: flex; flex-direction: column; }
-    .crew-block:first-child { border-right: 2px solid black; }
-    .crew-header { text-align: center; font-weight: bold; background-color: #eeeeee !important; border-bottom: 1px solid black; padding: 3px; font-size: 10px; }
+    .crew-block:first-child { border-right: 1px solid black; }
+    .crew-header { 
+        text-align: center; 
+        font-weight: bold; 
+        background-color: #eeeeee !important; 
+        border-bottom: 1px solid black; 
+        padding: 4px; 
+        font-size: 10px; 
+    }
+    
     .signature-grid { display: grid; grid-template-columns: 1fr 1fr; }
     .sign-box { display: flex; flex-direction: column; border-right: 1px solid black; }
     .sign-box:last-child { border-right: none; }
-    .sign-title { text-align: center; font-weight: bold; border-bottom: 1px solid black; padding: 2px; font-size: 9.5px; }
-    .sign-content { display: grid; grid-template-columns: 50px 10px 1fr; grid-auto-rows: 16px; padding: 3px 5px; font-size: 9px; align-items: center; }
-    .footer-info { display: flex; justify-content: space-between; margin-top: 4px; font-size: 9px; font-weight: bold; }
+    .sign-title { 
+        text-align: center; 
+        font-weight: bold; 
+        border-bottom: 1px solid black; 
+        padding: 3px; 
+        font-size: 9.5px; 
+    }
+    .sign-content { 
+        display: grid; 
+        grid-template-columns: 50px 10px 1fr; 
+        grid-auto-rows: 18px; 
+        padding: 4px 6px; 
+        font-size: 9px; 
+        align-items: center; 
+    }
+    
+    .footer-info { 
+        display: flex; 
+        justify-content: space-between; 
+        margin-top: 4px; 
+        font-size: 9px; 
+        font-weight: bold; 
+    }
 
     @media print {
         body > *:not(#hobModal) { display: none !important; }
@@ -75,7 +164,6 @@
         if (modal) modal.remove();
     };
 
-    // 🚀 SELALU BUKA FORM KONFIGURASI SAAT CREATE HOB
     window.initHoBConfig = async function(forceModal = true) {
         let users = [];
         try {
@@ -101,12 +189,12 @@
         const findUser = (id) => users.find(u => String(u.EmployeeId) === String(id)) 
             || { Name: "________________", EmployeeId: "________" };
 
-        // 🚀 1. FILTER KETAT PERSONIL HANYA BERDASARKAN UNIT AKTIF
+        // Filter ketat personil per unit aktif
         const unitUsers = users.filter(u => 
             String(u.UnitCode || '').trim().toLowerCase() === activeUnit.toLowerCase()
         );
 
-        // 🚀 2. FILTER KETAT CREW HANYA DARI UNIT AKTIF TERSEBUT
+        // Filter ketat crew per unit aktif
         const crewList = [...new Set(unitUsers.map(u => String(u.Crew || '').trim()).filter(cr => cr && cr !== '-' && cr !== 'undefined'))].sort();
 
         const userOpts = (selId) => {
@@ -133,18 +221,32 @@
 
         const { value: form } = await Swal.fire({
             title: `<span style="font-size:16px; color:#fff;">HoB Configuration - Node: ${activeUnit}</span>`,
-            width: '850px',
+            width: '900px',
             background: '#151921',
             html: `
                 <div style="text-align: left; font-size: 11px; display: flex; flex-direction: column; gap: 12px; color: #94a3b8;">
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px;">
+                    <div style="display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px;">
                         <div>
                             <span style="font-weight:700; color:#38bdf8; text-transform:uppercase; display:block; margin-bottom:6px;">1. Maintenance Header</span>
                             <div style="display: flex; flex-direction: column; gap: 6px;">
-                                <!-- 🚀 INPUT DIKOSONGKAN SECARA DEFAULT -->
-                                <div><label>A/C REG</label><input id="sw-ac" class="input-field" value="${c.acReg || ''}" placeholder="e.g. PK-GFA" style="background:#0b0e14; padding:6px; border-radius:6px; width:100%; color:#fff; border:1px solid #334155;"></div>
-                                <div><label>INSPECTION TYPE</label><input id="sw-insp" class="input-field" value="${c.insp || ''}" placeholder="e.g. C-Check / Daily" style="background:#0b0e14; padding:6px; border-radius:6px; width:100%; color:#fff; border:1px solid #334155;"></div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+                                    <div><label>A/C REG</label><input id="sw-ac" class="input-field" value="${c.acReg || ''}" placeholder="e.g. PK-GFA" style="background:#0b0e14; padding:6px; border-radius:6px; width:100%; color:#fff; border:1px solid #334155;"></div>
+                                    <div><label>INSPECTION TYPE</label><input id="sw-insp" class="input-field" value="${c.insp || ''}" placeholder="e.g. C-Check" style="background:#0b0e14; padding:6px; border-radius:6px; width:100%; color:#fff; border:1px solid #334155;"></div>
+                                </div>
                                 <div><label>WORK ORDER NO</label><input id="sw-wo" class="input-field" value="${c.woNo || ''}" placeholder="e.g. WO-123456" style="background:#0b0e14; padding:6px; border-radius:6px; width:100%; color:#fff; border:1px solid #334155;"></div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+                                    <div><label>HANGAR IN DATE</label><input id="sw-h-in" class="input-field" value="${c.hIn || 'N/A'}" placeholder="N/A" style="background:#0b0e14; padding:6px; border-radius:6px; width:100%; color:#fff; border:1px solid #334155;"></div>
+                                    <div><label>HANGAR OUT DATE</label><input id="sw-h-out" class="input-field" value="${c.hOut || 'N/A'}" placeholder="N/A" style="background:#0b0e14; padding:6px; border-radius:6px; width:100%; color:#fff; border:1px solid #334155;"></div>
+                                </div>
+                                <div>
+                                    <label>HANGAR OUT TAG (ESTIMATION / ACTUAL)</label>
+                                    <select id="sw-h-out-tag" style="background:#0b0e14; padding:6px; border-radius:6px; width:100%; color:#fff; border:1px solid #334155;">
+                                        <option value="(Estimation/Actual)" ${c.hOutTag === '(Estimation/Actual)' || !c.hOutTag ? 'selected' : ''}>(Estimation/Actual)</option>
+                                        <option value="(Estimation)" ${c.hOutTag === '(Estimation)' ? 'selected' : ''}>(Estimation)</option>
+                                        <option value="(Actual)" ${c.hOutTag === '(Actual)' ? 'selected' : ''}>(Actual)</option>
+                                        <option value="" ${c.hOutTag === '' ? 'selected' : ''}>-- Coret / Hilangkan Keterangan --</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
                         <div>
@@ -211,7 +313,7 @@
                 const formatGmfDate = (val) => {
                     if (!val) return "-";
                     const d = new Date(val);
-                    if (isNaN(d)) return "-";
+                    if (isNaN(d)) return val; // biarkan teks bebas jika bukan tanggal valid
                     const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
                     const days = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"];
                     return `${days[d.getDay()]}, ${d.getDate().toString().padStart(2, '0')} ${months[d.getMonth()]} ${d.getFullYear()}`;
@@ -221,6 +323,9 @@
                     acReg: document.getElementById('sw-ac').value.trim() || '-',
                     insp: document.getElementById('sw-insp').value.trim() || '-',
                     woNo: document.getElementById('sw-wo').value.trim() || '-',
+                    hIn: document.getElementById('sw-h-in').value.trim() || 'N/A',
+                    hOut: document.getElementById('sw-h-out').value.trim() || 'N/A',
+                    hOutTag: document.getElementById('sw-h-out-tag').value,
                     fullDate: formatGmfDate(document.getElementById('sw-date').value),
                     rawDate: document.getElementById('sw-date').value,
                     outCrew: document.getElementById('sw-out-crew').value || '-',
@@ -250,7 +355,7 @@
             localStorage.setItem(storageKey, JSON.stringify(form));
             renderAllPages(form);
         } else if (!c.isInitialized) {
-            closeHoBModal(); // Tutup jika dibatalkan dan belum ada data tersimpan
+            closeHoBModal();
         }
     }
 
@@ -284,109 +389,118 @@
                 ].filter(Boolean).join(' | ');
 
                 descriptionContent = `
-                    <div style="font-weight: bold; line-height: 1.1;">(${it.acReg || '-'}) ${it.Description}</div>
-                    ${meta ? `<div style="font-size: 7.5px; color: #444; margin-top: 1px;">${meta}</div>` : ''}
+                    <div style="font-weight: bold; line-height: 1.2;">(${it.acReg || '-'}) ${it.Description}</div>
+                    ${meta ? `<div style="font-size: 8px; color: #444; margin-top: 2px;">${meta}</div>` : ''}
                 `;
             }
 
+            // Tinggi baris 32px agar seimbang dan teks vertikal rata tengah sempurna
             rowsHtml += `
-            <tr style="height: 26px;">
-                <td class="center">${((num - 1) * ITEMS_PER_PAGE) + i + 1}.</td>
-                <td class="center" style="font-size: 9px; font-weight: bold;">${it?.orderNo || '-'}</td>
-                <td style="padding: 2px 4px; overflow: hidden; vertical-align: top;">${descriptionContent}</td>
-                <td class="center font-bold">${s === 'OPEN' ? 'X' : ''}</td>
-                <td class="center font-bold">${s === 'PROGRESS' ? 'X' : ''}</td>
-                <td class="center font-bold">${s === 'CLOSED' ? 'X' : ''}</td>
-                <td style="font-size: 8.5px; line-height: 1.1; overflow: hidden; vertical-align: top;">${it?.note || ''}</td>
+            <tr style="height: 32px;">
+                <td class="center font-mono">${((num - 1) * ITEMS_PER_PAGE) + i + 1}.</td>
+                <td class="center font-mono" style="font-size: 9.5px; font-weight: bold;">${it?.orderNo || '-'}</td>
+                <td style="padding: 3px 6px; overflow: hidden;">${descriptionContent}</td>
+                <td class="center font-bold" style="font-size: 11px;">${s === 'OPEN' ? 'X' : ''}</td>
+                <td class="center font-bold" style="font-size: 11px;">${s === 'PROGRESS' ? 'X' : ''}</td>
+                <td class="center font-bold" style="font-size: 11px;">${s === 'CLOSED' ? 'X' : ''}</td>
+                <td style="font-size: 8.5px; line-height: 1.2; overflow: hidden;">${it?.note || ''}</td>
             </tr>`;
         }
 
         pageDiv.innerHTML = `
-            <div class="main-title">HAND OVER MAINTENANCE STATUS</div>
+            <div>
+                <div class="main-title">HAND OVER MAINTENANCE STATUS</div>
+                
+                <div class="header-info">
+                    <div class="header-column">
+                        <div class="info-cell label">Date</div><div class="info-cell">:</div><div class="info-cell">${f.fullDate}</div>
+                        <div class="info-cell label">Outgoing Crew</div><div class="info-cell">:</div><div class="info-cell">${f.outCrew}</div>
+                        <div class="info-cell label">Shift</div><div class="info-cell">:</div><div class="info-cell">${f.outShift}</div>
+                        <div class="info-cell label">Incoming Crew</div><div class="info-cell">:</div><div class="info-cell">${f.inCrew}</div>
+                        <div class="info-cell label">Shift</div><div class="info-cell">:</div><div class="info-cell">${f.inShift}</div>
+                    </div>
+                    <div class="header-column">
+                        <div class="info-cell label">Aircraft Registration</div><div class="info-cell">:</div><div class="info-cell">${f.acReg}</div>
+                        <div class="info-cell label">Type of Inspection</div><div class="info-cell">:</div><div class="info-cell">${f.insp}</div>
+                        <div class="info-cell label">Work Order No</div><div class="info-cell">:</div><div class="info-cell">${f.woNo}</div>
+                        
+                        <!-- Header Hangar In / Out Date -->
+                        <div class="info-cell label">Hangar In Date</div><div class="info-cell">:</div><div class="info-cell">${f.hIn}</div>
+                        <div class="info-cell label">Hangar Out Date</div><div class="info-cell">:</div><div class="info-cell" style="justify-content: space-between;">
+                            <span>${f.hOut}</span>
+                            ${f.hOutTag ? `<span style="font-weight: normal; font-size: 8.5px; opacity: 0.75;">${f.hOutTag}</span>` : ''}
+                        </div>
+                    </div>
+                </div>
+
+                <table class="maintenance-table">
+                    <colgroup>
+                        <col style="width: 36px;">
+                        <col style="width: 105px;">
+                        <col style="width: 380px;">
+                        <col style="width: 44px;">
+                        <col style="width: 44px;">
+                        <col style="width: 48px;">
+                        <col style="width: 380px;">
+                    </colgroup>
+                    <thead>
+                        <tr class="bg-gray"><th rowspan="2" class="center">No.</th><th rowspan="2" class="center">Order No.</th><th rowspan="2" class="center">Work Description</th><th colspan="3" class="center">Status</th><th rowspan="2" class="center">Remarks</th></tr>
+                        <tr class="bg-gray"><th class="center">O</th><th class="center">P</th><th class="center">C</th></tr>
+                    </thead>
+                    <tbody>${rowsHtml}</tbody>
+                </table>
+
+                <div class="signature-section">
+                    <div class="crew-block">
+                        <div class="crew-header">Outgoing Crew</div>
+                        <div class="signature-grid">
+                            <div class="sign-box">
+                                <div class="sign-title">Supervisor</div>
+                                <div class="sign-content">
+                                    <div>Name</div><div>:</div><div style="font-weight:bold; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${f.outSup.Name || f.outSup.EmployeeName || '-'}</div>
+                                    <div>Id No.</div><div>:</div><div>${f.outSup.EmployeeId || '-'}</div>
+                                    <div>Time</div><div>:</div><div>${f.outSupT}</div>
+                                    <div>Sign</div><div>:</div><div>__________</div>
+                                </div>
+                            </div>
+                            <div class="sign-box">
+                                <div class="sign-title">Manager</div>
+                                <div class="sign-content">
+                                    <div>Name</div><div>:</div><div style="font-weight:bold; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${f.outMgr.Name || f.outMgr.EmployeeName || '-'}</div>
+                                    <div>Id No.</div><div>:</div><div>${f.outMgr.EmployeeId || '-'}</div>
+                                    <div>Time</div><div>:</div><div>${f.outMgrT}</div>
+                                    <div>Sign</div><div>:</div><div>__________</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="crew-block">
+                        <div class="crew-header">Incoming Crew</div>
+                        <div class="signature-grid">
+                            <div class="sign-box">
+                                <div class="sign-title">Supervisor</div>
+                                <div class="sign-content">
+                                    <div>Name</div><div>:</div><div style="font-weight:bold; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${f.inSup.Name || f.inSup.EmployeeName || '-'}</div>
+                                    <div>Id No.</div><div>:</div><div>${f.inSup.EmployeeId || '-'}</div>
+                                    <div>Time</div><div>:</div><div>${f.inSupT}</div>
+                                    <div>Sign</div><div>:</div><div>__________</div>
+                                </div>
+                            </div>
+                            <div class="sign-box">
+                                <div class="sign-title">Manager</div>
+                                <div class="sign-content">
+                                    <div>Name</div><div>:</div><div style="font-weight:bold; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${f.inMgr.Name || f.inMgr.EmployeeName || '-'}</div>
+                                    <div>Id No.</div><div>:</div><div>${f.inMgr.EmployeeId || '-'}</div>
+                                    <div>Time</div><div>:</div><div>${f.inMgrT}</div>
+                                    <div>Sign</div><div>:</div><div>__________</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
             
-            <div class="header-info">
-                <div class="header-column">
-                    <div class="info-cell label">Date</div><div class="info-cell">:</div><div class="info-cell">${f.fullDate}</div>
-                    <div class="info-cell label">Outgoing Crew</div><div class="info-cell">:</div><div class="info-cell">${f.outCrew}</div>
-                    <div class="info-cell label">Shift</div><div class="info-cell">:</div><div class="info-cell">${f.outShift}</div>
-                    <div class="info-cell label">Incoming Crew</div><div class="info-cell">:</div><div class="info-cell">${f.inCrew}</div>
-                    <div class="info-cell label">Shift</div><div class="info-cell">:</div><div class="info-cell">${f.inShift}</div>
-                </div>
-                <div class="header-column">
-                    <div class="info-cell label">Aircraft Registration</div><div class="info-cell">:</div><div class="info-cell">${f.acReg}</div>
-                    <div class="info-cell label">Type of Inspection</div><div class="info-cell">:</div><div class="info-cell">${f.insp}</div>
-                    <div class="info-cell label">Work Order No</div><div class="info-cell">:</div><div class="info-cell">${f.woNo}</div>
-                    <div class="info-cell label">Unit / Station</div><div class="info-cell">:</div><div class="info-cell">${activeUnit}</div>
-                    <div class="info-cell label">Report Scope</div><div class="info-cell">:</div><div class="info-cell">Production Control</div>
-                </div>
-            </div>
-
-            <table class="maintenance-table">
-                <colgroup>
-                    <col style="width: 35px;">
-                    <col style="width: 105px;">
-                    <col style="width: 380px;">
-                    <col style="width: 45px;">
-                    <col style="width: 45px;">
-                    <col style="width: 50px;">
-                    <col style="width: 380px;">
-                </colgroup>
-                <thead>
-                    <tr class="bg-gray"><th rowspan="2" class="center">No.</th><th rowspan="2" class="center">Order No.</th><th rowspan="2" class="center">Work Description</th><th colspan="3" class="center">Status</th><th rowspan="2" class="center">Remarks</th></tr>
-                    <tr class="bg-gray"><th class="center">O</th><th class="center">P</th><th class="center">C</th></tr>
-                </thead>
-                <tbody>${rowsHtml}</tbody>
-            </table>
-
-            <div class="signature-section">
-                <div class="crew-block">
-                    <div class="crew-header">Outgoing Crew</div>
-                    <div class="signature-grid">
-                        <div class="sign-box">
-                            <div class="sign-title">Supervisor</div>
-                            <div class="sign-content">
-                                <div>Name</div><div>:</div><div style="font-weight:bold; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${f.outSup.Name || f.outSup.EmployeeName || '-'}</div>
-                                <div>Id No.</div><div>:</div><div>${f.outSup.EmployeeId || '-'}</div>
-                                <div>Time</div><div>:</div><div>${f.outSupT}</div>
-                                <div>Sign</div><div>:</div><div>__________</div>
-                            </div>
-                        </div>
-                        <div class="sign-box">
-                            <div class="sign-title">Manager</div>
-                            <div class="sign-content">
-                                <div>Name</div><div>:</div><div style="font-weight:bold; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${f.outMgr.Name || f.outMgr.EmployeeName || '-'}</div>
-                                <div>Id No.</div><div>:</div><div>${f.outMgr.EmployeeId || '-'}</div>
-                                <div>Time</div><div>:</div><div>${f.outMgrT}</div>
-                                <div>Sign</div><div>:</div><div>__________</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="crew-block">
-                    <div class="crew-header">Incoming Crew</div>
-                    <div class="signature-grid">
-                        <div class="sign-box">
-                            <div class="sign-title">Supervisor</div>
-                            <div class="sign-content">
-                                <div>Name</div><div>:</div><div style="font-weight:bold; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${f.inSup.Name || f.inSup.EmployeeName || '-'}</div>
-                                <div>Id No.</div><div>:</div><div>${f.inSup.EmployeeId || '-'}</div>
-                                <div>Time</div><div>:</div><div>${f.inSupT}</div>
-                                <div>Sign</div><div>:</div><div>__________</div>
-                            </div>
-                        </div>
-                        <div class="sign-box">
-                            <div class="sign-title">Manager</div>
-                            <div class="sign-content">
-                                <div>Name</div><div>:</div><div style="font-weight:bold; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${f.inMgr.Name || f.inMgr.EmployeeName || '-'}</div>
-                                <div>Id No.</div><div>:</div><div>${f.inMgr.EmployeeId || '-'}</div>
-                                <div>Time</div><div>:</div><div>${f.inMgrT}</div>
-                                <div>Sign</div><div>:</div><div>__________</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
             <div class="footer-info"><div>Form No: GMF/Q-392</div><div>Page ${num} of ${total}</div></div>
         `;
         return pageDiv;
@@ -402,27 +516,32 @@
                     <style>
                         @page { size: A4 landscape; margin: 0; }
                         body { margin: 0; padding: 0; background: white !important; font-family: Arial, sans-serif; }
-                        .page-container { width: 297mm; height: 210mm; padding: 8mm 10mm; background-color: white; margin: 0 auto; display: flex; flex-direction: column; page-break-after: always; box-sizing: border-box; }
-                        .main-title { text-align: center; font-weight: bold; font-size: 13px; border: 2px solid black; padding: 5px; background-color: #eeeeee !important; }
-                        .header-info { display: grid; grid-template-columns: 1fr 1fr; border-left: 2px solid black; border-right: 2px solid black; border-bottom: 1px solid black; }
+                        .page-container { 
+                            width: 297mm; height: 210mm; padding: 9mm 12mm; 
+                            background-color: white; margin: 0 auto; 
+                            display: flex; flex-direction: column; justify-content: space-between;
+                            page-break-after: always; box-sizing: border-box; 
+                        }
+                        .main-title { text-align: center; font-weight: bold; font-size: 13px; border: 1px solid black; padding: 6px; background-color: #eeeeee !important; }
+                        .header-info { display: grid; grid-template-columns: 1fr 1fr; border-left: 1px solid black; border-right: 1px solid black; border-bottom: 1px solid black; }
                         .header-column { display: grid; grid-template-columns: 130px 10px 1fr; }
-                        .header-column:first-child { border-right: 2px solid black; }
-                        .info-cell { padding: 2px 6px; border-bottom: 1px solid black; display: flex; align-items: center; height: 18px; font-size: 10px; }
+                        .header-column:first-child { border-right: 1px solid black; }
+                        .info-cell { padding: 3px 6px; border-bottom: 1px solid black; display: flex; align-items: center; height: 21px; font-size: 9.5px; }
                         .info-cell.label { font-weight: bold; }
                         .header-column .info-cell:nth-last-child(-n+3) { border-bottom: none; }
-                        table.maintenance-table { width: 100%; border-collapse: collapse; border-left: 2px solid black; border-right: 2px solid black; border-bottom: 2px solid black; table-layout: fixed; }
-                        table.maintenance-table th, table.maintenance-table td { border: 1px solid black; padding: 2px 4px; vertical-align: middle; word-wrap: break-word; font-size: 9.5px; }
+                        table.maintenance-table { width: 100%; border-collapse: collapse; border: 1px solid black; table-layout: fixed; }
+                        table.maintenance-table th, table.maintenance-table td { border: 1px solid black; padding: 4px 6px; vertical-align: middle !important; word-wrap: break-word; font-size: 9.5px; }
                         .center { text-align: center; }
                         .bg-gray { background-color: #eeeeee !important; }
-                        .signature-section { display: grid; grid-template-columns: 1fr 1fr; border-left: 2px solid black; border-right: 2px solid black; border-bottom: 2px solid black; }
+                        .signature-section { display: grid; grid-template-columns: 1fr 1fr; border-left: 1px solid black; border-right: 1px solid black; border-bottom: 1px solid black; }
                         .crew-block { display: flex; flex-direction: column; }
-                        .crew-block:first-child { border-right: 2px solid black; }
-                        .crew-header { text-align: center; font-weight: bold; background-color: #eeeeee !important; border-bottom: 1px solid black; padding: 3px; font-size: 10px; }
+                        .crew-block:first-child { border-right: 1px solid black; }
+                        .crew-header { text-align: center; font-weight: bold; background-color: #eeeeee !important; border-bottom: 1px solid black; padding: 4px; font-size: 10px; }
                         .signature-grid { display: grid; grid-template-columns: 1fr 1fr; }
                         .sign-box { display: flex; flex-direction: column; border-right: 1px solid black; }
                         .sign-box:last-child { border-right: none; }
-                        .sign-title { text-align: center; font-weight: bold; border-bottom: 1px solid black; padding: 2px; font-size: 9.5px; }
-                        .sign-content { display: grid; grid-template-columns: 50px 10px 1fr; grid-auto-rows: 16px; padding: 3px 5px; font-size: 9px; align-items: center; }
+                        .sign-title { text-align: center; font-weight: bold; border-bottom: 1px solid black; padding: 3px; font-size: 9.5px; }
+                        .sign-content { display: grid; grid-template-columns: 50px 10px 1fr; grid-auto-rows: 18px; padding: 4px 6px; font-size: 9px; align-items: center; }
                         .footer-info { display: flex; justify-content: space-between; margin-top: 4px; font-size: 9px; font-weight: bold; }
                         * { -webkit-print-color-adjust: exact; box-sizing: border-box; }
                     </style>
@@ -455,7 +574,8 @@
         let msg = `*DAILY HAND OVER REPORT - ${activeUnit}*\n`;
         msg += `CREW: ${f.outCrew} ➔ ${f.inCrew}\n`;
         msg += `SHIFT: ${f.outShift}\n`;
-        msg += `DATE: ${f.fullDate}\n\n`;
+        msg += `DATE: ${f.fullDate}\n`;
+        msg += `A/C REG: ${f.acReg} | WO: ${f.woNo}\n\n`;
         msg += `*💡 SUMMARY: ${items.length} ORDERS*\n${summaryStr}\n\n`;
 
         items.forEach((it, idx) => {
@@ -493,7 +613,7 @@
         }
     };
 
-    // 🚀 Jalankan dengan forceModal = true agar Form Config langsung muncul
+    // Jalankan dengan forceModal = true agar Form Config langsung muncul
     initHoBConfig(true);
 })();
 </script>
