@@ -31,14 +31,66 @@
 
         .plan-card { background-color: var(--panel) !important; border: 1px solid var(--border) !important; border-radius: 2.5rem; padding: 2rem; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); }
         
-        /* Internal Widget Tabs */
-        .cockpit-tabs { display: flex; gap: 0.25rem; background: var(--input-bg); padding: 0.25rem; border-radius: 1rem; margin-bottom: 1.5rem; width: fit-content; }
-        .c-tab { padding: 0.5rem 1rem; border-radius: 0.75rem; font-size: 9px; font-weight: 800; text-transform: uppercase; transition: 0.2s; color: var(--text-main); opacity: 0.5; }
-        .c-tab.active { background: var(--panel); color: var(--accent) !important; opacity: 1; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+        /* 🚀 COCKPIT WIDGET & TABS UPGRADE */
+        .cockpit-tabs { 
+            display: flex; 
+            gap: 0.35rem; 
+            background: rgba(0, 0, 0, 0.3); 
+            border: 1px solid var(--border); 
+            padding: 0.35rem; 
+            border-radius: 1rem; 
+            width: fit-content; 
+        }
+        .c-tab { 
+            padding: 0.45rem 1.25rem; 
+            border-radius: 0.75rem; 
+            font-size: 10px; 
+            font-weight: 800; 
+            text-transform: uppercase; 
+            letter-spacing: 0.05em; 
+            transition: all 0.2s ease; 
+            color: var(--text-main); 
+            opacity: 0.5; 
+            cursor: pointer;
+        }
+        .c-tab:hover { opacity: 0.9; color: #fff; }
+        .c-tab.active { 
+            background: var(--panel); 
+            color: var(--accent) !important; 
+            opacity: 1; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3); 
+            border: 1px solid rgba(255,255,255,0.08); 
+        }
 
-        .widget-card { border-radius: 1.25rem; padding: 1.25rem; border: 1px solid var(--border); text-align: center; background-color: var(--input-bg); }
-        .widget-val { font-size: 1.75rem; font-weight: 900; line-height: 1; margin-bottom: 0.25rem; color: var(--text-bold); }
-        .widget-lab { font-size: 8px; font-weight: 800; text-transform: uppercase; opacity: 0.6; }
+        .widget-card { 
+            border-radius: 1.25rem; 
+            padding: 1rem 0.75rem; 
+            border: 1px solid var(--border); 
+            text-align: center; 
+            background-color: var(--input-bg); 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            min-height: 86px; 
+            transition: all 0.2s ease; 
+        }
+        .widget-card:hover { transform: translateY(-2px); }
+        .widget-val { 
+            font-size: 1.6rem; 
+            font-weight: 900; 
+            line-height: 1; 
+            margin-bottom: 0.35rem; 
+            font-variant-numeric: tabular-nums; 
+        }
+        .widget-lab { 
+            font-size: 9px; 
+            font-weight: 800; 
+            text-transform: uppercase; 
+            letter-spacing: 0.06em; 
+            opacity: 0.75; 
+            white-space: nowrap; 
+        }
 
         /* Master Table */
         .master-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 11px; }
@@ -131,12 +183,12 @@
         };
 
         const FUNC_DEFS = {
-            'Production Team': 'border-blue-500/20 text-blue-400',
-            'Engineering Support': 'border-purple-500/20 text-purple-400',
-            'Material & MPC': 'border-amber-500/20 text-amber-400',
-            'Tool & Equipment Team': 'border-emerald-500/20 text-emerald-400',
-            'Keuangan / Finance': 'border-pink-500/20 text-pink-400',
-            'Leader & Top Leader': 'border-slate-500/20 text-slate-100'
+            'Production Team': { lab: 'Production', color: 'border-blue-500/30 bg-blue-500/5 text-blue-400' },
+            'Engineering Support': { lab: 'Engineering', color: 'border-purple-500/30 bg-purple-500/5 text-purple-400' },
+            'Material & MPC': { lab: 'Material & MPC', color: 'border-amber-500/30 bg-amber-500/5 text-amber-400' },
+            'Tool & Equipment Team': { lab: 'Tools & Eqp', color: 'border-emerald-500/30 bg-emerald-500/5 text-emerald-400' },
+            'Keuangan / Finance': { lab: 'Finance', color: 'border-pink-500/30 bg-pink-500/5 text-pink-400' },
+            'Leader & Top Leader': { lab: 'Leadership', color: 'border-slate-400/30 bg-slate-400/5 text-slate-300' }
         };
 
         let masterData = [], activeUnit = null, editId = null;
@@ -259,9 +311,48 @@
             document.getElementById(`w-${type}`).classList.add('active');
         }
 
-        function renderScopeWidgets(s) { return `<div class="grid grid-cols-1 sm:grid-cols-3 gap-4">${Object.entries(SCOPE_DEFS).map(([k,d])=>`<div class="widget-card ${d.color}"><span class="widget-val">${s[k]||0}</span><span class="widget-lab">${d.lab}</span></div>`).join('')}</div>`; }
-        function renderFuncWidgets(f) { return `<div class="grid grid-cols-2 md:grid-cols-6 gap-2">${Object.entries(FUNC_DEFS).map(([k,s])=>`<div class="widget-card ${s.split(' ')[0]} ${s.split(' ')[1]} !py-4"><span class="widget-val !text-lg">${f[k]||0}</span><span class="widget-lab !text-[7px]">${k.replace('Team','').trim()}</span></div>`).join('')}</div>`; }
-        function renderStatWidgets(st) { return `<div class="grid grid-cols-3 gap-4"><div class="widget-card border-slate-500/20 bg-slate-500/5 text-slate-400"><span class="widget-val">${st.Planned}</span><span class="widget-lab">Planned</span></div><div class="widget-card border-blue-500/20 bg-blue-500/5 text-blue-400"><span class="widget-val">${st['In Progress']||st.In_Progress||0}</span><span class="widget-lab">In Progress</span></div><div class="widget-card border-emerald-500/20 bg-emerald-500/5 text-emerald-400"><span class="widget-val">${st.Achieved}</span><span class="widget-lab">Achieved</span></div></div>`; }
+        // 🚀 RENDER WIDGET DENGAN GRID PRESISI & WARNA ANGKA YANG MENYALA
+        function renderScopeWidgets(s) { 
+            return `
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                    ${Object.entries(SCOPE_DEFS).map(([k,d]) => `
+                        <div class="widget-card ${d.color}">
+                            <span class="widget-val">${s[k] || 0}</span>
+                            <span class="widget-lab">${d.lab}</span>
+                        </div>
+                    `).join('')}
+                </div>`; 
+        }
+
+        function renderFuncWidgets(f) { 
+            return `
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+                    ${Object.entries(FUNC_DEFS).map(([k,d]) => `
+                        <div class="widget-card ${d.color}">
+                            <span class="widget-val">${f[k] || 0}</span>
+                            <span class="widget-lab">${d.lab}</span>
+                        </div>
+                    `).join('')}
+                </div>`; 
+        }
+
+        function renderStatWidgets(st) { 
+            return `
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                    <div class="widget-card border-slate-500/30 bg-slate-500/5 text-slate-300">
+                        <span class="widget-val">${st.Planned || 0}</span>
+                        <span class="widget-lab">Planned</span>
+                    </div>
+                    <div class="widget-card border-blue-500/30 bg-blue-500/5 text-blue-400">
+                        <span class="widget-val">${st['In Progress'] || st.In_Progress || 0}</span>
+                        <span class="widget-lab">In Progress</span>
+                    </div>
+                    <div class="widget-card border-emerald-500/30 bg-emerald-500/5 text-emerald-400">
+                        <span class="widget-val">${st.Achieved || 0}</span>
+                        <span class="widget-lab">Achieved</span>
+                    </div>
+                </div>`; 
+        }
 
         function openModal() {
             editId = null; document.getElementById('plan-modal').classList.remove('hidden');
