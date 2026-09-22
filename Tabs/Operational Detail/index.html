@@ -128,13 +128,13 @@
         const S_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRza2N4YmxhbnJ0dnpsY3RwY3lkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcwNjI0MjAsImV4cCI6MjA4MjYzODQyMH0.6epAPJdzgxe-pmG-rVtosdbg-dwF5lND6Xd18VgUeU0';
         const supabaseClient = supabase.createClient(S_URL, S_KEY);
 
-        // MAP SESUAI FILE W301, W302, W303
+        // MAP SESUAI FILE W301, W302, W303 & TCP-9
         const SUPABASE_UNITS = {
-            'TCR-1': { colStatus: 'status_sm1', colDate: 'date_closed_sm1', filterCek: 'cek_sm1' },
-            'TCR-2': { colStatus: 'status_cs1', colDate: 'date_closed_cs1', filterCek: 'cek_cs1' },
-            'TCR-5': { colStatus: 'status_mw',  colDate: 'date_closed_mw',  filterCek: 'cek_mw' },
-            'TCR-3': { colStatus: 'status_sm4', colDate: 'date_closed_sm4', filterCek: 'cek_sm4' },
-            'TCR-4': { colStatus: 'status_cs4', colDate: 'date_closed_cs4', filterCek: 'cek_cs4' }, // Tambahkan ini
+            'TCR-1': { colStatus: 'status_sm1', colDate: 'date_closed_sm1', filterCek: 'cek_sm1', reportKey: 'report_sm1', remarkKey: 'remark_sm1' },
+            'TCR-2': { colStatus: 'status_cs1', colDate: 'date_closed_cs1', filterCek: 'cek_cs1', reportKey: 'report_cs1', remarkKey: 'remark_cs1' },
+            'TCR-5': { colStatus: 'status_mw',  colDate: 'date_closed_mw',  filterCek: 'cek_mw',  reportKey: 'report_mw',  remarkKey: 'remark_mw' },
+            'TCR-3': { colStatus: 'status_sm4', colDate: 'date_closed_sm4', filterCek: 'cek_sm4', reportKey: 'report_sm4', remarkKey: 'remark_sm4' },
+            'TCR-4': { colStatus: 'status_cs4', colDate: 'date_closed_cs4', filterCek: 'cek_cs4', reportKey: 'report_cs4', remarkKey: 'remark_cs4' },
             'TCP-9': { colStatus: 'status_job', colDate: null,              filterCek: null,       reportKey: 'report_pe',  remarkKey: 'remark' }
         };
         
@@ -180,13 +180,18 @@
 
             if (sMap) {
                 // --- LOGIKA SUPABASE (TCR & TCP-9) ---
-                const reportKey = sMap.reportKey;
-                const remarkKey = sMap.remarkKey;
+                // Fallback otomatis jika key belum diset
+                const reportKey = sMap.reportKey || (activeUnit === 'TCR-2' ? 'report_cs1' : activeUnit === 'TCR-3' ? 'report_sm4' : activeUnit === 'TCR-4' ? 'report_cs4' : activeUnit === 'TCR-5' ? 'report_mw' : 'report_sm1');
+                const remarkKey = sMap.remarkKey || (activeUnit === 'TCP-9' ? 'remark' : activeUnit === 'TCR-2' ? 'remark_cs1' : activeUnit === 'TCR-3' ? 'remark_sm4' : activeUnit === 'TCR-4' ? 'remark_cs4' : activeUnit === 'TCR-5' ? 'remark_mw' : 'remark_sm1');
             
                 fullData = supabaseData
                     .filter(item => {
                         const isReported = (item[reportKey] === true || item[reportKey] === '1' || item[reportKey] === 'checked');
-                        const matchReport = showOnlyReported ? isReported : true;
+                        
+                        // 🚀 KHUSUS TCP-9: Jangan sembunyikan data jika belum dicentang (tampilkan semua data unarchived)
+                        const matchReport = (activeUnit === 'TCP-9') 
+                            ? (showOnlyReported ? true : true) // Selalu tampilkan data aktif TCP-9
+                            : (showOnlyReported ? isReported : true);
                         
                         const matchSearch = (
                             (item.ac_reg || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -194,7 +199,7 @@
                             (item.description || '').toLowerCase().includes(searchQuery.toLowerCase())
                         );
                         
-                        // TCR 1-5 wajib cek 'red'. Untuk TCP-9 (filterCek null), loloskan semua (tampilkan semua non-archived)
+                        // TCR 1-5 wajib cek 'red'. Untuk TCP-9 (filterCek null), loloskan semua data aktif
                         const matchCek = sMap.filterCek ? (item[sMap.filterCek] === 'red') : true;
 
                         return matchCek && matchReport && matchSearch;
@@ -478,6 +483,7 @@
                 Swal.fire('Update Error', e.message, 'error');
             }
         }
+        
         async function deleteOrder(orderNo) {
             const sMap = SUPABASE_UNITS[activeUnit];
             const res = await Swal.fire({ 
@@ -490,9 +496,13 @@
                 loader.style.display = 'flex';
                 try {
                     if (sMap) {
-                        // --- LOGIKA SUPABASE (TCR 1-5) ---
+                        // --- LOGIKA SUPABASE (TCR & TCP-9) ---
                         const payload = {}; 
-                        payload[sMap.filterCek] = ''; // Mengosongkan filter (misal: cek_sm4) di Supabase
+                        if (sMap.filterCek) {
+                            payload[sMap.filterCek] = ''; // TCR 1-5 lepas tag warna
+                        } else if (sMap.reportKey) {
+                            payload[sMap.reportKey] = ''; // TCP-9 lepas centang report
+                        }
                         
                         const targetRow = supabaseData.find(d => String(d.order) === String(orderNo));
                         if (!targetRow || !targetRow.id) throw new Error("Row ID not found for order: " + orderNo);
@@ -579,7 +589,14 @@
             }
         }
 
-        function switchUnit(uCode) { activeUnit = uCode; currentPage = 1; renderTabs(); renderCards(); }
+        function switchUnit(uCode) { 
+            activeUnit = uCode; 
+            currentPage = 1; 
+            // TCP-9 otomatis SHOW ALL agar data tidak kosong karena belum dicentang
+            showOnlyReported = (uCode !== 'TCP-9');
+            renderTabs(); 
+            renderCards(); 
+        }
         function updateRowsPerPage(val) { rowsPerPage = val; currentPage = 1; renderCards(); }
         function changePage(dir) { currentPage += dir; renderCards(); }
         function formatStatus(s) { if (!s) return 'Open'; return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase(); }
@@ -618,7 +635,8 @@
                 if (!raw) return;
                 
                 // Tentukan key remark dinamis
-                const rKey = (activeUnit === 'TCR-2') ? 'remark_cs1' : 
+                const rKey = (activeUnit === 'TCP-9') ? 'remark' :
+                             (activeUnit === 'TCR-2') ? 'remark_cs1' : 
                              (activeUnit === 'TCR-5') ? 'remark_mw' : 
                              (activeUnit === 'TCR-3') ? 'remark_sm4' : 'remark_sm1';
         
