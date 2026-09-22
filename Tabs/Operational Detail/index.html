@@ -555,8 +555,9 @@
             loader.style.display = 'flex';
 
             try {
-                const res = await fetch('modal/HoB/index.html');
-                if (!res.ok) throw new Error('File modal/HoB/index.html tidak ditemukan.');
+                // 🚀 PERBAIKAN PATH: Mundur 2 folder (../../) untuk menuju TCliveweb/modal/HoB/index.html
+                const res = await fetch('../../modal/HoB/index.html');
+                if (!res.ok) throw new Error('File ../../modal/HoB/index.html tidak ditemukan.');
                 const html = await res.text();
                 placeholder.innerHTML = html;
 
