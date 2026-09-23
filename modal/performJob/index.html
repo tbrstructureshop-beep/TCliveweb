@@ -28,8 +28,10 @@
                     00<span class="text-xs text-sky-400 font-normal ml-1 mr-2 font-sans">h</span>00<span class="text-xs text-sky-400 font-normal ml-1 mr-2 font-sans">m</span>00<span class="text-xs text-sky-400 font-normal ml-1 font-sans">s</span>
                 </div>
 
-                <div id="timer-timestamp-info" class="text-[10px] font-mono text-white/40 mb-5 flex items-center gap-3">
+                <div id="timer-timestamp-info" class="text-[10px] font-mono text-white/40 mb-5 flex flex-wrap items-center justify-center gap-3">
                     <span>Start: <b id="stamp-start" class="text-white/80">--:--:--</b></span>
+                    <span>&bull;</span>
+                    <span>Pause: <b id="stamp-pause" class="text-amber-400">--:--:--</b></span>
                     <span>&bull;</span>
                     <span>Stop: <b id="stamp-stop" class="text-white/80">--:--:--</b></span>
                 </div>
@@ -48,30 +50,40 @@
                 </div>
             </div>
 
-            <!-- SECTION 2: ACTIVE OPERATOR ASSIGNMENT -->
-            <div class="bg-white/[0.02] border border-white/5 p-4 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                <div>
-                    <span class="label-style text-sky-400 mb-0">Active Operator Performer</span>
-                    <p class="text-xs text-white/50">Pilih ID dan nama personil yang bertanggung jawab mencatat durasi kerja ini.</p>
+            <!-- SECTION 2: AUTHENTICATED OPERATOR INFO (LOCKED TO LOGIN USER) -->
+            <div class="bg-white/[0.02] border border-white/5 p-4 rounded-2xl flex items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-2xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400 font-bold font-mono">
+                        <i data-lucide="user-check" size="18"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-bold text-white" id="op-auth-name">Loading Operator...</span>
+                            <span class="bg-sky-500/10 text-sky-400 text-[9px] font-mono px-1.5 py-0.2 rounded border border-sky-500/20 font-bold" id="op-auth-class">Employee</span>
+                        </div>
+                        <p class="text-[10px] text-white/40 font-mono mt-0.5" id="op-auth-sub"></p>
+                    </div>
                 </div>
-                <div class="w-full md:w-72">
-                    <select id="operator-select" class="input-field text-xs cursor-pointer" onchange="onOperatorChange(this.value)">
-                        <!-- Injected via JS -->
-                    </select>
+                <div class="text-right">
+                    <span class="text-[9px] uppercase tracking-wider text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-1 rounded-lg font-bold">Authorized Session</span>
                 </div>
             </div>
 
-            <!-- SECTION 3: WHO IS HANDLING THIS ORDER (GROUPED BY CLASS) -->
-            <div class="space-y-3">
-                <div class="flex justify-between items-center px-1">
-                    <span class="text-[10px] font-black uppercase tracking-widest text-sky-400">Who is Handling this order (Node Personnel Roster)</span>
-                    <span id="pj-personnel-count" class="text-[9px] font-mono text-white/40"></span>
-                </div>
+            <!-- SECTION 3: WHO IS HANDLING THIS ORDER (READ FROM JOB RECORD, GROUPED BY CLASS) -->
+            <details open class="group space-y-3">
+                <summary class="flex justify-between items-center cursor-pointer select-none bg-white/[0.02] border border-white/5 p-4 rounded-2xl hover:bg-white/[0.04] transition">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="chevron-down" class="w-4 h-4 text-sky-400 group-open:rotate-180 transition-transform"></i>
+                        <span class="text-[10px] font-black uppercase tracking-widest text-sky-400">Who is Handling this order (Job Records by Class)</span>
+                    </div>
+                    <span id="pj-history-count" class="text-[9px] font-mono text-white/40 bg-white/5 px-2 py-0.5 rounded-md">Loading Records...</span>
+                </summary>
 
-                <div id="class-roster-container" class="space-y-4">
-                    <!-- Dynamic grouped cards injected here -->
+                <!-- Class Group Accordions Injected Here -->
+                <div id="class-roster-container" class="space-y-3 pt-2">
+                    <!-- Injected via JS -->
                 </div>
-            </div>
+            </details>
 
         </div>
     </div>
@@ -80,22 +92,68 @@
 <script>
 (function() {
     lucide.createIcons();
+
+    // 1. CEK KONTEKS ORDER & UNIT
     const jobContext = window.activePerformJob || {};
-    const unitCode = jobContext.unitCode || 'TCP-9';
-    const orderNo = jobContext.orderNo || '-';
+    const unitCode = String(jobContext.unitCode || 'TCP-9').trim();
+    const orderNo = String(jobContext.orderNo || '-').trim();
 
     document.getElementById('pj-node').innerText = `${unitCode} // A/C: ${jobContext.acReg || '-'}`;
     document.getElementById('pj-order-title').innerText = `ORDER #${orderNo}`;
     document.getElementById('pj-desc').innerText = jobContext.description || 'No description provided';
 
+    // 2. VERIFIKASI SESI LOGIN (WAJIB LOGIN DARI modal/logIn)
+    const savedUserStr = localStorage.getItem('tc_user');
+    if (!savedUserStr) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Authentication Required',
+            text: 'Anda harus login terlebih dahulu untuk melakukan pekerjaan ini.',
+            background: '#151921',
+            color: '#fff',
+            confirmButtonColor: '#0ea5e9'
+        }).then(() => {
+            const modal = document.getElementById('performJobModal');
+            if (modal) modal.remove();
+        });
+        return;
+    }
+
+    const currentUser = JSON.parse(savedUserStr);
+    const userUnit = String(currentUser.UnitCode || '').trim();
+
+    // 3. VERIFIKASI KECOCOKAN UNIT CODE
+    if (userUnit.toLowerCase() !== unitCode.toLowerCase()) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Akses Ditolak',
+            text: `Maaf, Anda tidak diizinkan untuk handle pekerjaan ${unitCode}. Silakan pergi ke Unit Anda (${userUnit || 'Unassigned'}).`,
+            background: '#151921',
+            color: '#fff',
+            confirmButtonColor: '#ef4444'
+        }).then(() => {
+            const modal = document.getElementById('performJobModal');
+            if (modal) modal.remove();
+        });
+        return;
+    }
+
+    // Tampilkan data Operator Terautentikasi
+    document.getElementById('op-auth-name').innerText = currentUser.Name || currentUser.EmployeeId;
+    document.getElementById('op-auth-class').innerText = currentUser.Class || 'Employee';
+    document.getElementById('op-auth-sub').innerText = `ID: ${currentUser.EmployeeId} &bull; Unit: ${userUnit} &bull; ${currentUser.JobTitle || 'Staff'}`;
+
+    // Timer State
     let timerInterval = null;
     let secondsElapsed = 0;
     let isRunning = false;
-    let startTimeIso = null;
-    let stopTimeIso = null;
-
-    let allUnitUsers = [];
-    let selectedEmployeeId = null;
+    
+    let dateStartStr = '';
+    let timeStartStr = '';
+    let datePauseStr = '';
+    let timePauseStr = '';
+    let dateStopStr = '';
+    let timeStopStr = '';
 
     window.closePerformJobModal = function() {
         if (isRunning) {
@@ -114,34 +172,43 @@
         if (modal) modal.remove();
     };
 
-    // Format durasi (s min H)
     function formatDurationDisplay(totalSeconds) {
         const hrs = Math.floor(totalSeconds / 3600);
         const mins = Math.floor((totalSeconds % 3600) / 60);
         const secs = totalSeconds % 60;
         
-        const hStr = String(hrs).padStart(2, '0');
-        const mStr = String(mins).padStart(2, '0');
-        const sStr = String(secs).padStart(2, '0');
-
-        return `${hStr}<span class="text-xs text-sky-400 font-normal ml-1 mr-2 font-sans">h</span>` +
-               `${mStr}<span class="text-xs text-sky-400 font-normal ml-1 mr-2 font-sans">m</span>` +
-               `${sStr}<span class="text-xs text-sky-400 font-normal ml-1 font-sans">s</span>`;
+        return `${String(hrs).padStart(2,'0')}<span class="text-xs text-sky-400 font-normal ml-1 mr-2 font-sans">h</span>` +
+               `${String(mins).padStart(2,'0')}<span class="text-xs text-sky-400 font-normal ml-1 mr-2 font-sans">m</span>` +
+               `${String(secs).padStart(2,'0')}<span class="text-xs text-sky-400 font-normal ml-1 font-sans">s</span>`;
     }
 
-    function formatTimeClock(dateObj) {
-        if (!dateObj) return '--:--:--';
-        return `${String(dateObj.getHours()).padStart(2,'0')}:${String(dateObj.getMinutes()).padStart(2,'0')}:${String(dateObj.getSeconds()).padStart(2,'0')}`;
+    function formatSecToReadable(totalSeconds) {
+        const s = parseInt(totalSeconds) || 0;
+        const hrs = Math.floor(s / 3600);
+        const mins = Math.floor((s % 3600) / 60);
+        const secs = s % 60;
+        if (hrs > 0) return `${hrs}h ${mins}m ${secs}s`;
+        if (mins > 0) return `${mins}m ${secs}s`;
+        return `${secs}s`;
     }
 
-    // Dynamic color hash
+    function getCurrentTimeClock() {
+        const d = new Date();
+        return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;
+    }
+
+    function getCurrentDateIso() {
+        const d = new Date();
+        return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    }
+
+    // Dynamic Color Palette
     const PALETTES = [
-        { bg: 'bg-sky-500/10', border: 'border-sky-500/30', text: 'text-sky-400', badge: 'bg-sky-500/20 text-sky-300' },
-        { bg: 'bg-purple-500/10', border: 'border-purple-500/30', text: 'text-purple-400', badge: 'bg-purple-500/20 text-purple-300' },
-        { bg: 'bg-emerald-500/10', border: 'border-emerald-500/30', text: 'text-emerald-400', badge: 'bg-emerald-500/20 text-emerald-300' },
-        { bg: 'bg-amber-500/10', border: 'border-amber-500/30', text: 'text-amber-400', badge: 'bg-amber-500/20 text-amber-300' },
-        { bg: 'bg-rose-500/10', border: 'border-rose-500/30', text: 'text-rose-400', badge: 'bg-rose-500/20 text-rose-300' },
-        { bg: 'bg-indigo-500/10', border: 'border-indigo-500/30', text: 'text-indigo-400', badge: 'bg-indigo-500/20 text-indigo-300' }
+        { border: 'border-sky-500/30', text: 'text-sky-400', badge: 'bg-sky-500/20 text-sky-300' },
+        { border: 'border-purple-500/30', text: 'text-purple-400', badge: 'bg-purple-500/20 text-purple-300' },
+        { border: 'border-emerald-500/30', text: 'text-emerald-400', badge: 'bg-emerald-500/20 text-emerald-300' },
+        { border: 'border-amber-500/30', text: 'text-amber-400', badge: 'bg-amber-500/20 text-amber-300' },
+        { border: 'border-rose-500/30', text: 'text-rose-400', badge: 'bg-rose-500/20 text-rose-300' }
     ];
 
     function getDynamicColor(str) {
@@ -151,102 +218,124 @@
         return PALETTES[Math.abs(hash) % PALETTES.length];
     }
 
-    // Load Personnel from USER table
-    async function loadPersonnel() {
+    // 🚀 LOAD RIWAYAT PENGERJAAN ORDER DARI TAB "JOB RECORD"
+    async function loadJobRecordsHistory() {
+        const countSpan = document.getElementById('pj-history-count');
+        const container = document.getElementById('class-roster-container');
+
         try {
-            const res = await API.get('USER');
-            const users = res.data || [];
-            allUnitUsers = users.filter(u => String(u.UnitCode || '').trim().toLowerCase() === unitCode.toLowerCase());
+            const [jobRes, userRes] = await Promise.all([
+                API.get('JOB_RECORD'),
+                API.get('USER')
+            ]);
 
-            document.getElementById('pj-personnel-count').innerText = `${allUnitUsers.length} Personnel in Node`;
+            const allJobs = jobRes.data || [];
+            const allUsers = userRes.data || [];
 
-            // Operator dropdown
-            const opSelect = document.getElementById('operator-select');
-            opSelect.innerHTML = allUnitUsers.map(u => 
-                `<option value="${u.EmployeeId}">${u.Name} (${u.EmployeeId} &bull; ${u.Class || 'Staff'})</option>`
-            ).join('');
+            // 1. Saring riwayat pengerjaan khusus untuk ORDER ini saja
+            const orderJobs = allJobs.filter(j => String(j.Order || '').trim() === orderNo);
 
-            if (allUnitUsers.length > 0) {
-                selectedEmployeeId = allUnitUsers[0].EmployeeId;
+            countSpan.innerText = `${orderJobs.length} Records for this Order`;
+
+            if (orderJobs.length === 0) {
+                container.innerHTML = `
+                    <div class="p-8 text-center text-white/30 font-mono italic bg-black/20 border border-white/5 rounded-2xl">
+                        Belum ada riwayat pengerjaan pada Order #${orderNo} di sheet JOB RECORD.
+                    </div>`;
+                return;
             }
 
-            renderGroupedRoster();
-        } catch(e) {
-            console.error("Failed to load users:", e);
-        }
-    }
+            // 2. Gabungkan data dengan tabel USER untuk memperoleh Nama & Class Karyawan
+            const enrichedJobs = orderJobs.map(j => {
+                const u = allUsers.find(usr => String(usr.EmployeeId).trim() === String(j.EmployeeId).trim()) || {};
+                return {
+                    ...j,
+                    Name: u.Name || 'Unknown Personnel',
+                    Class: (u.Class || 'Employee').trim()
+                };
+            });
 
-    // Render "Who is Handling this order" grouped by Class
-    function renderGroupedRoster() {
-        const container = document.getElementById('class-roster-container');
-        const grouped = allUnitUsers.reduce((acc, u) => {
-            const cls = (u.Class || 'Unassigned').trim();
-            if (!acc[cls]) acc[cls] = [];
-            acc[cls].push(u);
-            return acc;
-        }, {});
+            // 3. Kelompokkan berdasarkan Class
+            const groupedByClass = enrichedJobs.reduce((acc, j) => {
+                if (!acc[j.Class]) acc[j.Class] = [];
+                acc[j.Class].push(j);
+                return acc;
+            }, {});
 
-        if (Object.keys(grouped).length === 0) {
-            container.innerHTML = `<div class="p-6 text-center text-white/30 font-mono italic">No personnel registered under ${unitCode}</div>`;
-            return;
-        }
-
-        container.innerHTML = Object.entries(grouped).map(([clsName, members]) => {
-            const c = getDynamicColor(clsName);
-            return `
-                <div class="bg-black/30 border border-white/5 rounded-2xl p-4 space-y-2.5">
-                    <div class="flex justify-between items-center">
-                        <span class="font-bold text-xs uppercase tracking-wider ${c.text}">${clsName}</span>
-                        <span class="${c.badge} font-mono text-[10px] font-bold px-2 py-0.5 rounded-lg">${members.length} Personnel</span>
-                    </div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
-                        ${members.map(m => `
-                            <div class="p-2.5 rounded-xl border border-white/5 bg-white/[0.02] flex items-center justify-between gap-2 hover:bg-white/[0.05] transition cursor-pointer"
-                                 onclick="selectOperatorFromCard('${m.EmployeeId}')">
-                                <div class="truncate">
-                                    <div class="font-bold text-white text-[11px] truncate">${m.Name}</div>
-                                    <div class="text-[9px] font-mono text-sky-400/80">${m.EmployeeId} &bull; ${m.JobTitle || '-'}</div>
-                                </div>
-                                <span class="text-[8px] font-mono ${selectedEmployeeId === m.EmployeeId ? 'bg-emerald-500 text-white font-bold' : 'text-white/20'} px-1.5 py-0.5 rounded uppercase">
-                                    ${selectedEmployeeId === m.EmployeeId ? 'Active' : 'Pick'}
-                                </span>
+            // 4. Render Akordeon Bersarang: Setiap Class Bisa Dihide/Expand
+            container.innerHTML = Object.entries(groupedByClass).map(([className, jobList]) => {
+                const c = getDynamicColor(className);
+                return `
+                    <details open class="group bg-black/30 border border-white/5 rounded-2xl p-4 transition-all">
+                        <summary class="flex justify-between items-center cursor-pointer select-none mb-3">
+                            <div class="flex items-center gap-2">
+                                <i data-lucide="chevron-down" class="w-3.5 h-3.5 ${c.text} group-open:rotate-180 transition-transform"></i>
+                                <span class="font-bold text-xs uppercase tracking-wider ${c.text}">${className}</span>
                             </div>
-                        `).join('')}
-                    </div>
-                </div>
-            `;
-        }).join('');
+                            <span class="${c.badge} font-mono text-[9px] font-bold px-2 py-0.5 rounded-md">${jobList.length} Performed</span>
+                        </summary>
+
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-[11px] border-collapse">
+                                <thead>
+                                    <tr class="border-b border-white/10 text-[9px] uppercase font-bold text-white/40">
+                                        <th class="py-2 px-3 w-10 text-center">NO.</th>
+                                        <th class="py-2 px-3">Personnel Name & ID</th>
+                                        <th class="py-2 px-3">Start</th>
+                                        <th class="py-2 px-3">Stop</th>
+                                        <th class="py-2 px-3 font-mono">Duration</th>
+                                        <th class="py-2 px-3 text-right">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-white/5 font-mono">
+                                    ${jobList.map((j, idx) => `
+                                        <tr class="hover:bg-white/[0.02] transition">
+                                            <td class="py-2 px-3 text-center text-white/30 text-[10px]">${idx + 1}</td>
+                                            <td class="py-2 px-3 font-sans">
+                                                <div class="font-bold text-white">${j.Name}</div>
+                                                <div class="text-[9px] text-sky-400/80 font-mono">${j.EmployeeId}</div>
+                                            </td>
+                                            <td class="py-2 px-3 text-white/70 text-[10px]">
+                                                <div>${j.Start || '-'}</div>
+                                                <div class="text-[8px] text-white/30">${j.DateStart || ''}</div>
+                                            </td>
+                                            <td class="py-2 px-3 text-white/70 text-[10px]">
+                                                <div>${j.Stop || '-'}</div>
+                                                <div class="text-[8px] text-white/30">${j.DateStop || ''}</div>
+                                            </td>
+                                            <td class="py-2 px-3 text-emerald-400 font-bold text-[10px]">
+                                                ${formatSecToReadable(j.Duration)}
+                                                <span class="text-[8px] opacity-40 font-normal text-white">(${j.Duration}s)</span>
+                                            </td>
+                                            <td class="py-2 px-3 text-right">
+                                                <span class="px-2 py-0.5 rounded text-[8px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase tracking-tighter">
+                                                    Completed
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </details>
+                `;
+            }).join('');
+
+            lucide.createIcons();
+        } catch(err) {
+            console.error(err);
+            container.innerHTML = `<div class="p-6 text-center text-red-400/50 font-mono text-xs">Gagal memuat riwayat JOB RECORD</div>`;
+        }
     }
 
-    window.onOperatorChange = function(empId) {
-        selectedEmployeeId = empId;
-        renderGroupedRoster();
-    };
-
-    window.selectOperatorFromCard = function(empId) {
-        selectedEmployeeId = empId;
-        document.getElementById('operator-select').value = empId;
-        renderGroupedRoster();
-    };
-
-    // --- WORKFLOW TIMER ---
+    // --- WORKFLOW TIMER ENGINE ---
     window.handleStartJob = async function() {
-        if (!selectedEmployeeId) {
-            Swal.fire({ title: 'Pilih Operator', text: 'Pilih personil yang melakukan pekerjaan ini.', icon: 'warning', background: '#151921', color: '#fff' });
-            return;
-        }
-
-        const op = allUnitUsers.find(u => String(u.EmployeeId) === String(selectedEmployeeId));
-        const opName = op ? op.Name : selectedEmployeeId;
-
-        // Prompt Persiapan
         if (secondsElapsed === 0) {
             const { isConfirmed } = await Swal.fire({
                 title: `<span style="font-size:16px; color:#fff;">Perform Order #${orderNo}</span>`,
                 html: `
                     <div style="font-size:12px; color:#94a3b8; text-align:left; display:flex; flex-direction:column; gap:6px;">
-                        <p>Operator: <b style="color:#fff;">${opName}</b> (${selectedEmployeeId})</p>
+                        <p>Operator: <b style="color:#fff;">${currentUser.Name}</b> (${currentUser.EmployeeId})</p>
                         <p>Unit Node: <b style="color:#38bdf8;">${unitCode}</b></p>
                         <hr style="border-color:rgba(255,255,255,0.1); margin:4px 0;">
                         <p style="color:#fff; font-weight:700; font-size:13px;">Are you ready to perform this work?</p>
@@ -254,24 +343,23 @@
                 `,
                 icon: 'question',
                 showCancelButton: true,
-                confirmButtonText: 'Yes, Start Timer',
+                confirmButtonText: 'Yes, Start Work',
                 confirmButtonColor: '#0ea5e9',
                 cancelButtonColor: '#334155',
                 background: '#151921'
             });
 
             if (!isConfirmed) return;
-            const startNow = new Date();
-            startTimeIso = startNow;
-            document.getElementById('stamp-start').innerText = formatTimeClock(startNow);
+
+            dateStartStr = getCurrentDateIso();
+            timeStartStr = getCurrentTimeClock();
+            document.getElementById('stamp-start').innerText = timeStartStr;
         }
 
-        // Aktifkan timer
         isRunning = true;
         document.getElementById('btn-timer-start').disabled = true;
         document.getElementById('btn-timer-pause').disabled = false;
         document.getElementById('btn-timer-stop').disabled = false;
-        document.getElementById('operator-select').disabled = true;
 
         timerInterval = setInterval(() => {
             secondsElapsed++;
@@ -284,6 +372,10 @@
         clearInterval(timerInterval);
         isRunning = false;
 
+        datePauseStr = getCurrentDateIso();
+        timePauseStr = getCurrentTimeClock();
+        document.getElementById('stamp-pause').innerText = timePauseStr;
+
         document.getElementById('btn-timer-start').disabled = false;
         document.getElementById('label-start').innerText = "Resume Job";
         document.getElementById('btn-timer-pause').disabled = true;
@@ -295,62 +387,55 @@
         clearInterval(timerInterval);
         isRunning = false;
 
-        const stopNow = new Date();
-        stopTimeIso = stopNow;
-        document.getElementById('stamp-stop').innerText = formatTimeClock(stopNow);
+        dateStopStr = getCurrentDateIso();
+        timeStopStr = getCurrentTimeClock();
+        document.getElementById('stamp-stop').innerText = timeStopStr;
 
-        const op = allUnitUsers.find(u => String(u.EmployeeId) === String(selectedEmployeeId));
-        const opName = op ? op.Name : selectedEmployeeId;
-
-        const now = new Date();
-        const dateToday = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
-
-        const hrs = Math.floor(secondsElapsed / 3600);
-        const mins = Math.floor((secondsElapsed % 3600) / 60);
-        const secs = secondsElapsed % 60;
-        const readableDuration = `${hrs > 0 ? hrs + 'h ' : ''}${mins}m ${secs}s`;
+        const readableDur = formatSecToReadable(secondsElapsed);
 
         const { isConfirmed } = await Swal.fire({
             title: 'Hentikan & Simpan Record?',
             html: `
                 <div style="font-size:12px; color:#94a3b8; text-align:left; display:flex; flex-direction:column; gap:6px;">
-                    <p>Operator: <b style="color:#fff;">${opName}</b></p>
+                    <p>Operator: <b style="color:#fff;">${currentUser.Name}</b> (${currentUser.EmployeeId})</p>
                     <p>Order No: <b style="color:#38bdf8;">#${orderNo}</b></p>
-                    <p>Total Durasi: <b style="color:#4ade80;">${readableDuration}</b> (${secondsElapsed} detik)</p>
-                    <p class="text-[10px] text-white/40 italic mt-1">Data akan dicatat ke sheet JOB RECORD.</p>
+                    <p>Durasi Kerja: <b style="color:#4ade80;">${readableDur}</b> (${secondsElapsed} detik)</p>
+                    <p class="text-[10px] text-white/40 italic mt-1">Data akan dicatat permanen ke sheet JOB RECORD.</p>
                 </div>
             `,
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonText: 'Stop & Commit to Sheet',
+            confirmButtonText: 'Stop & Commit Record',
             confirmButtonColor: '#ef4444',
             cancelButtonColor: '#334155',
             background: '#151921'
         });
 
         if (!isConfirmed) {
-            // Lanjutkan jika batal stop
             handleStartJob();
             return;
         }
 
-        // 🚀 SIMPAN KE GOOGLE SHEET "JOB RECORD"
-        // Susunan tabel: EmployeeId | Date | Order | Start | Stop | Duration (disimpan detik)
+        // 🚀 SUSUNAN SHEET "JOB RECORD" SESUAI SPESIFIKASI:
+        // EmployeeId | DateStart | DatePause | DateStop | Order | Start | Pause | Stop | Duration
         const payload = {
             tab: 'JOB RECORD',
             action: 'add',
-            EmployeeId: selectedEmployeeId,
-            Date: dateToday,
+            EmployeeId: currentUser.EmployeeId,
+            DateStart: dateStartStr,
+            DatePause: datePauseStr || '',
+            DateStop: dateStopStr,
             Order: String(orderNo),
-            Start: formatTimeClock(startTimeIso),
-            Stop: formatTimeClock(stopTimeIso),
-            Duration: secondsElapsed // Simpan integer detik agar mudah kalkulasi di masa depan
+            Start: timeStartStr,
+            Pause: timePauseStr || '',
+            Stop: timeStopStr,
+            Duration: secondsElapsed // Satuan detik murni untuk kalkulasi masa depan
         };
 
         try {
             Swal.fire({
                 title: 'Saving Job Record...',
-                html: '<div class="text-xs text-white/50">Menyimpan data durasi pengerjaan...</div>',
+                html: '<div class="text-xs text-white/50">Mencatat durasi ke database...</div>',
                 allowOutsideClick: false,
                 background: '#151921',
                 didOpen: () => Swal.showLoading()
@@ -358,33 +443,44 @@
 
             const res = await API.post(payload);
 
-            // 🚀 PERBAIKAN PENGECEKAN RESPON
             if (res && res.status === 'success') {
                 await Swal.fire({
                     icon: 'success',
                     title: 'Work Completed & Saved',
-                    text: `Durasi ${readableDuration} berhasil dicatat pada JOB RECORD.`,
+                    text: `Durasi ${readableDur} berhasil dicatat pada JOB RECORD.`,
                     background: '#151921',
                     color: '#fff',
                     confirmButtonColor: '#0ea5e9'
                 });
-                closePerformJobModal();
+
+                // Hancurkan cache agar tabel data pekerjaan segera terupdate
+                if (API.clearLocalCache) await API.clearLocalCache('JOB_RECORD');
+                await loadJobRecordsHistory();
+
+                // Reset timer status
+                secondsElapsed = 0;
+                document.getElementById('timer-display').innerHTML = formatDurationDisplay(0);
+                document.getElementById('btn-timer-start').disabled = false;
+                document.getElementById('label-start').innerText = "Start Job";
+                document.getElementById('btn-timer-pause').disabled = true;
+                document.getElementById('btn-timer-stop').disabled = true;
             } else {
-                throw new Error(res?.message || 'Gagal menerima konfirmasi dari server');
+                throw new Error(res?.message || 'Gagal menyimpan ke server.');
             }
         } catch(err) {
-            console.error("Save error:", err);
-            Swal.fire({ 
-                title: 'Gagal Menyimpan', 
-                text: err.message || 'Terjadi kesalahan sistem', 
-                icon: 'error', 
-                background: '#151921', 
-                color: '#fff' 
+            console.error(err);
+            Swal.fire({
+                title: 'Gagal Menyimpan',
+                text: err.message || 'Terjadi kesalahan sistem.',
+                icon: 'error',
+                background: '#151921',
+                color: '#fff'
             });
             document.getElementById('btn-timer-start').disabled = false;
         }
     };
 
-    loadPersonnel();
+    // Muat riwayat tabel saat modal dibuka
+    loadJobRecordsHistory();
 })();
 </script>
