@@ -1,1 +1,381 @@
+<div id="performJobModal" class="fixed inset-0 z-[999] flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
+    <div class="bg-[#151921] border border-white/10 rounded-[2.5rem] w-full max-w-4xl max-h-[92vh] shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        
+        <!-- Header -->
+        <div class="p-6 border-b border-white/5 flex justify-between items-start bg-white/[0.02]">
+            <div>
+                <div class="flex items-center gap-2 mb-1">
+                    <span class="bg-sky-500/10 border border-sky-500/20 text-sky-400 font-mono text-[10px] font-bold px-2 py-0.5 rounded-lg uppercase tracking-wider">JOB EXECUTION & TIMER</span>
+                    <span id="pj-node" class="text-xs font-mono font-bold text-white/40"></span>
+                </div>
+                <h2 id="pj-order-title" class="text-2xl font-black text-white font-mono tracking-tight">ORDER #</h2>
+                <p id="pj-desc" class="text-xs text-white/70 mt-1 line-clamp-2 leading-relaxed"></p>
+            </div>
+            <button onclick="closePerformJobModal()" class="p-2 hover:bg-white/10 rounded-full text-white/40 hover:text-white transition">
+                <i data-lucide="x" size="20"></i>
+            </button>
+        </div>
 
+        <!-- Body Scrollable -->
+        <div class="p-6 overflow-y-auto space-y-6 flex-1 text-xs custom-scrollbar">
+            
+            <!-- SECTION 1: TIMER COCKPIT -->
+            <div class="bg-black/40 border border-white/10 rounded-3xl p-6 text-center flex flex-col items-center justify-center relative overflow-hidden">
+                <span class="text-[9px] font-mono uppercase tracking-[0.3em] text-white/40 font-bold mb-1">Work Execution Duration</span>
+                
+                <!-- Display Durasi Format (s min H) -->
+                <div id="timer-display" class="text-5xl md:text-6xl font-black font-mono tracking-wider text-white my-2 tabular-nums">
+                    00<span class="text-xs text-sky-400 font-normal ml-1 mr-2 font-sans">h</span>00<span class="text-xs text-sky-400 font-normal ml-1 mr-2 font-sans">m</span>00<span class="text-xs text-sky-400 font-normal ml-1 font-sans">s</span>
+                </div>
+
+                <div id="timer-timestamp-info" class="text-[10px] font-mono text-white/40 mb-5 flex items-center gap-3">
+                    <span>Start: <b id="stamp-start" class="text-white/80">--:--:--</b></span>
+                    <span>&bull;</span>
+                    <span>Stop: <b id="stamp-stop" class="text-white/80">--:--:--</b></span>
+                </div>
+
+                <!-- Timer Controls -->
+                <div class="flex flex-wrap items-center justify-center gap-3">
+                    <button id="btn-timer-start" onclick="handleStartJob()" class="px-6 py-3 bg-sky-600 hover:bg-sky-500 text-white rounded-2xl font-bold uppercase tracking-wider text-[11px] flex items-center gap-2 shadow-lg shadow-sky-600/20 active:scale-95 transition-all">
+                        <i data-lucide="play" size="14"></i> <span id="label-start">Start Job</span>
+                    </button>
+                    <button id="btn-timer-pause" onclick="handlePauseJob()" disabled class="px-5 py-3 bg-amber-600/20 text-amber-400 border border-amber-500/30 hover:bg-amber-600 hover:text-white rounded-2xl font-bold uppercase tracking-wider text-[11px] flex items-center gap-2 disabled:opacity-20 disabled:cursor-not-allowed transition-all">
+                        <i data-lucide="pause" size="14"></i> Pause
+                    </button>
+                    <button id="btn-timer-stop" onclick="handleStopJob()" disabled class="px-6 py-3 bg-red-600/20 text-red-400 border border-red-500/30 hover:bg-red-600 hover:text-white rounded-2xl font-bold uppercase tracking-wider text-[11px] flex items-center gap-2 disabled:opacity-20 disabled:cursor-not-allowed transition-all">
+                        <i data-lucide="square" size="14"></i> Stop & Record
+                    </button>
+                </div>
+            </div>
+
+            <!-- SECTION 2: ACTIVE OPERATOR ASSIGNMENT -->
+            <div class="bg-white/[0.02] border border-white/5 p-4 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div>
+                    <span class="label-style text-sky-400 mb-0">Active Operator Performer</span>
+                    <p class="text-xs text-white/50">Pilih ID dan nama personil yang bertanggung jawab mencatat durasi kerja ini.</p>
+                </div>
+                <div class="w-full md:w-72">
+                    <select id="operator-select" class="input-field text-xs cursor-pointer" onchange="onOperatorChange(this.value)">
+                        <!-- Injected via JS -->
+                    </select>
+                </div>
+            </div>
+
+            <!-- SECTION 3: WHO IS HANDLING THIS ORDER (GROUPED BY CLASS) -->
+            <div class="space-y-3">
+                <div class="flex justify-between items-center px-1">
+                    <span class="text-[10px] font-black uppercase tracking-widest text-sky-400">Who is Handling this order (Node Personnel Roster)</span>
+                    <span id="pj-personnel-count" class="text-[9px] font-mono text-white/40"></span>
+                </div>
+
+                <div id="class-roster-container" class="space-y-4">
+                    <!-- Dynamic grouped cards injected here -->
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    lucide.createIcons();
+    const jobContext = window.activePerformJob || {};
+    const unitCode = jobContext.unitCode || 'TCP-9';
+    const orderNo = jobContext.orderNo || '-';
+
+    document.getElementById('pj-node').innerText = `${unitCode} // A/C: ${jobContext.acReg || '-'}`;
+    document.getElementById('pj-order-title').innerText = `ORDER #${orderNo}`;
+    document.getElementById('pj-desc').innerText = jobContext.description || 'No description provided';
+
+    let timerInterval = null;
+    let secondsElapsed = 0;
+    let isRunning = false;
+    let startTimeIso = null;
+    let stopTimeIso = null;
+
+    let allUnitUsers = [];
+    let selectedEmployeeId = null;
+
+    window.closePerformJobModal = function() {
+        if (isRunning) {
+            Swal.fire({
+                title: 'Timer Masih Berjalan!',
+                text: 'Pencatatan waktu sedang aktif. Pause atau Stop sebelum menutup modul.',
+                icon: 'warning',
+                background: '#151921',
+                color: '#fff',
+                confirmButtonColor: '#0ea5e9'
+            });
+            return;
+        }
+        clearInterval(timerInterval);
+        const modal = document.getElementById('performJobModal');
+        if (modal) modal.remove();
+    };
+
+    // Format durasi (s min H)
+    function formatDurationDisplay(totalSeconds) {
+        const hrs = Math.floor(totalSeconds / 3600);
+        const mins = Math.floor((totalSeconds % 3600) / 60);
+        const secs = totalSeconds % 60;
+        
+        const hStr = String(hrs).padStart(2, '0');
+        const mStr = String(mins).padStart(2, '0');
+        const sStr = String(secs).padStart(2, '0');
+
+        return `${hStr}<span class="text-xs text-sky-400 font-normal ml-1 mr-2 font-sans">h</span>` +
+               `${mStr}<span class="text-xs text-sky-400 font-normal ml-1 mr-2 font-sans">m</span>` +
+               `${sStr}<span class="text-xs text-sky-400 font-normal ml-1 font-sans">s</span>`;
+    }
+
+    function formatTimeClock(dateObj) {
+        if (!dateObj) return '--:--:--';
+        return `${String(dateObj.getHours()).padStart(2,'0')}:${String(dateObj.getMinutes()).padStart(2,'0')}:${String(dateObj.getSeconds()).padStart(2,'0')}`;
+    }
+
+    // Dynamic color hash
+    const PALETTES = [
+        { bg: 'bg-sky-500/10', border: 'border-sky-500/30', text: 'text-sky-400', badge: 'bg-sky-500/20 text-sky-300' },
+        { bg: 'bg-purple-500/10', border: 'border-purple-500/30', text: 'text-purple-400', badge: 'bg-purple-500/20 text-purple-300' },
+        { bg: 'bg-emerald-500/10', border: 'border-emerald-500/30', text: 'text-emerald-400', badge: 'bg-emerald-500/20 text-emerald-300' },
+        { bg: 'bg-amber-500/10', border: 'border-amber-500/30', text: 'text-amber-400', badge: 'bg-amber-500/20 text-amber-300' },
+        { bg: 'bg-rose-500/10', border: 'border-rose-500/30', text: 'text-rose-400', badge: 'bg-rose-500/20 text-rose-300' },
+        { bg: 'bg-indigo-500/10', border: 'border-indigo-500/30', text: 'text-indigo-400', badge: 'bg-indigo-500/20 text-indigo-300' }
+    ];
+
+    function getDynamicColor(str) {
+        let hash = 0;
+        const text = String(str || 'Class');
+        for (let i = 0; i < text.length; i++) hash = text.charCodeAt(i) + ((hash << 5) - hash);
+        return PALETTES[Math.abs(hash) % PALETTES.length];
+    }
+
+    // Load Personnel from USER table
+    async function loadPersonnel() {
+        try {
+            const res = await API.get('USER');
+            const users = res.data || [];
+            allUnitUsers = users.filter(u => String(u.UnitCode || '').trim().toLowerCase() === unitCode.toLowerCase());
+
+            document.getElementById('pj-personnel-count').innerText = `${allUnitUsers.length} Personnel in Node`;
+
+            // Operator dropdown
+            const opSelect = document.getElementById('operator-select');
+            opSelect.innerHTML = allUnitUsers.map(u => 
+                `<option value="${u.EmployeeId}">${u.Name} (${u.EmployeeId} &bull; ${u.Class || 'Staff'})</option>`
+            ).join('');
+
+            if (allUnitUsers.length > 0) {
+                selectedEmployeeId = allUnitUsers[0].EmployeeId;
+            }
+
+            renderGroupedRoster();
+        } catch(e) {
+            console.error("Failed to load users:", e);
+        }
+    }
+
+    // Render "Who is Handling this order" grouped by Class
+    function renderGroupedRoster() {
+        const container = document.getElementById('class-roster-container');
+        const grouped = allUnitUsers.reduce((acc, u) => {
+            const cls = (u.Class || 'Unassigned').trim();
+            if (!acc[cls]) acc[cls] = [];
+            acc[cls].push(u);
+            return acc;
+        }, {});
+
+        if (Object.keys(grouped).length === 0) {
+            container.innerHTML = `<div class="p-6 text-center text-white/30 font-mono italic">No personnel registered under ${unitCode}</div>`;
+            return;
+        }
+
+        container.innerHTML = Object.entries(grouped).map(([clsName, members]) => {
+            const c = getDynamicColor(clsName);
+            return `
+                <div class="bg-black/30 border border-white/5 rounded-2xl p-4 space-y-2.5">
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold text-xs uppercase tracking-wider ${c.text}">${clsName}</span>
+                        <span class="${c.badge} font-mono text-[10px] font-bold px-2 py-0.5 rounded-lg">${members.length} Personnel</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                        ${members.map(m => `
+                            <div class="p-2.5 rounded-xl border border-white/5 bg-white/[0.02] flex items-center justify-between gap-2 hover:bg-white/[0.05] transition cursor-pointer"
+                                 onclick="selectOperatorFromCard('${m.EmployeeId}')">
+                                <div class="truncate">
+                                    <div class="font-bold text-white text-[11px] truncate">${m.Name}</div>
+                                    <div class="text-[9px] font-mono text-sky-400/80">${m.EmployeeId} &bull; ${m.JobTitle || '-'}</div>
+                                </div>
+                                <span class="text-[8px] font-mono ${selectedEmployeeId === m.EmployeeId ? 'bg-emerald-500 text-white font-bold' : 'text-white/20'} px-1.5 py-0.5 rounded uppercase">
+                                    ${selectedEmployeeId === m.EmployeeId ? 'Active' : 'Pick'}
+                                </span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    window.onOperatorChange = function(empId) {
+        selectedEmployeeId = empId;
+        renderGroupedRoster();
+    };
+
+    window.selectOperatorFromCard = function(empId) {
+        selectedEmployeeId = empId;
+        document.getElementById('operator-select').value = empId;
+        renderGroupedRoster();
+    };
+
+    // --- WORKFLOW TIMER ---
+    window.handleStartJob = async function() {
+        if (!selectedEmployeeId) {
+            Swal.fire({ title: 'Pilih Operator', text: 'Pilih personil yang melakukan pekerjaan ini.', icon: 'warning', background: '#151921', color: '#fff' });
+            return;
+        }
+
+        const op = allUnitUsers.find(u => String(u.EmployeeId) === String(selectedEmployeeId));
+        const opName = op ? op.Name : selectedEmployeeId;
+
+        // Prompt Persiapan
+        if (secondsElapsed === 0) {
+            const { isConfirmed } = await Swal.fire({
+                title: `<span style="font-size:16px; color:#fff;">Perform Order #${orderNo}</span>`,
+                html: `
+                    <div style="font-size:12px; color:#94a3b8; text-align:left; display:flex; flex-direction:column; gap:6px;">
+                        <p>Operator: <b style="color:#fff;">${opName}</b> (${selectedEmployeeId})</p>
+                        <p>Unit Node: <b style="color:#38bdf8;">${unitCode}</b></p>
+                        <hr style="border-color:rgba(255,255,255,0.1); margin:4px 0;">
+                        <p style="color:#fff; font-weight:700; font-size:13px;">Are you ready to perform this work?</p>
+                    </div>
+                `,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, Start Timer',
+                confirmButtonColor: '#0ea5e9',
+                cancelButtonColor: '#334155',
+                background: '#151921'
+            });
+
+            if (!isConfirmed) return;
+            const startNow = new Date();
+            startTimeIso = startNow;
+            document.getElementById('stamp-start').innerText = formatTimeClock(startNow);
+        }
+
+        // Aktifkan timer
+        isRunning = true;
+        document.getElementById('btn-timer-start').disabled = true;
+        document.getElementById('btn-timer-pause').disabled = false;
+        document.getElementById('btn-timer-stop').disabled = false;
+        document.getElementById('operator-select').disabled = true;
+
+        timerInterval = setInterval(() => {
+            secondsElapsed++;
+            document.getElementById('timer-display').innerHTML = formatDurationDisplay(secondsElapsed);
+        }, 1000);
+    };
+
+    window.handlePauseJob = function() {
+        if (!isRunning) return;
+        clearInterval(timerInterval);
+        isRunning = false;
+
+        document.getElementById('btn-timer-start').disabled = false;
+        document.getElementById('label-start').innerText = "Resume Job";
+        document.getElementById('btn-timer-pause').disabled = true;
+    };
+
+    window.handleStopJob = async function() {
+        if (secondsElapsed === 0) return;
+
+        clearInterval(timerInterval);
+        isRunning = false;
+
+        const stopNow = new Date();
+        stopTimeIso = stopNow;
+        document.getElementById('stamp-stop').innerText = formatTimeClock(stopNow);
+
+        const op = allUnitUsers.find(u => String(u.EmployeeId) === String(selectedEmployeeId));
+        const opName = op ? op.Name : selectedEmployeeId;
+
+        const now = new Date();
+        const dateToday = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+
+        const hrs = Math.floor(secondsElapsed / 3600);
+        const mins = Math.floor((secondsElapsed % 3600) / 60);
+        const secs = secondsElapsed % 60;
+        const readableDuration = `${hrs > 0 ? hrs + 'h ' : ''}${mins}m ${secs}s`;
+
+        const { isConfirmed } = await Swal.fire({
+            title: 'Hentikan & Simpan Record?',
+            html: `
+                <div style="font-size:12px; color:#94a3b8; text-align:left; display:flex; flex-direction:column; gap:6px;">
+                    <p>Operator: <b style="color:#fff;">${opName}</b></p>
+                    <p>Order No: <b style="color:#38bdf8;">#${orderNo}</b></p>
+                    <p>Total Durasi: <b style="color:#4ade80;">${readableDuration}</b> (${secondsElapsed} detik)</p>
+                    <p class="text-[10px] text-white/40 italic mt-1">Data akan dicatat ke sheet JOB RECORD.</p>
+                </div>
+            `,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Stop & Commit to Sheet',
+            confirmButtonColor: '#ef4444',
+            cancelButtonColor: '#334155',
+            background: '#151921'
+        });
+
+        if (!isConfirmed) {
+            // Lanjutkan jika batal stop
+            handleStartJob();
+            return;
+        }
+
+        // 🚀 SIMPAN KE GOOGLE SHEET "JOB RECORD"
+        // Susunan tabel: EmployeeId | Date | Order | Start | Stop | Duration (disimpan detik)
+        const payload = {
+            tab: 'JOB RECORD',
+            action: 'add',
+            EmployeeId: selectedEmployeeId,
+            Date: dateToday,
+            Order: String(orderNo),
+            Start: formatTimeClock(startTimeIso),
+            Stop: formatTimeClock(stopTimeIso),
+            Duration: secondsElapsed // Simpan integer detik agar mudah kalkulasi di masa depan
+        };
+
+        try {
+            Swal.fire({
+                title: 'Saving Job Record...',
+                html: '<div class="text-xs text-white/50">Menyimpan data durasi pengerjaan...</div>',
+                allowOutsideClick: false,
+                background: '#151921',
+                didOpen: () => Swal.showLoading()
+            });
+
+            const res = await API.post(payload);
+            if (res.status === 'success') {
+                await Swal.fire({
+                    icon: 'success',
+                    title: 'Work Completed & Saved',
+                    text: `Durasi ${readableDuration} berhasil dicatat pada JOB RECORD.`,
+                    background: '#151921',
+                    color: '#fff',
+                    confirmButtonColor: '#0ea5e9'
+                });
+                closePerformJobModal();
+            } else {
+                throw new Error(res.message);
+            }
+        } catch(err) {
+            Swal.fire({ title: 'Gagal Menyimpan', text: err.message, icon: 'error', background: '#151921', color: '#fff' });
+            document.getElementById('btn-timer-start').disabled = false;
+        }
+    };
+
+    loadPersonnel();
+})();
+</script>
