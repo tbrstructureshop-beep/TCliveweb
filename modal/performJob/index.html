@@ -671,27 +671,33 @@
             return;
         }
 
-        / 🚀 1. UPDATE SUPABASE KHUSUS TCR-1 S/D TCR-5 DENGAN VALIDASI ID
-        if (isTcrUnit) {
-            // Gunakan client aktif dari parent atau instansiasi langsung
-            const client = sbClient || (window.parent && window.parent.supabaseClient);
-            const mapInfo = SUPABASE_MAP[unitCode];
+        try {
+            Swal.fire({
+                title: 'Saving Final Record...',
+                html: '<div class="text-xs text-white/50">Menyimpan durasi ke Sheet & memperbarui status...</div>',
+                allowOutsideClick: false,
+                background: '#151921',
+                didOpen: () => Swal.showLoading()
+            });
 
-            if (client && mapInfo) {
-                const sbPayload = {};
-                sbPayload[mapInfo.colStatus] = formResult.status.toUpperCase();
-                sbPayload[mapInfo.remarkKey] = formResult.remark;
+            // 🚀 1. UPDATE SUPABASE KHUSUS TCR-1 S/D TCR-5 DENGAN VALIDASI ID
+            if (isTcrUnit) {
+                const client = sbClient || (window.parent && window.parent.supabaseClient);
+                const mapInfo = SUPABASE_MAP[unitCode];
 
-                if (formResult.status.toUpperCase() === 'CLOSED') {
-                    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-                    const d = new Date();
-                    sbPayload[mapInfo.colDate] = `${String(d.getDate()).padStart(2,'0')}-${months[d.getMonth()]}-${d.getFullYear()}`;
-                } else {
-                    sbPayload[mapInfo.colDate] = null;
-                }
+                if (client && mapInfo) {
+                    const sbPayload = {};
+                    sbPayload[mapInfo.colStatus] = formResult.status.toUpperCase();
+                    sbPayload[mapInfo.remarkKey] = formResult.remark;
 
-                try {
-                    // Update menggunakan ID unik primary key jika ada, atau fallback ke order (angka & teks)
+                    if (formResult.status.toUpperCase() === 'CLOSED') {
+                        const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+                        const d = new Date();
+                        sbPayload[mapInfo.colDate] = `${String(d.getDate()).padStart(2,'0')}-${months[d.getMonth()]}-${d.getFullYear()}`;
+                    } else {
+                        sbPayload[mapInfo.colDate] = null;
+                    }
+
                     let query = client.from('mntp_tcr').update(sbPayload);
                     if (jobContext.supabaseId) {
                         query = query.eq('id', jobContext.supabaseId);
@@ -701,67 +707,84 @@
                     }
 
                     const { error: sbErr } = await query;
-                    if (sbErr) throw sbErr;
+                    if (sbErr) {
+                        console.error("Supabase sync failed:", sbErr);
+                        throw new Error("Gagal update data di Supabase: " + (sbErr.message || sbErr));
+                    }
                     console.log("✔ Supabase status & remark updated successfully!");
-                } catch(sbErr) {
-                    console.error("Supabase sync failed:", sbErr);
-                    throw new Error("Gagal update data di Supabase: " + (sbErr.message || sbErr));
                 }
+            } else if (unitCode === 'TCP-9') {
+                // Khusus TCP-9 update status_job & remark di Supabase
+                const client = sbClient || (window.parent && window.parent.supabaseClient);
+                if (client) {
+                    let query = client.from('mntp_tcr').update({
+                        status_job: formResult.status.toUpperCase(),
+                        remark: formResult.remark
+                    });
+                    if (jobContext.supabaseId) {
+                        query = query.eq('id', jobContext.supabaseId);
+                    } else {
+                        const numericOrder = isNaN(orderNo) ? orderNo : Number(orderNo);
+                        query = query.eq('order', numericOrder);
+                    }
+                    await query;
+                }
+            } else {
+                // Unit Google Sheet (misal TCP-10)
+                await API.post({
+                    tab: 'Operational Detail',
+                    action: 'update',
+                    primaryId: orderNo,
+                    Status: formResult.status,
+                    Remark: formResult.remark,
+                    Remarks: formResult.remark
+                });
             }
-        }
 
-        // 🚀 2. REKAM FINAL KE GOOGLE SHEET JOB RECORD
-        const payload = {
-            tab: 'JOB RECORD',
-            action: 'update',
-            primaryId: `${currentUser.EmployeeId}|${dateStartStr}|${timeStartStr}|${orderNo}`,
-            EmployeeId: currentUser.EmployeeId,
-            DateStart: dateStartStr,
-            DatePause: datePauseStr || '',
-            DateStop: dateStopStr,
-            Order: String(orderNo),
-            Start: timeStartStr,
-            Pause: timePauseStr || '',
-            Stop: timeStopStr,
-            Duration: secondsElapsed // Integer detik murni
-        };
-
-        try {
-            Swal.fire({
-                title: 'Saving Final Record...',
-                html: '<div class="text-xs text-white/50">Mencatat durasi & status ke database...</div>',
-                allowOutsideClick: false,
-                background: '#151921',
-                didOpen: () => Swal.showLoading()
-            });
+            // 🚀 2. REKAM FINAL KE GOOGLE SHEET JOB RECORD
+            const payload = {
+                tab: 'JOB RECORD',
+                action: 'update',
+                primaryId: `${currentUser.EmployeeId}|${dateStartStr}|${timeStartStr}|${orderNo}`,
+                EmployeeId: currentUser.EmployeeId,
+                DateStart: dateStartStr,
+                DatePause: datePauseStr || '',
+                DateStop: dateStopStr,
+                Order: String(orderNo),
+                Start: timeStartStr,
+                Pause: timePauseStr || '',
+                Stop: timeStopStr,
+                Duration: secondsElapsed // Integer detik murni
+            };
 
             const res = await API.post(payload);
-
-            if (res && res.status === 'success') {
-                await Swal.fire({
-                    icon: 'success',
-                    title: 'Work Completed & Saved',
-                    text: `Durasi ${readableDur} berhasil dicatat pada JOB RECORD.`,
-                    background: '#151921',
-                    color: '#fff',
-                    confirmButtonColor: '#0ea5e9'
-                });
-
-                // Reset timer & status
-                isExistingSession = false;
-                secondsElapsed = 0;
-                document.getElementById('timer-display').innerHTML = formatDurationDisplay(0);
-                document.getElementById('btn-timer-start').disabled = false;
-                document.getElementById('label-start').innerText = "Start Job";
-                document.getElementById('btn-timer-pause').disabled = true;
-                document.getElementById('btn-timer-stop').disabled = true;
-
-                await loadJobRecordsHistory();
-            } else {
-                throw new Error(res?.message || 'Gagal menyimpan ke server.');
+            if (!res || res.status !== 'success') {
+                throw new Error(res?.message || 'Gagal menyimpan ke sheet JOB RECORD.');
             }
+
+            // 🚀 3. SELESAI, TUTUP MODAL & REFRESH DASHBOARD UTAMA
+            await Swal.fire({
+                icon: 'success',
+                title: 'Work Completed & Saved',
+                text: `Durasi ${readableDur} tercatat & status diubah ke ${formResult.status}.`,
+                background: '#151921',
+                color: '#fff',
+                confirmButtonColor: '#0ea5e9'
+            });
+
+            // Tutup modal
+            isExistingSession = false;
+            secondsElapsed = 0;
+            const modal = document.getElementById('performJobModal');
+            if (modal) modal.remove();
+
+            // Refresh data dan tabel di halaman utama Operational Detail secara live
+            if (typeof window.init === 'function') {
+                window.init();
+            }
+
         } catch(err) {
-            console.error(err);
+            console.error("Stop job error:", err);
             Swal.fire({
                 title: 'Gagal Menyimpan',
                 text: err.message || 'Terjadi kesalahan sistem.',
@@ -769,7 +792,7 @@
                 background: '#151921',
                 color: '#fff'
             });
-            document.getElementById('btn-timer-start').disabled = false;
+            startTimerTicker(); // Lanjutkan timer jika gagal simpan
         }
     };
 
