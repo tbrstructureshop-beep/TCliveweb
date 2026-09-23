@@ -671,10 +671,13 @@
             return;
         }
 
-        // 🚀 1. UPDATE SUPABASE KHUSUS TCR-1 S/D TCR-5
-        if (isTcrUnit && sbClient) {
+        / 🚀 1. UPDATE SUPABASE KHUSUS TCR-1 S/D TCR-5 DENGAN VALIDASI ID
+        if (isTcrUnit) {
+            // Gunakan client aktif dari parent atau instansiasi langsung
+            const client = sbClient || (window.parent && window.parent.supabaseClient);
             const mapInfo = SUPABASE_MAP[unitCode];
-            if (mapInfo) {
+
+            if (client && mapInfo) {
                 const sbPayload = {};
                 sbPayload[mapInfo.colStatus] = formResult.status.toUpperCase();
                 sbPayload[mapInfo.remarkKey] = formResult.remark;
@@ -688,9 +691,21 @@
                 }
 
                 try {
-                    await sbClient.from('mntp_tcr').update(sbPayload).eq('order', orderNo);
+                    // Update menggunakan ID unik primary key jika ada, atau fallback ke order (angka & teks)
+                    let query = client.from('mntp_tcr').update(sbPayload);
+                    if (jobContext.supabaseId) {
+                        query = query.eq('id', jobContext.supabaseId);
+                    } else {
+                        const numericOrder = isNaN(orderNo) ? orderNo : Number(orderNo);
+                        query = query.eq('order', numericOrder);
+                    }
+
+                    const { error: sbErr } = await query;
+                    if (sbErr) throw sbErr;
+                    console.log("✔ Supabase status & remark updated successfully!");
                 } catch(sbErr) {
                     console.error("Supabase sync failed:", sbErr);
+                    throw new Error("Gagal update data di Supabase: " + (sbErr.message || sbErr));
                 }
             }
         }
