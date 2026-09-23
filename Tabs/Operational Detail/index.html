@@ -158,6 +158,9 @@
     <!-- Penampung Modal HoB Eksternal -->
     <div id="hobModalPlaceholder"></div>
 
+    <!-- Penampung Modal Perform Job -->
+    <div id="performJobModalPlaceholder"></div>
+
     <script>
         lucide.createIcons();
         const loader = document.getElementById('local-loader');
@@ -461,10 +464,10 @@
                                         </td>
                                         <td class="text-white/70">${item.Remark}</td>
                                         <td class="text-right">
-                                            <div class="flex gap-4 justify-end opacity-0 group-hover:opacity-100 transition-all">
-                                                <button onclick="editOrder('${item.OrderNo}')" class="text-sky-500/50 hover:text-sky-400"><i data-lucide="edit-3" size="14"></i></button>
-                                                <button onclick="deleteOrder('${item.OrderNo}')" class="text-red-500/30 hover:text-red-500"><i data-lucide="trash-2" size="14"></i></button>
-                                            </div>
+                                            <button onclick="openRowActionMenu('${item.OrderNo}')" 
+                                                class="p-1.5 hover:bg-white/10 text-white/50 hover:text-white rounded-lg transition" title="Actions">
+                                                <i data-lucide="more-vertical" size="15"></i>
+                                            </button>
                                         </td>
                                     </tr>`).join('')}
                                 ${paginatedItems.length === 0 ? `<tr><td colspan="${sMap ? 7 : 6}" class="text-center py-20 opacity-20 italic tracking-widest font-mono">NODE_EMPTY // NO_ACTIVE_TASKS</td></tr>` : ''}
@@ -1097,6 +1100,107 @@
             searchQuery = val;
             currentPage = 1; // Reset ke halaman 1 saat search
             renderCards();
+        }
+
+        // 🚀 MENU AKSI 3 TITIK (PERFORM JOB, EDIT, DELETE)
+        async function openRowActionMenu(orderNo) {
+            const { value: action } = await Swal.fire({
+                title: `<span style="font-size:15px; color:#fff;">Order Action &bull; ${orderNo}</span>`,
+                html: `
+                    <div style="display: flex; flex-direction: column; gap: 8px; font-size: 11px; text-align: left; padding: 4px;">
+                        <button id="btn-act-perform" type="button" class="w-full py-3 px-4 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold flex items-center justify-between transition">
+                            <span class="flex items-center gap-2"><i data-lucide="play-circle" style="width:16px; height:16px;"></i> Perform this Job</span>
+                            <span style="font-size:9px; opacity:0.8;">TRACK TIME</span>
+                        </button>
+                        <button id="btn-act-edit" type="button" class="w-full py-2.5 px-4 rounded-xl bg-white/5 hover:bg-white/10 text-white font-semibold flex items-center gap-2 transition">
+                            <i data-lucide="edit-3" style="width:15px; height:15px;"></i> Edit Order Details
+                        </button>
+                        <button id="btn-act-delete" type="button" class="w-full py-2.5 px-4 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 font-semibold flex items-center gap-2 transition">
+                            <i data-lucide="trash-2" style="width:15px; height:15px;"></i> Remove from Dashboard
+                        </button>
+                    </div>
+                `,
+                background: '#151921',
+                showConfirmButton: false,
+                showCancelButton: true,
+                cancelButtonText: 'Dismiss',
+                cancelButtonColor: '#334155',
+                didOpen: () => {
+                    lucide.createIcons();
+                    document.getElementById('btn-act-perform').onclick = () => {
+                        Swal.close();
+                        openPerformJobModal(orderNo);
+                    };
+                    document.getElementById('btn-act-edit').onclick = () => {
+                        Swal.close();
+                        editOrder(orderNo);
+                    };
+                    document.getElementById('btn-act-delete').onclick = () => {
+                        Swal.close();
+                        deleteOrder(orderNo);
+                    };
+                }
+            });
+        }
+
+        // 🚀 PEMANGGIL MODAL PERFORM JOB
+        async function openPerformJobModal(orderNo) {
+            const sMap = SUPABASE_UNITS[activeUnit];
+            let itemData = null;
+
+            if (sMap) {
+                const raw = supabaseData.find(d => String(d.order) === String(orderNo));
+                if (raw) {
+                    itemData = {
+                        orderNo: raw.order,
+                        acReg: raw.ac_reg || '-',
+                        description: raw.description || '-',
+                        unitCode: activeUnit
+                    };
+                }
+            } else {
+                const raw = rawOpData.find(d => String(d.OrderNo) === String(orderNo));
+                if (raw) {
+                    itemData = {
+                        orderNo: raw.OrderNo,
+                        acReg: raw.ACReg || '-',
+                        description: raw.Description || '-',
+                        unitCode: activeUnit
+                    };
+                }
+            }
+
+            if (!itemData) {
+                Swal.fire('Error', 'Detail order tidak ditemukan.', 'error');
+                return;
+            }
+
+            // Simpan konteks order aktif ke global window
+            window.activePerformJob = itemData;
+
+            const placeholder = document.getElementById('performJobModalPlaceholder');
+            if (!placeholder) return;
+            placeholder.innerHTML = '';
+            loader.style.display = 'flex';
+
+            try {
+                const res = await fetch('../../modal/performJob/index.html');
+                if (!res.ok) throw new Error('File ../../modal/performJob/index.html tidak ditemukan.');
+                const html = await res.text();
+                placeholder.innerHTML = html;
+
+                const scripts = placeholder.querySelectorAll('script');
+                scripts.forEach(oldScript => {
+                    const newScript = document.createElement('script');
+                    newScript.textContent = oldScript.textContent;
+                    document.body.appendChild(newScript);
+                });
+                lucide.createIcons();
+            } catch (err) {
+                Swal.fire({ title: 'Gagal Memuat Modul', text: err.message, icon: 'error', background: '#151921', color: '#fff' });
+            } finally {
+                loader.style.display = 'none';
+            }
         }
 
         init();
