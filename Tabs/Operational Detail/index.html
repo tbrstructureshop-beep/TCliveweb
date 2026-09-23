@@ -1143,7 +1143,7 @@
             });
         }
 
-        // 🚀 PEMANGGIL MODAL PERFORM JOB
+        // 🚀 PEMANGGIL MODAL PERFORM JOB (PASTIKAN MEMBAWA PRIMARY KEY ID SUPABASE)
         async function openPerformJobModal(orderNo) {
             const sMap = SUPABASE_UNITS[activeUnit];
             let itemData = null;
@@ -1155,7 +1155,8 @@
                         orderNo: raw.order,
                         acReg: raw.ac_reg || '-',
                         description: raw.description || '-',
-                        unitCode: activeUnit
+                        unitCode: activeUnit,
+                        supabaseId: raw.id // 👈 WAJIB: Bawa ID unik Supabase agar query update tepat sasaran
                     };
                 }
             } else {
@@ -1165,7 +1166,8 @@
                         orderNo: raw.OrderNo,
                         acReg: raw.ACReg || '-',
                         description: raw.Description || '-',
-                        unitCode: activeUnit
+                        unitCode: activeUnit,
+                        supabaseId: null
                     };
                 }
             }
@@ -1175,7 +1177,6 @@
                 return;
             }
 
-            // Simpan konteks order aktif ke global window
             window.activePerformJob = itemData;
 
             const placeholder = document.getElementById('performJobModalPlaceholder');
