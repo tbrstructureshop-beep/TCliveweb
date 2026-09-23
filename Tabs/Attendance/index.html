@@ -46,6 +46,10 @@
         .master-table td:first-child { border-left: 1px solid var(--border); border-top-left-radius: 14px; border-bottom-left-radius: 14px; }
         .master-table td:last-child { border-right: 1px solid var(--border); border-top-right-radius: 14px; border-bottom-right-radius: 14px; }
 
+        /* Accordion Styling Clean */
+        details > summary { list-style: none; outline: none; }
+        details > summary::-webkit-details-marker { display: none; }
+
         .input-field { width: 100%; background: var(--input-bg) !important; border: 1px solid var(--border) !important; color: var(--text-bold) !important; border-radius: 0.75rem; padding: 0.75rem; font-size: 0.875rem; outline: none; }
         .label-style { text-transform: uppercase; font-size: 9px; font-weight: 800; opacity: 0.4; margin-bottom: 0.25rem; display: block; letter-spacing: 0.08em; }
 
@@ -208,7 +212,7 @@
 
         function switchUnit(uCode) {
             activeUnit = uCode;
-            activeShiftCat = null; // reset shift saat ganti unit
+            activeShiftCat = null; 
             document.querySelectorAll('.unit-tab').forEach(t => t.classList.toggle('active', t.innerText === uCode));
             renderMainDashboard();
         }
@@ -230,29 +234,43 @@
             const unitDesc = unitInfo.UnitDesc || 'Unit Description';
             const unitLeader = unitInfo.UnitLeader || 'Department Head';
 
-            // 2. Ambil Shift-Shift Terdaftar untuk Unit ini
+            // 2. Ambil Shift Terdaftar untuk Unit ini
             const unitShifts = allShifts.filter(s => String(s.UnitCode || '').trim().toLowerCase() === activeUnit.toLowerCase());
             
-            // Tentukan shift aktif
             if (!activeShiftCat && unitShifts.length > 0) {
                 activeShiftCat = unitShifts[0].ShiftCategory;
             }
             const currentShift = unitShifts.find(s => s.ShiftCategory === activeShiftCat) || unitShifts[0] || { ShiftCategory: 'Regular', Crew: '' };
             const currentCrew = currentShift.Crew ? String(currentShift.Crew).trim() : '';
 
-            // 3. Filter Anggota User Sesuai Unit & Crew Shift Tersebut
+            // 3. Filter Semua User Milik Unit Aktif (Untuk Summary Class & Job Title)
+            const unitTotalUsers = allUsers.filter(u => 
+                String(u.UnitCode || '').trim().toLowerCase() === activeUnit.toLowerCase()
+            );
+
+            // Perhitungan Summary Class & Job Title
+            const classCounts = {};
+            const jobCounts = {};
+            unitTotalUsers.forEach(u => {
+                const c = (u.Class || 'Employee').trim();
+                classCounts[c] = (classCounts[c] || 0) + 1;
+
+                const j = (u.JobTitle || u['Job Title'] || 'General Technical').trim();
+                jobCounts[j] = (jobCounts[j] || 0) + 1;
+            });
+
+            // 4. Filter Anggota User Sesuai Shift & Crew Terpilih
             const crewUsers = allUsers.filter(u => 
                 String(u.UnitCode || '').trim().toLowerCase() === activeUnit.toLowerCase() &&
                 (!currentCrew || String(u.Crew || '').trim().toLowerCase() === currentCrew.toLowerCase())
             );
 
-            // 4. Hitung Statistik Real Presensi Hari Ini
+            // 5. Hitung Statistik Real Presensi Hari Ini
             let attendCount = 0;
             let leaveCount = 0;
             const leaveBreakdown = {};
 
             const enrichedMembers = crewUsers.map(u => {
-                // Cari record presensi tanggal hari ini
                 const attRec = allAttendanceRecords.find(r => 
                     String(r.EmployeeId).trim() === String(u.EmployeeId).trim() && 
                     String(r.Date).trim() === todayIso
@@ -281,7 +299,7 @@
             const leavePct = totalMembers > 0 ? ((leaveCount / totalMembers) * 100).toFixed(0) : 0;
             const availPct = totalMembers > 0 ? (((attendCount) / totalMembers) * 100).toFixed(1) : '0.0';
 
-            // 5. Ambil Log Operasional (Utilization, Highlight, Inspector, Overtime)
+            // 6. Ambil Log Operasional
             const opsLog = opsDataList.find(o => 
                 o.UnitCode === activeUnit && 
                 (!activeShiftCat || o.ShiftCategory === activeShiftCat)
@@ -319,7 +337,7 @@
                     </div>
 
                     <!-- SUMMARY CARDS: TOTAL CREW, AVAILABILITY, ATTEND %, LEAVE % -->
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
                         <div class="stat-box">
                             <span class="stat-val text-white">${totalMembers}</span>
                             <span class="stat-lab">Total Crew (${currentCrew || 'All'})</span>
@@ -340,7 +358,7 @@
 
                     <!-- DYNAMIC LEAVE BREAKDOWN PILLS -->
                     ${leaveCount > 0 ? `
-                        <div class="flex flex-wrap items-center gap-2 mb-6 p-3 bg-amber-500/5 border border-amber-500/10 rounded-2xl">
+                        <div class="flex flex-wrap items-center gap-2 mb-5 p-3 bg-amber-500/5 border border-amber-500/10 rounded-2xl">
                             <span class="text-[9px] font-bold uppercase text-amber-400 tracking-wider">Leave Breakdown:</span>
                             ${Object.entries(leaveBreakdown).map(([lType, lCount]) => `
                                 <span class="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-amber-500/10 text-amber-300 border border-amber-500/20">
@@ -350,12 +368,55 @@
                         </div>
                     ` : ''}
 
-                    <!-- DETAIL ABSENSI HARI INI (TABLE) -->
-                    <div class="mb-8">
-                        <div class="flex justify-between items-center mb-3">
-                            <span class="text-[10px] font-black uppercase tracking-widest text-sky-400">Detail Absensi Hari Ini (${activeUnit} - ${currentCrew || 'All Crew'})</span>
-                            <span class="text-[9px] font-mono text-white/40">${enrichedMembers.length} Members Listed</span>
+                    <!-- 🚀 SUMMARY ROSTER: CLASS & JOB TITLE UNTUK AKTIF UNIT -->
+                    <details class="group mb-6 bg-white/[0.02] border border-white/5 rounded-2xl p-4 transition-all">
+                        <summary class="flex justify-between items-center cursor-pointer select-none">
+                            <div class="flex items-center gap-2">
+                                <i data-lucide="chevron-down" class="w-4 h-4 text-sky-400 group-open:rotate-180 transition-transform"></i>
+                                <span class="text-[10px] font-black uppercase tracking-widest text-sky-400">Node Personnel Insights &bull; Class & Job Title Roster</span>
+                            </div>
+                            <span class="text-[9px] font-mono text-white/40 bg-white/5 px-2 py-0.5 rounded-md">${unitTotalUsers.length} Registered Personnel</span>
+                        </summary>
+
+                        <div class="pt-4 grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-white/5 mt-3">
+                            <!-- Class Summary -->
+                            <div>
+                                <span class="label-style text-sky-400">Personnel Class Division</span>
+                                <div class="flex flex-wrap gap-2 mt-1">
+                                    ${Object.entries(classCounts).map(([cls, cnt]) => `
+                                        <div class="bg-black/40 border border-white/10 px-3 py-1.5 rounded-xl flex items-center gap-2">
+                                            <span class="text-[11px] font-bold text-white">${cls}</span>
+                                            <span class="bg-sky-500/20 text-sky-400 font-mono text-[10px] font-black px-1.5 py-0.2 rounded">${cnt}</span>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+
+                            <!-- Job Title Summary -->
+                            <div>
+                                <span class="label-style text-purple-400">Job Title Distribution</span>
+                                <div class="flex flex-wrap gap-1.5 mt-1 max-h-36 overflow-y-auto pr-1">
+                                    ${Object.entries(jobCounts).map(([job, cnt]) => `
+                                        <div class="bg-black/30 border border-white/5 px-2.5 py-1 rounded-lg flex items-center gap-2 text-[10px]">
+                                            <span class="text-white/80 font-medium truncate max-w-[200px]" title="${job}">${job}</span>
+                                            <span class="text-purple-400 font-mono font-bold">${cnt}</span>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
                         </div>
+                    </details>
+
+                    <!-- 🚀 DETAIL ABSENSI HARI INI (EXPANDABLE & COLLAPSIBLE) -->
+                    <details open class="group mb-6">
+                        <summary class="flex justify-between items-center cursor-pointer select-none mb-3 py-1">
+                            <div class="flex items-center gap-2">
+                                <i data-lucide="chevron-down" class="w-4 h-4 text-sky-400 group-open:rotate-180 transition-transform"></i>
+                                <span class="text-[10px] font-black uppercase tracking-widest text-sky-400">Detail Absensi Hari Ini (${activeUnit} - ${currentCrew || 'All Crew'})</span>
+                            </div>
+                            <span class="text-[9px] font-mono text-white/40 bg-white/5 px-2 py-0.5 rounded-md">${enrichedMembers.length} Members Listed</span>
+                        </summary>
+
                         <div class="overflow-x-auto">
                             <table class="master-table">
                                 <thead>
@@ -367,7 +428,7 @@
                                         <th>F4 (Out)</th>
                                         <th>Leave Type</th>
                                         <th>Status Approval</th>
-                                        <th class="text-right">Action</th>
+                                        <th class="text-right w-16">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -401,10 +462,13 @@
                                                     </span>
                                                 </td>
                                                 <td class="text-right">
-                                                    <button onclick="openApprovalMenu('${m.user.EmployeeId}', '${m.user.Name}', '${approvalStatus}')" 
-                                                        class="p-1.5 hover:bg-white/10 text-white/50 hover:text-white rounded-lg transition" title="Approve Presensi">
-                                                        <i data-lucide="more-vertical" size="14"></i>
-                                                    </button>
+                                                    <!-- 🚀 TOMBOL TITIK TIGA HANYA MUNCUL PADA ROW YANG LEAVE -->
+                                                    ${m.leaveType ? `
+                                                        <button onclick="openApprovalMenu('${m.user.EmployeeId}', '${m.user.Name}', '${approvalStatus}')" 
+                                                            class="p-1.5 hover:bg-white/10 text-amber-400 hover:text-white rounded-lg transition" title="Approve Leave Presensi">
+                                                            <i data-lucide="more-vertical" size="14"></i>
+                                                        </button>
+                                                    ` : '<span class="text-white/10 pr-2 select-none">-</span>'}
                                                 </td>
                                             </tr>
                                         `;
@@ -415,18 +479,21 @@
                                 </tbody>
                             </table>
                         </div>
-                    </div>
+                    </details>
 
-                    <!-- OPERATIONAL SECTIONS (UTILIZATION, HIGHLIGHT, INSPECTOR, OVERTIME) -->
-                    <div class="border-t border-white/5 pt-6">
-                        <div class="flex justify-between items-center mb-4">
-                            <span class="text-[10px] font-black uppercase tracking-widest text-sky-400">Shift Operational Status & Duties</span>
-                            <button onclick="openOpsModal()" class="text-[10px] text-sky-400 hover:text-sky-300 font-bold flex items-center gap-1">
+                    <!-- 🚀 SHIFT OPERATIONAL STATUS & DUTIES (EXPANDABLE & COLLAPSIBLE) -->
+                    <details open class="group border-t border-white/5 pt-6">
+                        <summary class="flex justify-between items-center cursor-pointer select-none mb-4 py-1">
+                            <div class="flex items-center gap-2">
+                                <i data-lucide="chevron-down" class="w-4 h-4 text-sky-400 group-open:rotate-180 transition-transform"></i>
+                                <span class="text-[10px] font-black uppercase tracking-widest text-sky-400">Shift Operational Status & Duties</span>
+                            </div>
+                            <button type="button" onclick="event.stopPropagation(); openOpsModal()" class="text-[10px] text-sky-400 hover:text-sky-300 font-bold flex items-center gap-1 bg-white/5 hover:bg-white/10 px-2.5 py-1 rounded-lg border border-white/10 transition">
                                 <i data-lucide="edit-3" size="12"></i> Edit Operations Log
                             </button>
-                        </div>
+                        </summary>
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-xs pt-1">
                             <!-- Utilization Card -->
                             <div class="bg-white/[0.02] border border-white/5 p-4 rounded-2xl">
                                 <span class="label-style">Manpower Utilization</span>
@@ -481,14 +548,14 @@
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </details>
                 </div>
             `;
             lucide.createIcons();
         }
 
         // ========================================================
-        // APPROVAL ACTION MENU (THREE VERTICAL DOTS)
+        // APPROVAL ACTION MENU (THREE VERTICAL DOTS UNTUK LEAVE)
         // ========================================================
         async function openApprovalMenu(empId, empName, currentStatus) {
             const { value: action } = await Swal.fire({
@@ -512,7 +579,7 @@
 
             let newStatus = null;
             if (action) newStatus = 'Approved';
-            else if (action === false) newStatus = 'Pending'; // jika deny clicked
+            else if (action === false) newStatus = 'Pending';
 
             if (newStatus) {
                 loader.style.display = 'flex';
@@ -537,7 +604,6 @@
 
                     const res = await API.post(payload);
                     if (res.status === 'success') {
-                        // Invalidate & refresh
                         await API.clearLocalCache('ATTENDANCE_RECORD');
                         const fresh = await API.get('ATTENDANCE_RECORD');
                         allAttendanceRecords = fresh.data || [];
