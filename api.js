@@ -92,16 +92,20 @@ const API = {
             });
             const result = await resp.json();
 
-            if (result.status === 'success') {
-                // 🚀 PAKSA EKSEKUSI PEMBUNUH CACHE SETELAH POST BERHASIL
-                await this.clearLocalCache(payload.tab);
+            if (result && result.status === 'success') {
+                // 🚀 PENGAMAN: Bersihkan cache hanya jika fungsinya tersedia agar tidak crash
+                if (typeof this.clearLocalCache === 'function') {
+                    await this.clearLocalCache(payload.tab);
+                } else if (typeof this._dbOp === 'function') {
+                    await this._dbOp("delete", payload.tab);
+                }
                 console.log(`%c[CACHE_PURGE] ${payload.tab} Cache invalidated`, "color: #ef4444; font-style: italic;");
             }
 
             return result;
         } catch (e) {
             console.error(`[SYSTEM_ERROR] Transaction failed:`, e);
-            return { status: 'error' };
+            return { status: 'error', message: e.message || 'Network / Script Error' };
         }
     },
 
