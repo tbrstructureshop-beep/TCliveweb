@@ -19,121 +19,136 @@
         body { background: transparent; color: var(--text-main); font-family: 'Inter', sans-serif; overflow-x: hidden; transition: all 0.3s ease; }
         .text-white, h1, h2, h3, h4 { color: var(--text-bold) !important; }
         
-        .unit-nav-wrapper { display: flex; align-items: center; gap: 8px; margin-bottom: 1.5rem; }
-        .unit-nav { display: flex; gap: 0.4rem; padding: 0.4rem; background: rgba(0,0,0,0.2); border-radius: 1rem; border: 1px solid var(--border); overflow-x: auto; flex: 1; scroll-behavior: smooth; }
+        .unit-nav-wrapper { display: flex; align-items: center; gap: 8px; margin-bottom: 2rem; }
+        .unit-nav { display: flex; gap: 0.5rem; padding: 0.5rem; background: rgba(0,0,0,0.2); border-radius: 1.25rem; border: 1px solid var(--border); overflow-x: auto; flex: 1; scroll-behavior: smooth; }
         .unit-nav::-webkit-scrollbar { display: none; }
-        .unit-tab { padding: 0.5rem 1rem; border-radius: 0.75rem; font-size: 10px; font-weight: 800; white-space: nowrap; transition: 0.3s; color: var(--text-main); border: 1px solid transparent; }
-        .unit-tab.active { background: var(--accent); color: white !important; }
-        .nav-arrow { background: var(--panel); border: 1px solid var(--border); border-radius: 50%; width: 28px; height: 28px; display: flex; items-center; justify-content: center; color: var(--accent); cursor: pointer; }
+        .unit-tab { padding: 0.75rem 1.5rem; border-radius: 1rem; font-size: 11px; font-weight: 800; white-space: nowrap; transition: 0.3s; color: var(--text-main); border: 1px solid transparent; }
+        .unit-tab.active { background: var(--accent); color: white !important; box-shadow: 0 10px 20px -5px rgba(14, 165, 233, 0.4); }
+        .nav-arrow { background: var(--panel); border: 1px solid var(--border); border-radius: 50%; width: 32px; height: 32px; display: flex; items-center; justify-content: center; color: var(--accent); cursor: pointer; flex-shrink: 0; }
 
-        .attendance-card { background-color: var(--panel) !important; border: 1px solid var(--border) !important; border-radius: 1.5rem; padding: 1.25rem; margin-bottom: 1rem; }
-        .metric-ribbon { display: flex; align-items: center; gap: 1rem; background: rgba(0,0,0,0.2); padding: 0.6rem 1rem; border-radius: 1rem; margin-bottom: 1rem; border: 1px solid var(--border); overflow-x: auto; }
-        .metric-item { display: flex; align-items: center; gap: 0.4rem; white-space: nowrap; }
-        .metric-val { font-weight: 900; color: var(--text-bold); font-size: 0.9rem; }
-        .metric-lab { font-size: 7px; font-weight: 800; text-transform: uppercase; opacity: 0.4; }
-
-        .card-tabs { display: flex; gap: 0.2rem; background: var(--input-bg); padding: 0.2rem; border-radius: 0.6rem; margin-bottom: 0.75rem; width: fit-content; }
-        .c-tab { padding: 0.3rem 0.7rem; border-radius: 0.4rem; font-size: 8px; font-weight: 900; text-transform: uppercase; transition: 0.2s; color: var(--text-main); opacity: 0.5; }
-        .c-tab.active { background: var(--panel); color: var(--accent) !important; opacity: 1; }
-
-        .detail-item { background: var(--input-bg); border: 1px solid var(--border); border-radius: 0.75rem; padding: 0.6rem; margin-bottom: 0.4rem; }
-        .input-field { width: 100%; background: var(--input-bg) !important; border: 1px solid var(--border) !important; color: var(--text-bold) !important; border-radius: 0.5rem; padding: 0.6rem; font-size: 13px; outline: none; }
+        .attendance-card { background-color: var(--panel) !important; border: 1px solid var(--border) !important; border-radius: 2.5rem; padding: 2rem; margin-bottom: 2rem; box-shadow: 0 20px 50px -12px rgba(0,0,0,0.5); }
         
-        select option { background-color: #ffffff !important; color: #1e293b !important; }
-        :not(.light) select option { background-color: #151921 !important; color: #ffffff !important; }
+        /* Shift Internal Tabs */
+        .shift-tabs { display: flex; gap: 0.35rem; background: rgba(0,0,0,0.3); padding: 0.35rem; border-radius: 1rem; border: 1px solid var(--border); overflow-x: auto; width: fit-content; margin-bottom: 1.5rem; }
+        .s-tab { padding: 0.5rem 1.25rem; border-radius: 0.75rem; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; transition: all 0.2s ease; color: var(--text-main); opacity: 0.5; cursor: pointer; }
+        .s-tab:hover { opacity: 0.9; color: #fff; }
+        .s-tab.active { background: var(--panel); color: var(--accent) !important; opacity: 1; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); }
 
-        #local-loader { display: none; position: fixed; inset: 0; background: rgba(11, 14, 20, 0.9); backdrop-filter: blur(8px); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; }
-        .label-style { text-transform: uppercase; font-size: 9px; font-weight: 800; opacity: 0.4; margin-bottom: 0.2rem; display: block; color: var(--text-main); }
+        /* Stats Grid */
+        .stat-box { flex: 1; min-width: 90px; padding: 12px 10px; border-radius: 1.25rem; border: 1px solid var(--border); text-align: center; background: var(--input-bg); display: flex; flex-direction: column; align-items: center; justify-content: center; transition: all 0.2s ease; }
+        .stat-val { display: block; font-size: 1.35rem; font-weight: 900; line-height: 1; margin-bottom: 4px; font-variant-numeric: tabular-nums; }
+        .stat-lab { font-size: 8px; font-weight: 800; text-transform: uppercase; opacity: 0.5; letter-spacing: 1px; display: block; }
+
+        /* Table */
+        .master-table { width: 100%; font-size: 11px; border-spacing: 0 6px; border-collapse: separate; }
+        .master-table th { padding: 12px; text-align: left; opacity: 0.4; text-transform: uppercase; font-size: 10px; font-weight: 800; }
+        .master-table td { padding: 12px; background: rgba(255,255,255,0.01); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); vertical-align: middle; }
+        .master-table td:first-child { border-left: 1px solid var(--border); border-top-left-radius: 14px; border-bottom-left-radius: 14px; }
+        .master-table td:last-child { border-right: 1px solid var(--border); border-top-right-radius: 14px; border-bottom-right-radius: 14px; }
+
+        .input-field { width: 100%; background: var(--input-bg) !important; border: 1px solid var(--border) !important; color: var(--text-bold) !important; border-radius: 0.75rem; padding: 0.75rem; font-size: 0.875rem; outline: none; }
+        .label-style { text-transform: uppercase; font-size: 9px; font-weight: 800; opacity: 0.4; margin-bottom: 0.25rem; display: block; letter-spacing: 0.08em; }
+
+        #local-loader { display: none; position: fixed; inset: 0; background: rgba(11, 14, 20, 0.95); backdrop-filter: blur(10px); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; }
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
     </style>
 </head>
-<body class="p-4 md:p-6">
+<body class="p-4 md:p-8">
 
     <div id="local-loader">
-        <div class="w-10 h-10 border-4 border-sky-500/10 border-t-sky-500 rounded-full animate-spin mb-2"></div>
-        <span class="text-[9px] font-mono text-sky-500 font-bold uppercase">Syncing_Records...</span>
+        <div class="w-12 h-12 border-4 border-sky-500/10 border-t-sky-500 rounded-full animate-spin mb-3"></div>
+        <span class="text-[10px] font-mono text-sky-500 font-bold uppercase tracking-widest">Compiling_Live_Attendance...</span>
     </div>
 
-    <div class="flex justify-between items-center mb-6">
+    <!-- HEADER -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>
-            <h1 class="text-xl font-black text-white uppercase tracking-tighter">Attendance Log</h1>
-            <p class="text-[9px] opacity-40 font-mono uppercase">Operational Force Dashboard</p>
+            <h1 class="text-2xl font-black text-white uppercase tracking-tighter">Attendance Registry</h1>
+            <p class="text-[10px] opacity-40 font-mono uppercase tracking-widest">Live Force Presence & Operations Cockpit</p>
         </div>
-        <button onclick="openModal()" class="bg-sky-600 hover:bg-sky-500 text-white px-4 py-2 rounded-lg font-bold text-[10px] uppercase transition-all active:scale-95">
-            <i data-lucide="plus" class="inline-block mr-1" size="12"></i> Log Entry
-        </button>
+        <div class="flex gap-2">
+            <button onclick="init()" class="bg-white/5 border border-white/10 hover:bg-white/10 text-white px-5 py-2.5 rounded-xl font-bold text-[10px] uppercase transition-all flex items-center gap-2">
+                <i data-lucide="refresh-cw" size="14"></i> Sync Records
+            </button>
+            <button onclick="openOpsModal()" class="bg-sky-600 hover:bg-sky-500 text-white px-5 py-2.5 rounded-xl font-bold text-[10px] uppercase transition-all flex items-center gap-2 shadow-lg shadow-sky-600/20 active:scale-95">
+                <i data-lucide="clipboard-list" size="14"></i> Shift Operations Log
+            </button>
+        </div>
     </div>
 
+    <!-- UNIT TAB SWITCHER -->
     <div class="unit-nav-wrapper">
-        <button onclick="scrollNav(-100)" class="nav-arrow"><i data-lucide="chevron-left" size="14"></i></button>
+        <button onclick="scrollNav(-150)" class="nav-arrow"><i data-lucide="chevron-left" size="16"></i></button>
         <div id="unit-tabs" class="unit-nav"></div>
-        <button onclick="scrollNav(100)" class="nav-arrow"><i data-lucide="chevron-right" size="14"></i></button>
+        <button onclick="scrollNav(150)" class="nav-arrow"><i data-lucide="chevron-right" size="16"></i></button>
     </div>
 
+    <!-- MAIN CARD CONTAINER -->
     <div id="main-content"></div>
 
-    <!-- MODAL -->
-    <div id="attend-modal" class="fixed inset-0 bg-black/95 backdrop-blur-md hidden flex items-center justify-center z-[110] p-4">
-        <div class="bg-[#151921] border border-white/10 rounded-[2rem] w-full max-w-6xl shadow-2xl flex flex-col max-h-[90vh]">
-            <div class="p-5 border-b border-white/5 flex justify-between items-center">
-                <h3 id="modal-title" class="text-lg font-bold text-white uppercase">Attendance Registry</h3>
-                <button onclick="closeModal()" class="p-2 text-white/30 hover:text-white"><i data-lucide="x"></i></button>
+    <!-- MODAL OPERATIONS LOG (UTILIZATION, HIGHLIGHT, INSPECTOR, OVERTIME) -->
+    <div id="ops-modal" class="fixed inset-0 bg-black/95 backdrop-blur-md hidden flex items-center justify-center z-[110] p-4">
+        <div class="bg-[#151921] border border-white/10 rounded-[2.5rem] w-full max-w-4xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
+            <div class="p-6 border-b border-white/5 flex justify-between items-center text-white">
+                <div>
+                    <h3 class="text-lg font-bold uppercase tracking-widest text-sky-400">Shift Operations Log</h3>
+                    <p id="modal-sub-label" class="text-[10px] opacity-40 font-mono uppercase"></p>
+                </div>
+                <button onclick="closeOpsModal()" class="opacity-30 hover:opacity-100 p-1"><i data-lucide="x" size="20"></i></button>
             </div>
-            <form id="attend-form" class="p-6 overflow-y-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div class="space-y-4">
-                    <div><label class="label-style">Unit Code</label><select id="UnitCode" name="UnitCode" required class="input-field" onchange="updateShiftDropdown()"></select></div>
-                    <div><label class="label-style">Shift Category</label><select id="ShiftCategory" name="ShiftCategory" required class="input-field" onchange="syncManpowerFromShift()"></select></div>
-                    
-                    <div class="p-4 bg-white/5 rounded-xl border border-white/5 grid grid-cols-2 gap-4">
-                        <div><span class="label-style">Shift Base</span><span id="total-personnel" class="text-xl font-black text-white">0</span></div>
-                        <div class="text-right"><span class="label-style">Availability</span><span id="availability-pct" class="text-xl font-black text-emerald-400">0%</span></div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div><label class="label-style">Hadir (Manual)</label><input type="number" id="Hadir" name="Hadir" required class="input-field text-center font-bold" oninput="doCalculations()"></div>
-                        <div><label class="label-style">Absen (Auto)</label><input type="number" id="Absen" name="Absen" readonly class="input-field text-center opacity-40"></div>
-                    </div>
-                    <div><label class="label-style">Utilization (<span id="util-val">50</span>%)</label><input type="range" id="Utilization" name="Utilization" min="0" max="100" value="50" oninput="document.getElementById('util-val').innerText = this.value"></div>
-                    <div><label class="label-style">Highlight Note</label><textarea id="HighlightManpower" name="HighlightManpower" class="input-field h-24 resize-none" placeholder="Shift highlights..."></textarea></div>
-                </div>
-
-                <div class="space-y-6">
+            <form id="ops-form" class="p-6 overflow-y-auto space-y-6 flex-1 text-xs">
+                <!-- Section 1: Utilization & Highlights -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white/[0.02] p-4 rounded-2xl border border-white/5">
                     <div>
-                        <label class="label-style">Absence Detail</label>
-                        <div class="space-y-2 mb-2 bg-white/5 p-3 rounded-xl border border-white/5">
-                            <input id="abs-name" class="input-field" placeholder="Full Name">
-                            <div class="flex gap-2">
-                                <select id="abs-status" class="input-field flex-1"><option>Sick</option><option>Leave</option><option>Work Outside</option><option>Training</option><option>Other</option></select>
-                                <button type="button" onclick="addItem('abs')" class="bg-sky-600 px-4 rounded-lg text-white font-bold text-xs">ADD</button>
-                            </div>
-                            <input id="abs-note" class="input-field" placeholder="Reason / Remark">
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="label-style">Manpower Utilization</label>
+                            <span id="util-val-disp" class="text-xs font-mono font-bold text-sky-400">85%</span>
                         </div>
-                        <div id="list-abs" class="max-h-32 overflow-y-auto space-y-1"></div>
+                        <input type="range" id="Utilization" min="0" max="100" value="85" class="w-full accent-sky-500 cursor-pointer" oninput="document.getElementById('util-val-disp').innerText = this.value + '%'">
                     </div>
                     <div>
-                        <label class="label-style">Inspector Duty</label>
-                        <div class="flex gap-2 mb-2"><input id="insp-name" class="input-field" placeholder="Name"><input id="insp-task" class="input-field" placeholder="Job"><button type="button" onclick="addItem('insp')" class="bg-sky-600 px-4 rounded-lg text-white font-bold text-xs">ADD</button></div>
-                        <div id="list-insp" class="max-h-32 overflow-y-auto space-y-1"></div>
+                        <label class="label-style">Shift Highlight Notes</label>
+                        <textarea id="HighlightManpower" class="input-field h-20 resize-none" placeholder="Tuliskan catatan penting shift ini..."></textarea>
                     </div>
                 </div>
 
-                <div class="space-y-6">
-                    <div>
-                        <label class="label-style text-sky-400">Overtime Details</label>
-                        <div class="bg-white/5 p-3 rounded-xl border border-white/5 space-y-2 mb-2">
-                            <input id="ot-name" class="input-field" placeholder="Person Name">
+                <!-- Section 2: Inspector Duty & Overtime -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Inspector Duty Entry -->
+                    <div class="bg-white/[0.02] p-4 rounded-2xl border border-white/5 space-y-3">
+                        <span class="label-style text-purple-400">Inspector Duty</span>
+                        <div class="flex gap-2">
+                            <input id="insp-name" class="input-field text-xs flex-1" placeholder="Inspector Name">
+                            <input id="insp-task" class="input-field text-xs flex-1" placeholder="Job Assignment">
+                            <button type="button" onclick="addInspectorItem()" class="px-3 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-bold uppercase text-[10px]">Add</button>
+                        </div>
+                        <div id="modal-insp-list" class="max-h-36 overflow-y-auto space-y-1"></div>
+                    </div>
+
+                    <!-- Overtime Request Entry -->
+                    <div class="bg-white/[0.02] p-4 rounded-2xl border border-white/5 space-y-3">
+                        <span class="label-style text-amber-400">Overtime Details</span>
+                        <div class="space-y-2">
+                            <input id="ot-name" class="input-field text-xs" placeholder="Personnel Name">
                             <div class="grid grid-cols-2 gap-2">
-                                <div><label class="label-style !text-[7px]">Start</label><input id="ot-start" type="datetime-local" class="input-field !p-1.5 text-[10px]"></div>
-                                <div><label class="label-style !text-[7px]">End</label><input id="ot-end" type="datetime-local" class="input-field !p-1.5 text-[10px]"></div>
+                                <input id="ot-start" type="datetime-local" class="input-field text-[10px] !p-1.5">
+                                <input id="ot-end" type="datetime-local" class="input-field text-[10px] !p-1.5">
                             </div>
-                            <input id="ot-task" class="input-field" placeholder="Job Item">
-                            <div class="flex items-center gap-2 px-1">
-                                <input type="checkbox" id="ot-myhc" class="w-4 h-4 accent-sky-500">
-                                <label for="ot-myhc" class="text-[10px] font-bold uppercase opacity-60">Submitted MyHC</label>
+                            <div class="flex gap-2">
+                                <input id="ot-task" class="input-field text-xs flex-1" placeholder="Job Scope">
+                                <label class="flex items-center gap-1.5 text-[9px] uppercase font-bold text-white/60 bg-white/5 px-2 rounded-lg border border-white/10 cursor-pointer">
+                                    <input type="checkbox" id="ot-myhc" class="accent-sky-500"> MyHC
+                                </label>
+                                <button type="button" onclick="addOtItem()" class="px-3 bg-amber-600 hover:bg-amber-500 text-white rounded-lg font-bold uppercase text-[10px]">Add</button>
                             </div>
-                            <button type="button" onclick="addItem('ot')" class="w-full bg-sky-600 py-2 rounded-lg text-white font-bold text-[10px] uppercase">Add OVT</button>
                         </div>
-                        <div id="list-ot" class="max-h-48 overflow-y-auto space-y-1"></div>
+                        <div id="modal-ot-list" class="max-h-36 overflow-y-auto space-y-1"></div>
                     </div>
-                    <button type="submit" class="w-full bg-emerald-600 py-4 rounded-xl font-black text-white hover:bg-emerald-500 uppercase tracking-widest text-[10px]">Commit Records</button>
+                </div>
+
+                <div class="pt-4 border-t border-white/5">
+                    <button type="submit" class="w-full bg-sky-600 hover:bg-sky-500 py-3.5 rounded-2xl font-black text-white text-xs uppercase tracking-widest transition-all">Save Operations Log</button>
                 </div>
             </form>
         </div>
@@ -142,211 +157,544 @@
     <script>
         lucide.createIcons();
         const loader = document.getElementById('local-loader');
-        let allShifts = [], masterData = [], activeUnit = null, editId = null;
-        let listAbs = [], listInsp = [], listOt = [];
+        
+        let unitList = [], allShifts = [], allUsers = [], allAttendanceRecords = [], opsDataList = [];
+        let activeUnit = null, activeShiftCat = null;
+        
+        let tempInspList = [], tempOtList = [];
+
+        // Helper Tanggal Hari Ini (DD MMM YYYY & ISO YYYY-MM-DD)
+        const now = new Date();
+        const todayIso = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+        const todayFormatted = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 
         async function init() {
             loader.style.display = 'flex';
             try {
-                const [unitRes, shiftRes, attendRes] = await Promise.all([API.get('UNIT'), API.get('SHIFTS'), API.get('ATTENDANCE')]);
+                const [unitRes, shiftRes, userRes, attRecordRes, opsRes] = await Promise.all([
+                    API.get('UNIT'),
+                    API.get('SHIFTS'),
+                    API.get('USER'),
+                    API.get('ATTENDANCE_RECORD'),
+                    API.get('ATTENDANCE')
+                ]);
+
+                unitList = unitRes.data || [];
                 allShifts = shiftRes.data || [];
-                masterData = attendRes.data || [];
-                document.getElementById('UnitCode').innerHTML = unitRes.data.map(u => `<option value="${u.UnitCode}">${u.UnitCode}</option>`).join('');
-                renderTabs(unitRes.data);
-                if(!activeUnit && unitRes.data.length > 0) activeUnit = unitRes.data[0].UnitCode;
-                renderView();
-            } catch (e) { console.error(e); } finally { loader.style.display = 'none'; }
+                allUsers = userRes.data || [];
+                allAttendanceRecords = attRecordRes.data || [];
+                opsDataList = opsRes.data || [];
+
+                if (!activeUnit && unitList.length > 0) activeUnit = unitList[0].UnitCode;
+
+                renderTabs(unitList);
+                renderMainDashboard();
+            } catch(e) {
+                console.error(e);
+                Swal.fire({ title: 'Sync Error', text: e.message, icon: 'error', background: '#151921', color: '#fff' });
+            } finally {
+                loader.style.display = 'none';
+            }
         }
 
-        function renderTabs(units) { document.getElementById('unit-tabs').innerHTML = units.map(u => `<button onclick="switchUnit('${u.UnitCode}')" class="unit-tab ${u.UnitCode === activeUnit ? 'active' : ''}">${u.UnitCode}</button>`).join(''); }
+        function renderTabs(units) {
+            const container = document.getElementById('unit-tabs');
+            container.innerHTML = units.map(u => `
+                <button onclick="switchUnit('${u.UnitCode}')" class="unit-tab ${u.UnitCode === activeUnit ? 'active' : ''}">${u.UnitCode}</button>
+            `).join('');
+        }
+
         function scrollNav(amt) { document.getElementById('unit-tabs').scrollLeft += amt; }
-        function switchUnit(uCode) { activeUnit = uCode; document.querySelectorAll('.unit-tab').forEach(t => t.classList.toggle('active', t.innerText === uCode)); renderView(); }
 
-        function renderView() {
+        function switchUnit(uCode) {
+            activeUnit = uCode;
+            activeShiftCat = null; // reset shift saat ganti unit
+            document.querySelectorAll('.unit-tab').forEach(t => t.classList.toggle('active', t.innerText === uCode));
+            renderMainDashboard();
+        }
+
+        function switchShift(shiftCategory) {
+            activeShiftCat = shiftCategory;
+            renderMainDashboard();
+        }
+
+        function renderMainDashboard() {
             const container = document.getElementById('main-content');
-            const items = masterData.filter(i => i.UnitCode === activeUnit).reverse();
-            if(!activeUnit) { container.innerHTML = `<div class="py-20 text-center opacity-20 font-mono uppercase">Select_Node</div>`; return; }
+            if (!activeUnit) {
+                container.innerHTML = `<div class="py-24 text-center opacity-20 font-mono uppercase tracking-widest text-sm">SELECT_OPERATIONAL_NODE</div>`;
+                return;
+            }
 
-            container.innerHTML = items.map((item, idx) => {
-                const id = `at-${idx}`;
-                return `
-                <div class="attendance-card">
-                    <div class="flex justify-between items-center mb-3">
+            // 1. Ambil Info Unit (Desc & Leader)
+            const unitInfo = unitList.find(u => u.UnitCode === activeUnit) || {};
+            const unitDesc = unitInfo.UnitDesc || 'Unit Description';
+            const unitLeader = unitInfo.UnitLeader || 'Department Head';
+
+            // 2. Ambil Shift-Shift Terdaftar untuk Unit ini
+            const unitShifts = allShifts.filter(s => String(s.UnitCode || '').trim().toLowerCase() === activeUnit.toLowerCase());
+            
+            // Tentukan shift aktif
+            if (!activeShiftCat && unitShifts.length > 0) {
+                activeShiftCat = unitShifts[0].ShiftCategory;
+            }
+            const currentShift = unitShifts.find(s => s.ShiftCategory === activeShiftCat) || unitShifts[0] || { ShiftCategory: 'Regular', Crew: '' };
+            const currentCrew = currentShift.Crew ? String(currentShift.Crew).trim() : '';
+
+            // 3. Filter Anggota User Sesuai Unit & Crew Shift Tersebut
+            const crewUsers = allUsers.filter(u => 
+                String(u.UnitCode || '').trim().toLowerCase() === activeUnit.toLowerCase() &&
+                (!currentCrew || String(u.Crew || '').trim().toLowerCase() === currentCrew.toLowerCase())
+            );
+
+            // 4. Hitung Statistik Real Presensi Hari Ini
+            let attendCount = 0;
+            let leaveCount = 0;
+            const leaveBreakdown = {};
+
+            const enrichedMembers = crewUsers.map(u => {
+                // Cari record presensi tanggal hari ini
+                const attRec = allAttendanceRecords.find(r => 
+                    String(r.EmployeeId).trim() === String(u.EmployeeId).trim() && 
+                    String(r.Date).trim() === todayIso
+                ) || null;
+
+                const hasF1 = attRec && attRec.F1 && attRec.F1 !== '-' && attRec.F1.trim() !== '';
+                const leaveType = (attRec && attRec.Leave && attRec.Leave !== 'Present') ? attRec.Leave.trim() : null;
+
+                if (leaveType) {
+                    leaveCount++;
+                    leaveBreakdown[leaveType] = (leaveBreakdown[leaveType] || 0) + 1;
+                } else if (hasF1) {
+                    attendCount++;
+                }
+
+                return {
+                    user: u,
+                    record: attRec,
+                    hasF1: hasF1,
+                    leaveType: leaveType
+                };
+            });
+
+            const totalMembers = crewUsers.length;
+            const attendPct = totalMembers > 0 ? ((attendCount / totalMembers) * 100).toFixed(0) : 0;
+            const leavePct = totalMembers > 0 ? ((leaveCount / totalMembers) * 100).toFixed(0) : 0;
+            const availPct = totalMembers > 0 ? (((attendCount) / totalMembers) * 100).toFixed(1) : '0.0';
+
+            // 5. Ambil Log Operasional (Utilization, Highlight, Inspector, Overtime)
+            const opsLog = opsDataList.find(o => 
+                o.UnitCode === activeUnit && 
+                (!activeShiftCat || o.ShiftCategory === activeShiftCat)
+            ) || {};
+
+            let inspData = [], otData = [];
+            try { inspData = JSON.parse(opsLog.DetailInspectorName || '[]'); } catch(e){}
+            try { otData = JSON.parse(opsLog.PermintaanOvertime || '[]'); } catch(e){}
+
+            container.innerHTML = `
+                <div class="attendance-card animate-in fade-in duration-500">
+                    <!-- HEADER CARD -->
+                    <div class="flex flex-col lg:flex-row justify-between items-start gap-4 mb-6 pb-6 border-b border-white/5">
+                        <div>
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="bg-sky-500/10 text-sky-400 border border-sky-500/20 px-2.5 py-0.5 rounded-lg text-[10px] font-mono font-bold uppercase tracking-wider">ATTENDANCE RECORD</span>
+                                <span class="text-xs font-bold text-white/50 font-mono tracking-tight">${todayFormatted}</span>
+                            </div>
+                            <h2 class="text-3xl font-black text-white uppercase tracking-tight">${activeUnit}</h2>
+                            <p class="text-xs text-white/70 font-semibold mt-0.5">${unitDesc} &bull; <span class="text-sky-400 font-bold">${unitLeader}</span></p>
+                        </div>
+                        
                         <div class="flex items-center gap-2">
-                            <span class="bg-sky-500/10 text-sky-400 px-2 py-1 rounded text-[9px] font-black border border-sky-500/20 uppercase">${item.ShiftCategory}</span>
-                            <span class="opacity-20 font-mono text-[9px]">${item.Timestamp}</span>
+                            <span class="text-[10px] font-mono font-bold text-white/40 uppercase">Shift Cycle:</span>
+                            <!-- INTERNAL CARD TABS (SHIFT CLASS) -->
+                            <div class="shift-tabs !m-0">
+                                ${unitShifts.map(s => `
+                                    <button onclick="switchShift('${s.ShiftCategory}')" class="s-tab ${s.ShiftCategory === activeShiftCat ? 'active' : ''}">
+                                        ${s.ShiftCategory} ${s.Crew ? `<span class="opacity-70 text-[9px]">(${s.Crew})</span>` : ''}
+                                    </button>
+                                `).join('')}
+                                ${unitShifts.length === 0 ? `<span class="s-tab active">General Shift</span>` : ''}
+                            </div>
                         </div>
-                        <div class="flex gap-2">
-                            <button onclick='editAttend(${JSON.stringify(item).replace(/'/g, "&apos;")})' class="text-sky-500/40 hover:text-sky-400 transition"><i data-lucide="edit-3" size="14"></i></button>
-                            <button onclick="deleteAttend('${item.Timestamp}')" class="text-red-500/30 hover:text-red-500 transition"><i data-lucide="trash-2" size="14"></i></button>
+                    </div>
+
+                    <!-- SUMMARY CARDS: TOTAL CREW, AVAILABILITY, ATTEND %, LEAVE % -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+                        <div class="stat-box">
+                            <span class="stat-val text-white">${totalMembers}</span>
+                            <span class="stat-lab">Total Crew (${currentCrew || 'All'})</span>
+                        </div>
+                        <div class="stat-box border-emerald-500/30 bg-emerald-500/5">
+                            <span class="stat-val text-emerald-400">${availPct}%</span>
+                            <span class="stat-lab text-emerald-400">Availability</span>
+                        </div>
+                        <div class="stat-box border-sky-500/30 bg-sky-500/5">
+                            <span class="stat-val text-sky-400">${attendCount} <span class="text-xs font-normal opacity-60">(${attendPct}%)</span></span>
+                            <span class="stat-lab text-sky-400">Attend (F1 Today)</span>
+                        </div>
+                        <div class="stat-box border-amber-500/30 bg-amber-500/5">
+                            <span class="stat-val text-amber-400">${leaveCount} <span class="text-xs font-normal opacity-60">(${leavePct}%)</span></span>
+                            <span class="stat-lab text-amber-400">Leave / Permit</span>
                         </div>
                     </div>
 
-                    <div class="metric-ribbon no-scrollbar">
-                        <div class="metric-item"><span class="metric-lab">Hadir:</span><span class="metric-val">${item.Hadir}</span></div>
-                        <div class="metric-item"><span class="metric-lab text-red-500/50">Absen:</span><span class="metric-val text-red-500">${item.Absen}</span></div>
-                        <div class="metric-item border-l border-white/5 pl-3"><span class="metric-lab">Avail:</span><span class="metric-val text-emerald-400">${item.Availability}%</span></div>
-                        <div class="metric-item"><span class="metric-lab">Util:</span><span class="metric-val text-sky-400">${item.Utilization}%</span></div>
+                    <!-- DYNAMIC LEAVE BREAKDOWN PILLS -->
+                    ${leaveCount > 0 ? `
+                        <div class="flex flex-wrap items-center gap-2 mb-6 p-3 bg-amber-500/5 border border-amber-500/10 rounded-2xl">
+                            <span class="text-[9px] font-bold uppercase text-amber-400 tracking-wider">Leave Breakdown:</span>
+                            ${Object.entries(leaveBreakdown).map(([lType, lCount]) => `
+                                <span class="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-amber-500/10 text-amber-300 border border-amber-500/20">
+                                    ${lType}: ${lCount} PAX
+                                </span>
+                            `).join('')}
+                        </div>
+                    ` : ''}
+
+                    <!-- DETAIL ABSENSI HARI INI (TABLE) -->
+                    <div class="mb-8">
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="text-[10px] font-black uppercase tracking-widest text-sky-400">Detail Absensi Hari Ini (${activeUnit} - ${currentCrew || 'All Crew'})</span>
+                            <span class="text-[9px] font-mono text-white/40">${enrichedMembers.length} Members Listed</span>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="master-table">
+                                <thead>
+                                    <tr>
+                                        <th>Employee ID</th>
+                                        <th>Personnel Name</th>
+                                        <th>Date</th>
+                                        <th>F1 (In)</th>
+                                        <th>F4 (Out)</th>
+                                        <th>Leave Type</th>
+                                        <th>Status Approval</th>
+                                        <th class="text-right">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${enrichedMembers.map(m => {
+                                        const r = m.record;
+                                        const f1 = r?.F1 || '-';
+                                        const f4 = r?.F4 || '-';
+                                        const leave = r?.Leave && r?.Leave !== 'Present' ? r.Leave : '-';
+                                        const approvalStatus = r?.StatusApproval || r?.['Status Approval'] || (m.hasF1 ? 'Pending' : '-');
+                                        
+                                        const isApproved = approvalStatus === 'Approved';
+                                        const approvalClass = isApproved 
+                                            ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
+                                            : (approvalStatus === 'Pending' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 'bg-white/5 text-white/30 border-white/10');
+
+                                        return `
+                                            <tr class="hover:bg-white/[0.02] transition">
+                                                <td class="font-mono text-sky-400 font-bold">${m.user.EmployeeId}</td>
+                                                <td class="font-bold text-white">${m.user.Name}</td>
+                                                <td class="font-mono text-white/60">${todayIso}</td>
+                                                <td class="font-mono ${f1 !== '-' ? 'text-emerald-400 font-bold' : 'text-white/30'}">${f1}</td>
+                                                <td class="font-mono ${f4 !== '-' ? 'text-blue-400 font-bold' : 'text-white/30'}">${f4}</td>
+                                                <td>
+                                                    ${leave !== '-' 
+                                                        ? `<span class="px-2 py-0.5 rounded text-[9px] font-bold bg-amber-500/10 text-amber-300 border border-amber-500/20 uppercase">${leave}</span>`
+                                                        : `<span class="opacity-20">-</span>`}
+                                                </td>
+                                                <td>
+                                                    <span class="px-2 py-0.5 rounded border text-[9px] font-bold uppercase ${approvalClass}">
+                                                        ${approvalStatus}
+                                                    </span>
+                                                </td>
+                                                <td class="text-right">
+                                                    <button onclick="openApprovalMenu('${m.user.EmployeeId}', '${m.user.Name}', '${approvalStatus}')" 
+                                                        class="p-1.5 hover:bg-white/10 text-white/50 hover:text-white rounded-lg transition" title="Approve Presensi">
+                                                        <i data-lucide="more-vertical" size="14"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        `;
+                                    }).join('')}
+                                    ${enrichedMembers.length === 0 ? `
+                                        <tr><td colspan="8" class="text-center py-12 opacity-30 italic font-mono uppercase">NO_CREW_REGISTERED_IN_THIS_SHIFT</td></tr>
+                                    ` : ''}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
 
-                    <div class="card-tabs">
-                        <button onclick="switchCardTab('${id}', 'info')" class="c-tab active" id="tab-${id}-info">Overview</button>
-                        <button onclick="switchCardTab('${id}', 'abs')" class="c-tab" id="tab-${id}-abs">Absence</button>
-                        <button onclick="switchCardTab('${id}', 'insp')" class="c-tab" id="tab-${id}-insp">Inspectors</button>
-                        <button onclick="switchCardTab('${id}', 'ot')" class="c-tab" id="tab-${id}-ot">Overtime</button>
-                    </div>
+                    <!-- OPERATIONAL SECTIONS (UTILIZATION, HIGHLIGHT, INSPECTOR, OVERTIME) -->
+                    <div class="border-t border-white/5 pt-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <span class="text-[10px] font-black uppercase tracking-widest text-sky-400">Shift Operational Status & Duties</span>
+                            <button onclick="openOpsModal()" class="text-[10px] text-sky-400 hover:text-sky-300 font-bold flex items-center gap-1">
+                                <i data-lucide="edit-3" size="12"></i> Edit Operations Log
+                            </button>
+                        </div>
 
-                    <div id="content-${id}" class="animate-in fade-in duration-300">
-                        ${renderCardInfo(item)}
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+                            <!-- Utilization Card -->
+                            <div class="bg-white/[0.02] border border-white/5 p-4 rounded-2xl">
+                                <span class="label-style">Manpower Utilization</span>
+                                <div class="text-2xl font-black text-sky-400 font-mono mb-2">${opsLog.Utilization || 85}%</div>
+                                <div class="w-full bg-white/5 rounded-full h-1.5 overflow-hidden">
+                                    <div class="bg-sky-500 h-full rounded-full" style="width: ${opsLog.Utilization || 85}%"></div>
+                                </div>
+                            </div>
+
+                            <!-- Highlights -->
+                            <div class="bg-white/[0.02] border border-white/5 p-4 rounded-2xl">
+                                <span class="label-style">Highlight Note</span>
+                                <p class="text-white/80 italic text-[11px] leading-relaxed line-clamp-3">
+                                    ${opsLog.HighlightManpower || 'No special highlights recorded for this shift.'}
+                                </p>
+                            </div>
+
+                            <!-- Inspector Duty -->
+                            <div class="bg-white/[0.02] border border-white/5 p-4 rounded-2xl">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="label-style text-purple-400 mb-0">Inspectors on Duty</span>
+                                    <span class="text-[9px] font-mono text-purple-400 bg-purple-500/10 px-1.5 py-0.2 rounded font-bold">${inspData.length}</span>
+                                </div>
+                                <div class="space-y-1.5 max-h-24 overflow-y-auto">
+                                    ${inspData.map(insp => `
+                                        <div class="flex justify-between items-center text-[10px] bg-white/5 p-1.5 rounded-lg">
+                                            <span class="font-bold text-white truncate">${insp.name}</span>
+                                            <span class="font-mono text-white/50 text-[9px]">${insp.job || 'INSP'}</span>
+                                        </div>
+                                    `).join('')}
+                                    ${inspData.length === 0 ? `<span class="opacity-20 text-[10px] italic">None Assigned</span>` : ''}
+                                </div>
+                            </div>
+
+                            <!-- Overtime Details -->
+                            <div class="bg-white/[0.02] border border-white/5 p-4 rounded-2xl">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="label-style text-amber-400 mb-0">Overtime Requests</span>
+                                    <span class="text-[9px] font-mono text-amber-400 bg-amber-500/10 px-1.5 py-0.2 rounded font-bold">${otData.length}</span>
+                                </div>
+                                <div class="space-y-1.5 max-h-24 overflow-y-auto">
+                                    ${otData.map(ot => `
+                                        <div class="text-[10px] bg-white/5 p-1.5 rounded-lg space-y-0.5">
+                                            <div class="flex justify-between font-bold text-white">
+                                                <span>${ot.name}</span>
+                                                <span class="text-[8px] font-mono ${ot.myhc ? 'text-emerald-400' : 'text-red-400'}">${ot.myhc ? 'MyHC OK' : 'No MyHC'}</span>
+                                            </div>
+                                            <div class="text-[9px] opacity-40 font-mono">${ot.hour}h &bull; ${ot.job}</div>
+                                        </div>
+                                    `).join('')}
+                                    ${otData.length === 0 ? `<span class="opacity-20 text-[10px] italic">No Overtime</span>` : ''}
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                </div>`;
-            }).join('');
+                </div>
+            `;
             lucide.createIcons();
         }
 
-        function renderCardInfo(item) { return `<div class="p-3 bg-white/5 rounded-xl border border-white/5"><span class="label-style !text-[7px]">Log Highlights</span><p class="text-xs italic opacity-60 leading-relaxed">${item.HighlightManpower || 'No major highlights.'}</p></div>`; }
-        
-        function renderCardList(jsonStr, type) {
-            try {
-                const data = JSON.parse(jsonStr || '[]');
-                if(!data.length) return `<div class="py-6 text-center opacity-10 text-[9px] font-mono uppercase">NO_RECORDS</div>`;
-                return data.map(i => {
-                    if(type === 'ot') return `<div class="detail-item"><div class="flex justify-between items-start mb-1"><span class="text-[10px] font-black text-white">${i.name}</span><span class="px-1.5 py-0.5 rounded text-[7px] font-bold ${i.myhc ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}">${i.myhc ? 'MYHC SUBMITTED' : 'NOT SUBMITTED'}</span></div><p class="text-[9px] opacity-40 mb-1 font-mono">${i.start.replace('T',' ')} ➔ ${i.end.split('T')[1]} (${i.hour}h)</p><p class="text-[9px] text-sky-500 italic uppercase font-bold">Item: ${i.job}</p></div>`;
-                    if(type === 'abs') return `<div class="detail-item"><div class="flex justify-between items-center"><span class="text-[10px] font-bold text-white">${i.name}</span><span class="text-[8px] font-black px-2 py-0.5 bg-white/5 rounded border border-white/5 uppercase text-red-400">${i.status}</span></div><p class="text-[9px] opacity-40 mt-1 italic">${i.note || 'No notes.'}</p></div>`;
-                    return `<div class="detail-item flex justify-between items-center"><span class="text-[10px] font-bold text-white">${i.name}</span><span class="text-[9px] font-mono opacity-40 uppercase">${i.job}</span></div>`;
-                }).join('');
-            } catch(e) { return 'Parse Error'; }
-        }
+        // ========================================================
+        // APPROVAL ACTION MENU (THREE VERTICAL DOTS)
+        // ========================================================
+        async function openApprovalMenu(empId, empName, currentStatus) {
+            const { value: action } = await Swal.fire({
+                title: `<span style="font-size:15px; color:#fff;">Approval Presensi</span>`,
+                html: `
+                    <div style="text-align: left; font-size: 11px; color: #94a3b8; display:flex; flex-direction:column; gap:6px;">
+                        <p>Karyawan: <b style="color:#fff;">${empName}</b> (${empId})</p>
+                        <p>Tanggal: <b style="color:#38bdf8;">${todayFormatted}</b></p>
+                        <p>Status Saat Ini: <b style="color:${currentStatus === 'Approved' ? '#4ade80' : '#fb923c'};">${currentStatus}</b></p>
+                    </div>
+                `,
+                background: '#151921',
+                showCancelButton: true,
+                showDenyButton: true,
+                confirmButtonText: 'Set Approved',
+                confirmButtonColor: '#10b981',
+                denyButtonText: 'Set Pending',
+                denyButtonColor: '#f59e0b',
+                cancelButtonColor: '#334155'
+            });
 
-        function switchCardTab(cardId, type) {
-            const itemIdx = cardId.split('-')[1];
-            const item = masterData.filter(i => i.UnitCode === activeUnit).reverse()[itemIdx];
-            const content = document.getElementById(`content-${cardId}`);
-            if(type === 'info') content.innerHTML = renderCardInfo(item);
-            else if(type === 'abs') content.innerHTML = renderCardList(item.DetailAbsen, 'abs');
-            else if(type === 'insp') content.innerHTML = renderCardList(item.DetailInspectorName, 'insp');
-            else if(type === 'ot') content.innerHTML = renderCardList(item.PermintaanOvertime, 'ot');
-            document.querySelectorAll(`#tab-${cardId}-info, #tab-${cardId}-abs, #tab-${cardId}-insp, #tab-${cardId}-ot`).forEach(b => b.classList.remove('active'));
-            document.getElementById(`tab-${cardId}-${type}`).classList.add('active');
-        }
+            let newStatus = null;
+            if (action) newStatus = 'Approved';
+            else if (action === false) newStatus = 'Pending'; // jika deny clicked
 
-        // --- FORM LOGIC ---
-        function openModal() {
-            editId = null; document.getElementById('attend-modal').classList.remove('hidden');
-            document.getElementById('attend-form').reset();
-            listAbs=[]; listInsp=[]; listOt=[]; renderAllLists(); updateShiftDropdown();
-        }
+            if (newStatus) {
+                loader.style.display = 'flex';
+                try {
+                    const existingRec = allAttendanceRecords.find(r => 
+                        String(r.EmployeeId).trim() === String(empId).trim() && 
+                        String(r.Date).trim() === todayIso
+                    );
 
-        function editAttend(item) {
-            editId = item.Timestamp; document.getElementById('attend-modal').classList.remove('hidden');
-            document.getElementById('UnitCode').value = item.UnitCode; updateShiftDropdown();
-            document.getElementById('ShiftCategory').value = item.ShiftCategory;
-            document.getElementById('Hadir').value = item.Hadir;
-            document.getElementById('HighlightManpower').value = item.HighlightManpower;
-            document.getElementById('Utilization').value = item.Utilization;
-            document.getElementById('util-val').innerText = item.Utilization;
-            listAbs = JSON.parse(item.DetailAbsen || '[]'); 
-            listInsp = JSON.parse(item.DetailInspectorName || '[]'); 
-            listOt = JSON.parse(item.PermintaanOvertime || '[]');
-            syncManpowerFromShift(); renderAllLists();
-        }
+                    const payload = {
+                        tab: 'ATTENDANCE_RECORD',
+                        action: existingRec ? 'update' : 'add',
+                        primaryId: `${empId}|${todayIso}`,
+                        EmployeeId: empId,
+                        Date: todayIso,
+                        F1: existingRec?.F1 || '-',
+                        F4: existingRec?.F4 || '-',
+                        Leave: existingRec?.Leave || '',
+                        StatusApproval: newStatus,
+                        "Status Approval": newStatus
+                    };
 
-        function addItem(type) {
-            if(type === 'abs') { 
-                const n = document.getElementById('abs-name').value; 
-                const note = document.getElementById('abs-note').value;
-                if(!n) return; 
-                listAbs.push({name: n, status: document.getElementById('abs-status').value, note: note || '-'}); 
-                document.getElementById('abs-name').value=''; document.getElementById('abs-note').value='';
+                    const res = await API.post(payload);
+                    if (res.status === 'success') {
+                        // Invalidate & refresh
+                        await API.clearLocalCache('ATTENDANCE_RECORD');
+                        const fresh = await API.get('ATTENDANCE_RECORD');
+                        allAttendanceRecords = fresh.data || [];
+                        renderMainDashboard();
+
+                        Swal.fire({
+                            icon: 'success',
+                            title: `Status Diubah: ${newStatus}`,
+                            toast: true,
+                            position: 'top-end',
+                            timer: 1500,
+                            showConfirmButton: false,
+                            background: '#151921',
+                            color: '#fff'
+                        });
+                    } else {
+                        throw new Error(res.message);
+                    }
+                } catch(e) {
+                    Swal.fire({ title: 'Gagal Update', text: e.message, icon: 'error', background: '#151921', color: '#fff' });
+                } finally {
+                    loader.style.display = 'none';
+                }
             }
-            if(type === 'insp') { 
-                const n = document.getElementById('insp-name').value; if(!n) return; 
-                listInsp.push({name: n, job: document.getElementById('insp-task').value || 'INSP'}); 
-                document.getElementById('insp-name').value=''; document.getElementById('insp-task').value='';
-            }
-            if(type === 'ot') { 
-                const n = document.getElementById('ot-name').value;
-                const start = document.getElementById('ot-start').value;
-                const end = document.getElementById('ot-end').value;
-                if(!n || !start || !end) return; 
-                
-                // Calculate Duration
-                const duration = ((new Date(end) - new Date(start)) / 3600000).toFixed(1);
-                
-                listOt.push({
-                    name: n, start: start, end: end, 
-                    hour: duration, job: document.getElementById('ot-task').value || 'OVT', 
-                    myhc: document.getElementById('ot-myhc').checked
-                }); 
-                document.getElementById('ot-name').value=''; document.getElementById('ot-task').value='';
-            }
-            renderAllLists();
         }
 
-        function removeItem(type, idx) {
-            if(type === 'abs') listAbs.splice(idx, 1); if(type === 'insp') listInsp.splice(idx, 1); if(type === 'ot') listOt.splice(idx, 1);
-            renderAllLists();
+        // ========================================================
+        // MODAL OPERATIONS LOG (UTILIZATION, HIGHLIGHTS, OVT, INSP)
+        // ========================================================
+        function openOpsModal() {
+            document.getElementById('ops-modal').classList.remove('hidden');
+            document.getElementById('modal-sub-label').innerText = `${activeUnit} - ${activeShiftCat || 'General'}`;
+
+            const opsLog = opsDataList.find(o => 
+                o.UnitCode === activeUnit && 
+                (!activeShiftCat || o.ShiftCategory === activeShiftCat)
+            ) || {};
+
+            document.getElementById('Utilization').value = opsLog.Utilization || 85;
+            document.getElementById('util-val-disp').innerText = (opsLog.Utilization || 85) + '%';
+            document.getElementById('HighlightManpower').value = opsLog.HighlightManpower || '';
+
+            try { tempInspList = JSON.parse(opsLog.DetailInspectorName || '[]'); } catch(e){ tempInspList = []; }
+            try { tempOtList = JSON.parse(opsLog.PermintaanOvertime || '[]'); } catch(e){ tempOtList = []; }
+
+            renderModalInsp();
+            renderModalOt();
         }
 
-        function renderAllLists() {
-            const r = (cid, data, type) => {
-                document.getElementById(cid).innerHTML = data.map((item, i) => `
-                    <div class="detail-item !py-2 !px-3 flex justify-between items-center">
-                        <span class="text-[9px] font-bold text-white">${item.name} <span class="opacity-30">(${item.status || item.hour + 'h'})</span></span>
-                        <button type="button" onclick="removeItem('${type}', ${i})" class="text-red-500/40 hover:text-red-500"><i data-lucide="x" size="10"></i></button>
-                    </div>`).join('');
-                lucide.createIcons();
-            };
-            r('list-abs', listAbs, 'abs'); r('list-insp', listInsp, 'insp'); r('list-ot', listOt, 'ot');
+        function closeOpsModal() {
+            document.getElementById('ops-modal').classList.add('hidden');
         }
 
-        // --- CALC ---
-        function updateShiftDropdown() {
-            const uCode = document.getElementById('UnitCode').value;
-            const filtered = allShifts.filter(s => s.UnitCode === uCode);
-            document.getElementById('ShiftCategory').innerHTML = filtered.map(s => `<option value="${s.ShiftCategory}">${s.ShiftCategory}</option>`).join('');
-            syncManpowerFromShift();
+        function addInspectorItem() {
+            const name = document.getElementById('insp-name').value.trim();
+            const task = document.getElementById('insp-task').value.trim();
+            if (!name) return;
+            tempInspList.push({ name, job: task || 'INSP' });
+            document.getElementById('insp-name').value = '';
+            document.getElementById('insp-task').value = '';
+            renderModalInsp();
         }
 
-        function syncManpowerFromShift() {
-            const u = document.getElementById('UnitCode').value;
-            const c = document.getElementById('ShiftCategory').value;
-            const match = allShifts.find(s => s.UnitCode === u && s.ShiftCategory === c);
-            document.getElementById('total-personnel').innerText = match ? match.TotalManpower : '0';
-            doCalculations();
+        function removeInspectorItem(idx) {
+            tempInspList.splice(idx, 1);
+            renderModalInsp();
         }
 
-        function doCalculations() {
-            const tot = parseInt(document.getElementById('total-personnel').innerText) || 0;
-            const had = parseInt(document.getElementById('Hadir').value) || 0;
-            document.getElementById('Absen').value = Math.max(0, tot - had);
-            document.getElementById('availability-pct').innerText = tot > 0 ? ((had / tot) * 100).toFixed(1) + '%' : '0%';
+        function renderModalInsp() {
+            const list = document.getElementById('modal-insp-list');
+            list.innerHTML = tempInspList.map((item, idx) => `
+                <div class="flex justify-between items-center bg-white/5 p-2 rounded-lg text-white">
+                    <span><b>${item.name}</b> <span class="opacity-50 text-[10px]">(${item.job})</span></span>
+                    <button type="button" onclick="removeInspectorItem(${idx})" class="text-red-400 hover:text-red-300 p-1"><i data-lucide="x" size="12"></i></button>
+                </div>
+            `).join('');
+            lucide.createIcons();
         }
 
-        document.getElementById('attend-form').onsubmit = async (e) => {
+        function addOtItem() {
+            const name = document.getElementById('ot-name').value.trim();
+            const start = document.getElementById('ot-start').value;
+            const end = document.getElementById('ot-end').value;
+            const task = document.getElementById('ot-task').value.trim();
+            const myhc = document.getElementById('ot-myhc').checked;
+            if (!name || !start || !end) return;
+
+            const duration = ((new Date(end) - new Date(start)) / 3600000).toFixed(1);
+            tempOtList.push({ name, start, end, hour: duration, job: task || 'OVT', myhc });
+
+            document.getElementById('ot-name').value = '';
+            document.getElementById('ot-task').value = '';
+            document.getElementById('ot-myhc').checked = false;
+            renderModalOt();
+        }
+
+        function removeOtItem(idx) {
+            tempOtList.splice(idx, 1);
+            renderModalOt();
+        }
+
+        function renderModalOt() {
+            const list = document.getElementById('modal-ot-list');
+            list.innerHTML = tempOtList.map((item, idx) => `
+                <div class="flex justify-between items-center bg-white/5 p-2 rounded-lg text-white">
+                    <div>
+                        <span class="font-bold">${item.name}</span>
+                        <span class="text-[10px] opacity-40 font-mono">(${item.hour}h &bull; ${item.job})</span>
+                    </div>
+                    <button type="button" onclick="removeOtItem(${idx})" class="text-red-400 hover:text-red-300 p-1"><i data-lucide="x" size="12"></i></button>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        document.getElementById('ops-form').onsubmit = async (e) => {
             e.preventDefault();
             loader.style.display = 'flex';
-            const formData = new FormData(e.target);
+
+            const existingOps = opsDataList.find(o => 
+                o.UnitCode === activeUnit && 
+                (!activeShiftCat || o.ShiftCategory === activeShiftCat)
+            );
+
             const payload = {
-                tab: 'ATTENDANCE', action: editId ? 'update' : 'add',
-                primaryId: editId || formData.get('UnitCode'),
-                DetailAbsen: JSON.stringify(listAbs),
-                DetailInspectorName: JSON.stringify(listInsp),
-                PermintaanOvertime: JSON.stringify(listOt),
-                Availability: document.getElementById('availability-pct').innerText.replace('%',''),
-                InspectorNo: listInsp.length
+                tab: 'ATTENDANCE',
+                action: existingOps ? 'update' : 'add',
+                primaryId: existingOps ? existingOps.Timestamp : activeUnit,
+                UnitCode: activeUnit,
+                ShiftCategory: activeShiftCat || 'General',
+                Utilization: document.getElementById('Utilization').value,
+                HighlightManpower: document.getElementById('HighlightManpower').value.trim(),
+                DetailInspectorName: JSON.stringify(tempInspList),
+                InspectorNo: tempInspList.length,
+                PermintaanOvertime: JSON.stringify(tempOtList)
             };
-            formData.forEach((v, k) => payload[k] = v);
-            try { await API.post(payload); closeModal(); init(); } 
-            catch(e) { console.error(e); } finally { loader.style.display = 'none'; }
-        }
 
-        async function deleteAttend(ts) {
-            const res = await Swal.fire({ title: 'Purge?', text: "Remove entry permanently.", icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', background: '#151921', color: '#fff' });
-            if(res.isConfirmed) { loader.style.display = 'flex'; await API.post({ tab: 'ATTENDANCE', action: 'delete', primaryId: ts }); init(); }
-        }
+            try {
+                const res = await API.post(payload);
+                if (res.status === 'success') {
+                    closeOpsModal();
+                    await API.clearLocalCache('ATTENDANCE');
+                    const freshOps = await API.get('ATTENDANCE');
+                    opsDataList = freshOps.data || [];
+                    renderMainDashboard();
 
-        function closeModal() { document.getElementById('attend-modal').classList.add('hidden'); }
+                    Swal.fire({ icon: 'success', title: 'Operations Log Saved', toast: true, position: 'top-end', timer: 1500, showConfirmButton: false, background: '#151921', color: '#fff' });
+                } else {
+                    throw new Error(res.message);
+                }
+            } catch(err) {
+                Swal.fire({ title: 'Gagal Menyimpan', text: err.message, icon: 'error', background: '#151921', color: '#fff' });
+            } finally {
+                loader.style.display = 'none';
+            }
+        };
+
         init();
     </script>
 </body>
