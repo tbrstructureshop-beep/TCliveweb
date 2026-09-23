@@ -90,7 +90,7 @@
 </div>
 
 <style>
-    /* 🚀 STYLING VERTICAL SCROLLBAR THEME */
+    /* Styling scrollbar vertikal tema dark */
     .custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
     .custom-scrollbar::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); border-radius: 8px; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 8px; }
@@ -178,6 +178,7 @@
     let secondsElapsed = 0;
     let isRunning = false;
     let isPaused = false;
+    let isExistingSession = false; // Flag apakah melanjutkan sesi yang sudah ada di sheet
     
     let dateStartStr = '';
     let timeStartStr = '';
@@ -185,8 +186,6 @@
     let timePauseStr = '';
     let dateStopStr = '';
     let timeStopStr = '';
-
-    const localActiveSessionKey = `active_job_${currentUser.EmployeeId}_${orderNo}`;
 
     window.closePerformJobModal = function() {
         if (isRunning) {
@@ -206,9 +205,10 @@
     };
 
     function formatDurationDisplay(totalSeconds) {
-        const hrs = Math.floor(totalSeconds / 3600);
-        const mins = Math.floor((totalSeconds % 3600) / 60);
-        const secs = totalSeconds % 60;
+        const s = Math.max(0, parseInt(totalSeconds) || 0);
+        const hrs = Math.floor(s / 3600);
+        const mins = Math.floor((s % 3600) / 60);
+        const secs = s % 60;
         
         return `${String(hrs).padStart(2,'0')}<span class="text-xs text-sky-400 font-normal ml-1 mr-2 font-sans">h</span>` +
                `${String(mins).padStart(2,'0')}<span class="text-xs text-sky-400 font-normal ml-1 mr-2 font-sans">m</span>` +
@@ -235,11 +235,14 @@
         return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
     }
 
-    function parseTimeToSeconds(dateStr, timeStr) {
+    // Helper konversi tanggal dan jam ke milidetik
+    function parseDateToMs(dateStr, timeStr) {
         if (!dateStr || !timeStr) return null;
         try {
-            const [y, m, d] = dateStr.split('-');
-            const [hh, mm, ss] = timeStr.split(':');
+            const cleanDate = dateStr.trim();
+            const cleanTime = timeStr.trim();
+            const [y, m, d] = cleanDate.split('-').map(Number);
+            const [hh, mm, ss] = cleanTime.split(':').map(Number);
             return new Date(y, m - 1, d, hh, mm, ss || 0).getTime();
         } catch(e) { return null; }
     }
@@ -259,14 +262,17 @@
         return PALETTES[Math.abs(hash) % PALETTES.length];
     }
 
-    // 🚀 LOAD RIWAYAT & PERIKSA STATUS AKTIF DI SHEET JOB RECORD
+    // 🚀 LOAD RIWAYAT & RECOVERY OTOMATIS JIKA DEVICE DI-REFRESH
     async function loadJobRecordsHistory() {
         const countSpan = document.getElementById('pj-history-count');
         const container = document.getElementById('class-roster-container');
 
         try {
+            // Hapus cache lokal dulu agar selalu membaca data terbaru dari spreadsheet
+            if (API.clearLocalCache) await API.clearLocalCache('JOB RECORD');
+
             const [jobRes, userRes] = await Promise.all([
-                API.get('JOB_RECORD'),
+                API.get('JOB RECORD'),
                 API.get('USER')
             ]);
 
@@ -302,27 +308,31 @@
                 });
             }
 
-            // Saring riwayat pengerjaan khusus order saat ini
+            // Saring semua record khusus untuk order saat ini
             const orderJobs = allJobs.filter(j => String(j.Order || '').trim() === orderNo);
             countSpan.innerText = `${orderJobs.length} Records for this Order`;
 
-            // 🚀 RESTORE SESI USER SENDIRI JIKA DEVICE TERESET
-            const myActiveSession = orderJobs.find(j => 
+            // 🚀 AMBIL SESI AKTIF TERAKHIR MILIK USER SENDIRI PADA ORDER INI
+            const myUnfinishedJobs = orderJobs.filter(j => 
                 String(j.EmployeeId).trim() === String(currentUser.EmployeeId).trim() && 
                 j.Start && (!j.Stop || j.Stop === '' || j.Stop === '-')
             );
 
-            if (myActiveSession && secondsElapsed === 0) {
-                dateStartStr = myActiveSession.DateStart || getCurrentDateIso();
-                timeStartStr = myActiveSession.Start;
+            // Ambil baris yang paling baru
+            const latestSession = myUnfinishedJobs.length > 0 ? myUnfinishedJobs[myUnfinishedJobs.length - 1] : null;
+
+            if (latestSession && secondsElapsed === 0) {
+                isExistingSession = true;
+                dateStartStr = latestSession.DateStart || getCurrentDateIso();
+                timeStartStr = latestSession.Start;
                 document.getElementById('stamp-start').innerText = timeStartStr;
 
-                if (myActiveSession.Pause && (!myActiveSession.Stop || myActiveSession.Stop === '')) {
-                    // Posisi sedang di-pause
-                    datePauseStr = myActiveSession.DatePause || '';
-                    timePauseStr = myActiveSession.Pause || '';
+                // KONDISI A: TERSIMPAN DALAM KEADAAN PAUSE
+                if (latestSession.Pause && (!latestSession.Stop || latestSession.Stop === '')) {
+                    datePauseStr = latestSession.DatePause || '';
+                    timePauseStr = latestSession.Pause || '';
                     document.getElementById('stamp-pause').innerText = timePauseStr;
-                    secondsElapsed = parseInt(myActiveSession.Duration) || 0;
+                    secondsElapsed = parseInt(latestSession.Duration) || 0;
                     isPaused = true;
                     isRunning = false;
 
@@ -331,28 +341,52 @@
                     document.getElementById('label-start').innerText = "Resume Job";
                     document.getElementById('btn-timer-pause').disabled = true;
                     document.getElementById('btn-timer-stop').disabled = false;
-                } else {
-                    // Posisi sedang running saat ter-reset: Hitung selisih detik ke waktu sekarang
-                    const startMs = parseTimeToSeconds(dateStartStr, timeStartStr);
+
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'Sesi Kerja Dimuat Kembali',
+                        text: `Pekerjaan dilanjutkan dalam kondisi Pause (Durasi: ${formatSecToReadable(secondsElapsed)}). Klik 'Resume Job' untuk melanjutkan.`,
+                        background: '#151921',
+                        color: '#fff',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                } 
+                // KONDISI B: TERSIMPAN DALAM KEADAAN RUNNING (HITUNG SELISIH WAKTU OTOMATIS)
+                else {
+                    const startMs = parseDateToMs(dateStartStr, timeStartStr);
                     const nowMs = Date.now();
+
                     if (startMs && nowMs > startMs) {
                         secondsElapsed = Math.floor((nowMs - startMs) / 1000);
                     } else {
-                        secondsElapsed = parseInt(myActiveSession.Duration) || 0;
+                        secondsElapsed = parseInt(latestSession.Duration) || 0;
                     }
 
                     document.getElementById('timer-display').innerHTML = formatDurationDisplay(secondsElapsed);
-                    handleStartJob(true); // resume running tanpa dialog awal
+                    
+                    // Langsung jalankan timer kembali tanpa memicu dialog start awal
+                    startTimerTicker();
+
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'Sesi Berjalan Dipulihkan',
+                        text: `Timer langsung dilanjutkan dari jam mulai ${timeStartStr} (Berjalan: ${formatSecToReadable(secondsElapsed)}).`,
+                        background: '#151921',
+                        color: '#fff',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
                 }
             }
 
-            // 🚀 PERIKSA APAKAH ADA ORANG LAIN YANG SEDANG MENGERJAKAN ORDER INI
+            // 🚀 PERIKSA APAKAH ADA ORANG LAIN YANG JUGA SEDANG MENGERJAKAN ORDER INI
             const otherActiveWorker = orderJobs.find(j => 
                 String(j.EmployeeId).trim() !== String(currentUser.EmployeeId).trim() && 
                 j.Start && (!j.Stop || j.Stop === '' || j.Stop === '-')
             );
 
-            if (otherActiveWorker && !myActiveSession && secondsElapsed === 0) {
+            if (otherActiveWorker && !latestSession && secondsElapsed === 0) {
                 const uObj = allUsers.find(usr => String(usr.EmployeeId).trim() === String(otherActiveWorker.EmployeeId).trim());
                 const workerName = uObj ? uObj.Name : otherActiveWorker.EmployeeId;
 
@@ -384,7 +418,7 @@
                 return;
             }
 
-            // 2. Gabungkan data dengan tabel USER untuk Nama & Class Karyawan
+            // Gabungkan data dengan tabel USER untuk Nama & Class Karyawan
             const enrichedJobs = orderJobs.map(j => {
                 const u = allUsers.find(usr => String(usr.EmployeeId).trim() === String(j.EmployeeId).trim()) || {};
                 let statusLabel = 'COMPLETED';
@@ -409,14 +443,14 @@
                 };
             });
 
-            // 3. Kelompokkan berdasarkan Class
+            // Kelompokkan berdasarkan Class
             const groupedByClass = enrichedJobs.reduce((acc, j) => {
                 if (!acc[j.Class]) acc[j.Class] = [];
                 acc[j.Class].push(j);
                 return acc;
             }, {});
 
-            // 4. Render Akordeon Bersarang: Setiap Class Bisa Dihide/Expand
+            // Render Akordeon Bersarang: Setiap Class Bisa Dihide/Expand
             container.innerHTML = Object.entries(groupedByClass).map(([className, jobList]) => {
                 const c = getDynamicColor(className);
                 return `
@@ -482,9 +516,25 @@
         }
     }
 
+    // Fungsi internal untuk menyalakan interval timer
+    function startTimerTicker() {
+        isRunning = true;
+        isPaused = false;
+        document.getElementById('btn-timer-start').disabled = true;
+        document.getElementById('btn-timer-pause').disabled = false;
+        document.getElementById('btn-timer-stop').disabled = false;
+
+        clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
+            secondsElapsed++;
+            document.getElementById('timer-display').innerHTML = formatDurationDisplay(secondsElapsed);
+        }, 1000);
+    }
+
     // --- WORKFLOW TIMER: START, PAUSE, STOP SECARA REAL-TIME ---
-    window.handleStartJob = async function(skipPrompt = false) {
-        if (!skipPrompt && secondsElapsed === 0) {
+    window.handleStartJob = async function() {
+        // Jika sesi belum pernah dimulai sama sekali
+        if (!isExistingSession && secondsElapsed === 0) {
             const { isConfirmed } = await Swal.fire({
                 title: `<span style="font-size:16px; color:#fff;">Perform Order #${orderNo}</span>`,
                 html: `
@@ -508,6 +558,7 @@
             dateStartStr = getCurrentDateIso();
             timeStartStr = getCurrentTimeClock();
             document.getElementById('stamp-start').innerText = timeStartStr;
+            isExistingSession = true;
 
             // 🚀 REKAM REAL-TIME KE SHEET: MENGISI DATESTART & START
             const payload = {
@@ -527,17 +578,7 @@
             API.post(payload).catch(console.error);
         }
 
-        isRunning = true;
-        isPaused = false;
-        document.getElementById('btn-timer-start').disabled = true;
-        document.getElementById('btn-timer-pause').disabled = false;
-        document.getElementById('btn-timer-stop').disabled = false;
-
-        clearInterval(timerInterval);
-        timerInterval = setInterval(() => {
-            secondsElapsed++;
-            document.getElementById('timer-display').innerHTML = formatDurationDisplay(secondsElapsed);
-        }, 1000);
+        startTimerTicker();
     };
 
     window.handlePauseJob = function() {
@@ -573,7 +614,7 @@
     };
 
     window.handleStopJob = async function() {
-        if (secondsElapsed === 0) return;
+        if (secondsElapsed === 0 && !isExistingSession) return;
 
         clearInterval(timerInterval);
         isRunning = false;
@@ -626,7 +667,7 @@
         });
 
         if (!formResult) {
-            handleStartJob(true);
+            startTimerTicker();
             return;
         }
 
@@ -654,7 +695,7 @@
             }
         }
 
-        // 🚀 2. REKAM FINAL KE GOOGLE SHEET JOB RECORD: MENGISI DATESTOP, STOP & FINAL DURATION
+        // 🚀 2. REKAM FINAL KE GOOGLE SHEET JOB RECORD
         const payload = {
             tab: 'JOB RECORD',
             action: 'update',
@@ -691,16 +732,16 @@
                     confirmButtonColor: '#0ea5e9'
                 });
 
-                if (API.clearLocalCache) await API.clearLocalCache('JOB_RECORD');
-                await loadJobRecordsHistory();
-
-                // Reset timer status
+                // Reset timer & status
+                isExistingSession = false;
                 secondsElapsed = 0;
                 document.getElementById('timer-display').innerHTML = formatDurationDisplay(0);
                 document.getElementById('btn-timer-start').disabled = false;
                 document.getElementById('label-start').innerText = "Start Job";
                 document.getElementById('btn-timer-pause').disabled = true;
                 document.getElementById('btn-timer-stop').disabled = true;
+
+                await loadJobRecordsHistory();
             } else {
                 throw new Error(res?.message || 'Gagal menyimpan ke server.');
             }
@@ -717,7 +758,7 @@
         }
     };
 
-    // Muat riwayat tabel saat modal dibuka
+    // Jalankan pemeriksaan awal dan muat riwayat tabel saat modal dibuka
     loadJobRecordsHistory();
 })();
 </script>
