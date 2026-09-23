@@ -89,11 +89,42 @@
     </div>
 </div>
 
+<style>
+    /* 🚀 STYLING VERTICAL SCROLLBAR THEME */
+    .custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); border-radius: 8px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 8px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #0ea5e9; }
+
+    details > summary { list-style: none; outline: none; }
+    details > summary::-webkit-details-marker { display: none; }
+</style>
+
 <script>
 (function() {
     lucide.createIcons();
 
-    // 1. CEK KONTEKS ORDER & UNIT
+    // 1. SUPABASE CLIENT & KONFIGURASI
+    const S_URL = 'https://tskcxblanrtvzlctpcyd.supabase.co';
+    const S_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRza2N4YmxhbnJ0dnpsY3RwY3lkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcwNjI0MjAsImV4cCI6MjA4MjYzODQyMH0.6epAPJdzgxe-pmG-rVtosdbg-dwF5lND6Xd18VgUeU0';
+    let sbClient = null;
+    try {
+        if (typeof supabase !== 'undefined' && supabase.createClient) {
+            sbClient = supabase.createClient(S_URL, S_KEY);
+        } else if (window.parent && window.parent.supabaseClient) {
+            sbClient = window.parent.supabaseClient;
+        }
+    } catch(e) {}
+
+    const SUPABASE_MAP = {
+        'TCR-1': { colStatus: 'status_sm1', colDate: 'date_closed_sm1', remarkKey: 'remark_sm1' },
+        'TCR-2': { colStatus: 'status_cs1', colDate: 'date_closed_cs1', remarkKey: 'remark_cs1' },
+        'TCR-3': { colStatus: 'status_sm4', colDate: 'date_closed_sm4', remarkKey: 'remark_sm4' },
+        'TCR-4': { colStatus: 'status_cs4', colDate: 'date_closed_cs4', remarkKey: 'remark_cs4' },
+        'TCR-5': { colStatus: 'status_mw',  colDate: 'date_closed_mw',  remarkKey: 'remark_mw' }
+    };
+
+    // 2. CEK KONTEKS ORDER & UNIT
     const jobContext = window.activePerformJob || {};
     const unitCode = String(jobContext.unitCode || 'TCP-9').trim();
     const orderNo = String(jobContext.orderNo || '-').trim();
@@ -102,7 +133,7 @@
     document.getElementById('pj-order-title').innerText = `ORDER #${orderNo}`;
     document.getElementById('pj-desc').innerText = jobContext.description || 'No description provided';
 
-    // 2. VERIFIKASI SESI LOGIN (WAJIB LOGIN DARI modal/logIn)
+    // 3. VERIFIKASI SESI LOGIN
     const savedUserStr = localStorage.getItem('tc_user');
     if (!savedUserStr) {
         Swal.fire({
@@ -122,7 +153,7 @@
     const currentUser = JSON.parse(savedUserStr);
     const userUnit = String(currentUser.UnitCode || '').trim();
 
-    // 3. VERIFIKASI KECOCOKAN UNIT CODE
+    // 4. VERIFIKASI KECOCOKAN UNIT CODE
     if (userUnit.toLowerCase() !== unitCode.toLowerCase()) {
         Swal.fire({
             icon: 'error',
@@ -138,15 +169,15 @@
         return;
     }
 
-    // Tampilkan data Operator Terautentikasi
     document.getElementById('op-auth-name').innerText = currentUser.Name || currentUser.EmployeeId;
     document.getElementById('op-auth-class').innerText = currentUser.Class || 'Employee';
     document.getElementById('op-auth-sub').innerText = `ID: ${currentUser.EmployeeId} &bull; Unit: ${userUnit} &bull; ${currentUser.JobTitle || 'Staff'}`;
 
-    // Timer State
+    // Timer & Record State
     let timerInterval = null;
     let secondsElapsed = 0;
     let isRunning = false;
+    let isPaused = false;
     
     let dateStartStr = '';
     let timeStartStr = '';
@@ -154,6 +185,8 @@
     let timePauseStr = '';
     let dateStopStr = '';
     let timeStopStr = '';
+
+    const localActiveSessionKey = `active_job_${currentUser.EmployeeId}_${orderNo}`;
 
     window.closePerformJobModal = function() {
         if (isRunning) {
@@ -202,13 +235,21 @@
         return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
     }
 
-    // Dynamic Color Palette
+    function parseTimeToSeconds(dateStr, timeStr) {
+        if (!dateStr || !timeStr) return null;
+        try {
+            const [y, m, d] = dateStr.split('-');
+            const [hh, mm, ss] = timeStr.split(':');
+            return new Date(y, m - 1, d, hh, mm, ss || 0).getTime();
+        } catch(e) { return null; }
+    }
+
     const PALETTES = [
-        { border: 'border-sky-500/30', text: 'text-sky-400', badge: 'bg-sky-500/20 text-sky-300' },
-        { border: 'border-purple-500/30', text: 'text-purple-400', badge: 'bg-purple-500/20 text-purple-300' },
-        { border: 'border-emerald-500/30', text: 'text-emerald-400', badge: 'bg-emerald-500/20 text-emerald-300' },
-        { border: 'border-amber-500/30', text: 'text-amber-400', badge: 'bg-amber-500/20 text-amber-300' },
-        { border: 'border-rose-500/30', text: 'text-rose-400', badge: 'bg-rose-500/20 text-rose-300' }
+        { text: 'text-sky-400', badge: 'bg-sky-500/20 text-sky-300' },
+        { text: 'text-purple-400', badge: 'bg-purple-500/20 text-purple-300' },
+        { text: 'text-emerald-400', badge: 'bg-emerald-500/20 text-emerald-300' },
+        { text: 'text-amber-400', badge: 'bg-amber-500/20 text-amber-300' },
+        { text: 'text-rose-400', badge: 'bg-rose-500/20 text-rose-300' }
     ];
 
     function getDynamicColor(str) {
@@ -218,7 +259,7 @@
         return PALETTES[Math.abs(hash) % PALETTES.length];
     }
 
-    // 🚀 LOAD RIWAYAT PENGERJAAN ORDER DARI TAB "JOB RECORD"
+    // 🚀 LOAD RIWAYAT & PERIKSA STATUS AKTIF DI SHEET JOB RECORD
     async function loadJobRecordsHistory() {
         const countSpan = document.getElementById('pj-history-count');
         const container = document.getElementById('class-roster-container');
@@ -232,10 +273,108 @@
             const allJobs = jobRes.data || [];
             const allUsers = userRes.data || [];
 
-            // 1. Saring riwayat pengerjaan khusus untuk ORDER ini saja
-            const orderJobs = allJobs.filter(j => String(j.Order || '').trim() === orderNo);
+            // 🚀 PERIKSA: APAKAH USER MEMILIKI TANGGUNGAN ORDER LAIN YANG MASIH BERJALAN?
+            const otherPendingJob = allJobs.find(j => 
+                String(j.EmployeeId).trim() === String(currentUser.EmployeeId).trim() && 
+                String(j.Order).trim() !== orderNo && 
+                j.Start && (!j.Stop || j.Stop === '' || j.Stop === '-')
+            );
 
+            if (otherPendingJob) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Pemberitahuan Tanggungan Order',
+                    html: `
+                        <div style="font-size:12px; color:#94a3b8; text-align:left; display:flex; flex-direction:column; gap:6px;">
+                            <p>Anda masih memiliki tanggungan pekerjaan yang sedang berjalan pada: <b style="color:#38bdf8;">Order #${otherPendingJob.Order}</b>.</p>
+                            <p>Mulai: <b style="color:#fff;">${otherPendingJob.Start}</b> (${otherPendingJob.DateStart || ''})</p>
+                            <p class="text-white/60 mt-1">Apakah Anda tetap ingin melanjutkan bekerja untuk order saat ini (#${orderNo})?</p>
+                        </div>
+                    `,
+                    background: '#151921',
+                    confirmButtonText: 'Lanjutkan Order Ini',
+                    confirmButtonColor: '#0ea5e9',
+                    showCancelButton: true,
+                    cancelButtonText: 'Tutup Modul',
+                    cancelButtonColor: '#334155'
+                }).then((res) => {
+                    if (!res.isConfirmed) closePerformJobModal();
+                });
+            }
+
+            // Saring riwayat pengerjaan khusus order saat ini
+            const orderJobs = allJobs.filter(j => String(j.Order || '').trim() === orderNo);
             countSpan.innerText = `${orderJobs.length} Records for this Order`;
+
+            // 🚀 RESTORE SESI USER SENDIRI JIKA DEVICE TERESET
+            const myActiveSession = orderJobs.find(j => 
+                String(j.EmployeeId).trim() === String(currentUser.EmployeeId).trim() && 
+                j.Start && (!j.Stop || j.Stop === '' || j.Stop === '-')
+            );
+
+            if (myActiveSession && secondsElapsed === 0) {
+                dateStartStr = myActiveSession.DateStart || getCurrentDateIso();
+                timeStartStr = myActiveSession.Start;
+                document.getElementById('stamp-start').innerText = timeStartStr;
+
+                if (myActiveSession.Pause && (!myActiveSession.Stop || myActiveSession.Stop === '')) {
+                    // Posisi sedang di-pause
+                    datePauseStr = myActiveSession.DatePause || '';
+                    timePauseStr = myActiveSession.Pause || '';
+                    document.getElementById('stamp-pause').innerText = timePauseStr;
+                    secondsElapsed = parseInt(myActiveSession.Duration) || 0;
+                    isPaused = true;
+                    isRunning = false;
+
+                    document.getElementById('timer-display').innerHTML = formatDurationDisplay(secondsElapsed);
+                    document.getElementById('btn-timer-start').disabled = false;
+                    document.getElementById('label-start').innerText = "Resume Job";
+                    document.getElementById('btn-timer-pause').disabled = true;
+                    document.getElementById('btn-timer-stop').disabled = false;
+                } else {
+                    // Posisi sedang running saat ter-reset: Hitung selisih detik ke waktu sekarang
+                    const startMs = parseTimeToSeconds(dateStartStr, timeStartStr);
+                    const nowMs = Date.now();
+                    if (startMs && nowMs > startMs) {
+                        secondsElapsed = Math.floor((nowMs - startMs) / 1000);
+                    } else {
+                        secondsElapsed = parseInt(myActiveSession.Duration) || 0;
+                    }
+
+                    document.getElementById('timer-display').innerHTML = formatDurationDisplay(secondsElapsed);
+                    handleStartJob(true); // resume running tanpa dialog awal
+                }
+            }
+
+            // 🚀 PERIKSA APAKAH ADA ORANG LAIN YANG SEDANG MENGERJAKAN ORDER INI
+            const otherActiveWorker = orderJobs.find(j => 
+                String(j.EmployeeId).trim() !== String(currentUser.EmployeeId).trim() && 
+                j.Start && (!j.Stop || j.Stop === '' || j.Stop === '-')
+            );
+
+            if (otherActiveWorker && !myActiveSession && secondsElapsed === 0) {
+                const uObj = allUsers.find(usr => String(usr.EmployeeId).trim() === String(otherActiveWorker.EmployeeId).trim());
+                const workerName = uObj ? uObj.Name : otherActiveWorker.EmployeeId;
+
+                Swal.fire({
+                    icon: 'question',
+                    title: 'Active Job Collaboration',
+                    html: `
+                        <div style="font-size:12px; color:#94a3b8; text-align:left; display:flex; flex-direction:column; gap:6px;">
+                            <p>Order #${orderNo} sedang aktif dikerjakan oleh: <b style="color:#fff;">${workerName}</b> (${otherActiveWorker.EmployeeId}).</p>
+                            <p style="color:#38bdf8; font-weight:700; margin-top:4px;">Do you part of this job?</p>
+                        </div>
+                    `,
+                    background: '#151921',
+                    showCancelButton: true,
+                    confirmButtonText: 'Yes, I am part of this job',
+                    confirmButtonColor: '#0ea5e9',
+                    cancelButtonText: 'No, Exit',
+                    cancelButtonColor: '#334155'
+                }).then((r) => {
+                    if (!r.isConfirmed) closePerformJobModal();
+                });
+            }
 
             if (orderJobs.length === 0) {
                 container.innerHTML = `
@@ -245,13 +384,28 @@
                 return;
             }
 
-            // 2. Gabungkan data dengan tabel USER untuk memperoleh Nama & Class Karyawan
+            // 2. Gabungkan data dengan tabel USER untuk Nama & Class Karyawan
             const enrichedJobs = orderJobs.map(j => {
                 const u = allUsers.find(usr => String(usr.EmployeeId).trim() === String(j.EmployeeId).trim()) || {};
+                let statusLabel = 'COMPLETED';
+                let statusColor = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+
+                if (!j.Stop || j.Stop === '' || j.Stop === '-') {
+                    if (j.Pause) {
+                        statusLabel = 'PAUSED';
+                        statusColor = 'bg-amber-500/10 text-amber-400 border-amber-500/20';
+                    } else {
+                        statusLabel = 'IN PROGRESS';
+                        statusColor = 'bg-sky-500/10 text-sky-400 border-sky-500/20 animate-pulse';
+                    }
+                }
+
                 return {
                     ...j,
                     Name: u.Name || 'Unknown Personnel',
-                    Class: (u.Class || 'Employee').trim()
+                    Class: (u.Class || 'Employee').trim(),
+                    statusLabel,
+                    statusColor
                 };
             });
 
@@ -270,9 +424,9 @@
                         <summary class="flex justify-between items-center cursor-pointer select-none mb-3">
                             <div class="flex items-center gap-2">
                                 <i data-lucide="chevron-down" class="w-3.5 h-3.5 ${c.text} group-open:rotate-180 transition-transform"></i>
-                                <span class="font-bold text-xs uppercase tracking-wider ${c.text}">${className}</span>
+                                <span class="font-bold text-xs uppercase tracking-wider ${c.text}">Class: ${className}</span>
                             </div>
-                            <span class="${c.badge} font-mono text-[9px] font-bold px-2 py-0.5 rounded-md">${jobList.length} Performed</span>
+                            <span class="${c.badge} font-mono text-[9px] font-bold px-2 py-0.5 rounded-md">${jobList.length} Records</span>
                         </summary>
 
                         <div class="overflow-x-auto">
@@ -305,11 +459,11 @@
                                             </td>
                                             <td class="py-2 px-3 text-emerald-400 font-bold text-[10px]">
                                                 ${formatSecToReadable(j.Duration)}
-                                                <span class="text-[8px] opacity-40 font-normal text-white">(${j.Duration}s)</span>
+                                                <span class="text-[8px] opacity-40 font-normal text-white">(${j.Duration || 0}s)</span>
                                             </td>
                                             <td class="py-2 px-3 text-right">
-                                                <span class="px-2 py-0.5 rounded text-[8px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase tracking-tighter">
-                                                    Completed
+                                                <span class="px-2 py-0.5 rounded text-[8px] font-bold uppercase tracking-tighter border ${j.statusColor}">
+                                                    ${j.statusLabel}
                                                 </span>
                                             </td>
                                         </tr>
@@ -328,9 +482,9 @@
         }
     }
 
-    // --- WORKFLOW TIMER ENGINE ---
-    window.handleStartJob = async function() {
-        if (secondsElapsed === 0) {
+    // --- WORKFLOW TIMER: START, PAUSE, STOP SECARA REAL-TIME ---
+    window.handleStartJob = async function(skipPrompt = false) {
+        if (!skipPrompt && secondsElapsed === 0) {
             const { isConfirmed } = await Swal.fire({
                 title: `<span style="font-size:16px; color:#fff;">Perform Order #${orderNo}</span>`,
                 html: `
@@ -354,13 +508,32 @@
             dateStartStr = getCurrentDateIso();
             timeStartStr = getCurrentTimeClock();
             document.getElementById('stamp-start').innerText = timeStartStr;
+
+            // 🚀 REKAM REAL-TIME KE SHEET: MENGISI DATESTART & START
+            const payload = {
+                tab: 'JOB RECORD',
+                action: 'add',
+                primaryId: `${currentUser.EmployeeId}|${dateStartStr}|${timeStartStr}|${orderNo}`,
+                EmployeeId: currentUser.EmployeeId,
+                DateStart: dateStartStr,
+                DatePause: '',
+                DateStop: '',
+                Order: String(orderNo),
+                Start: timeStartStr,
+                Pause: '',
+                Stop: '',
+                Duration: 0
+            };
+            API.post(payload).catch(console.error);
         }
 
         isRunning = true;
+        isPaused = false;
         document.getElementById('btn-timer-start').disabled = true;
         document.getElementById('btn-timer-pause').disabled = false;
         document.getElementById('btn-timer-stop').disabled = false;
 
+        clearInterval(timerInterval);
         timerInterval = setInterval(() => {
             secondsElapsed++;
             document.getElementById('timer-display').innerHTML = formatDurationDisplay(secondsElapsed);
@@ -371,6 +544,7 @@
         if (!isRunning) return;
         clearInterval(timerInterval);
         isRunning = false;
+        isPaused = true;
 
         datePauseStr = getCurrentDateIso();
         timePauseStr = getCurrentTimeClock();
@@ -379,6 +553,23 @@
         document.getElementById('btn-timer-start').disabled = false;
         document.getElementById('label-start').innerText = "Resume Job";
         document.getElementById('btn-timer-pause').disabled = true;
+
+        // 🚀 REKAM REAL-TIME KE SHEET: MENGISI DATEPAUSE, PAUSE & DURASI SEMENTARA
+        const payload = {
+            tab: 'JOB RECORD',
+            action: 'update',
+            primaryId: `${currentUser.EmployeeId}|${dateStartStr}|${timeStartStr}|${orderNo}`,
+            EmployeeId: currentUser.EmployeeId,
+            DateStart: dateStartStr,
+            DatePause: datePauseStr,
+            DateStop: '',
+            Order: String(orderNo),
+            Start: timeStartStr,
+            Pause: timePauseStr,
+            Stop: '',
+            Duration: secondsElapsed
+        };
+        API.post(payload).catch(console.error);
     };
 
     window.handleStopJob = async function() {
@@ -392,35 +583,82 @@
         document.getElementById('stamp-stop').innerText = timeStopStr;
 
         const readableDur = formatSecToReadable(secondsElapsed);
+        const isTcrUnit = ['TCR-1', 'TCR-2', 'TCR-3', 'TCR-4', 'TCR-5'].includes(unitCode);
 
-        const { isConfirmed } = await Swal.fire({
-            title: 'Hentikan & Simpan Record?',
+        // 🚀 DIALOG KONFIRMASI STATUS, REMARK & PENYIMPANAN FINAL
+        const { value: formResult } = await Swal.fire({
+            title: `<span style="font-size:16px; color:#fff;">Stop Work & Commit Record</span>`,
             html: `
-                <div style="font-size:12px; color:#94a3b8; text-align:left; display:flex; flex-direction:column; gap:6px;">
-                    <p>Operator: <b style="color:#fff;">${currentUser.Name}</b> (${currentUser.EmployeeId})</p>
-                    <p>Order No: <b style="color:#38bdf8;">#${orderNo}</b></p>
-                    <p>Durasi Kerja: <b style="color:#4ade80;">${readableDur}</b> (${secondsElapsed} detik)</p>
-                    <p class="text-[10px] text-white/40 italic mt-1">Data akan dicatat permanen ke sheet JOB RECORD.</p>
+                <div style="font-size:11px; color:#94a3b8; text-align:left; display:flex; flex-direction:column; gap:10px;">
+                    <div style="background:rgba(255,255,255,0.03); padding:10px; border-radius:12px; border:1px solid rgba(255,255,255,0.08);">
+                        <p>Operator: <b style="color:#fff;">${currentUser.Name}</b> (${currentUser.EmployeeId})</p>
+                        <p>Order No: <b style="color:#38bdf8;">#${orderNo}</b></p>
+                        <p>Durasi Kerja: <b style="color:#4ade80;">${readableDur}</b> (${secondsElapsed} detik)</p>
+                    </div>
+
+                    <div>
+                        <label style="font-size:10px; font-weight:700; text-transform:uppercase; color:#fff; display:block; margin-bottom:4px;">Status Pekerjaan</label>
+                        <select id="swal-stop-status" style="width:100%; background:#0b0e14; color:#fff; border:1px solid #334155; padding:8px; border-radius:8px; font-size:11px; outline:none;">
+                            <option value="CLOSED">CLOSED</option>
+                            <option value="PROGRESS" selected>PROGRESS</option>
+                            <option value="OPEN">OPEN</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label style="font-size:10px; font-weight:700; text-transform:uppercase; color:#fff; display:block; margin-bottom:4px;">Work Remark</label>
+                        <textarea id="swal-stop-remark" placeholder="Tuliskan remark/catatan pengerjaan..." style="width:100%; height:60px; background:#0b0e14; color:#fff; border:1px solid #334155; padding:8px; border-radius:8px; font-size:11px; outline:none; resize:none;"></textarea>
+                    </div>
                 </div>
             `,
-            icon: 'warning',
+            background: '#151921',
             showCancelButton: true,
-            confirmButtonText: 'Stop & Commit Record',
+            confirmButtonText: 'Commit Record',
             confirmButtonColor: '#ef4444',
+            cancelButtonText: 'Lanjutkan Kerja',
             cancelButtonColor: '#334155',
-            background: '#151921'
+            preConfirm: () => {
+                return {
+                    status: document.getElementById('swal-stop-status').value,
+                    remark: document.getElementById('swal-stop-remark').value.trim()
+                };
+            }
         });
 
-        if (!isConfirmed) {
-            handleStartJob();
+        if (!formResult) {
+            handleStartJob(true);
             return;
         }
 
-        // 🚀 SUSUNAN SHEET "JOB RECORD" SESUAI SPESIFIKASI:
-        // EmployeeId | DateStart | DatePause | DateStop | Order | Start | Pause | Stop | Duration
+        // 🚀 1. UPDATE SUPABASE KHUSUS TCR-1 S/D TCR-5
+        if (isTcrUnit && sbClient) {
+            const mapInfo = SUPABASE_MAP[unitCode];
+            if (mapInfo) {
+                const sbPayload = {};
+                sbPayload[mapInfo.colStatus] = formResult.status.toUpperCase();
+                sbPayload[mapInfo.remarkKey] = formResult.remark;
+
+                if (formResult.status.toUpperCase() === 'CLOSED') {
+                    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+                    const d = new Date();
+                    sbPayload[mapInfo.colDate] = `${String(d.getDate()).padStart(2,'0')}-${months[d.getMonth()]}-${d.getFullYear()}`;
+                } else {
+                    sbPayload[mapInfo.colDate] = null;
+                }
+
+                try {
+                    await sbClient.from('mntp_tcr').update(sbPayload).eq('order', orderNo);
+                } catch(sbErr) {
+                    console.error("Supabase sync failed:", sbErr);
+                }
+            }
+        }
+
+        // 🚀 2. REKAM FINAL KE GOOGLE SHEET JOB RECORD: MENGISI DATESTOP, STOP & FINAL DURATION
         const payload = {
             tab: 'JOB RECORD',
-            action: 'add',
+            action: 'update',
+            primaryId: `${currentUser.EmployeeId}|${dateStartStr}|${timeStartStr}|${orderNo}`,
             EmployeeId: currentUser.EmployeeId,
             DateStart: dateStartStr,
             DatePause: datePauseStr || '',
@@ -429,13 +667,13 @@
             Start: timeStartStr,
             Pause: timePauseStr || '',
             Stop: timeStopStr,
-            Duration: secondsElapsed // Satuan detik murni untuk kalkulasi masa depan
+            Duration: secondsElapsed // Integer detik murni
         };
 
         try {
             Swal.fire({
-                title: 'Saving Job Record...',
-                html: '<div class="text-xs text-white/50">Mencatat durasi ke database...</div>',
+                title: 'Saving Final Record...',
+                html: '<div class="text-xs text-white/50">Mencatat durasi & status ke database...</div>',
                 allowOutsideClick: false,
                 background: '#151921',
                 didOpen: () => Swal.showLoading()
@@ -453,7 +691,6 @@
                     confirmButtonColor: '#0ea5e9'
                 });
 
-                // Hancurkan cache agar tabel data pekerjaan segera terupdate
                 if (API.clearLocalCache) await API.clearLocalCache('JOB_RECORD');
                 await loadJobRecordsHistory();
 
