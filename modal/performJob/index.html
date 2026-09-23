@@ -357,7 +357,9 @@
             });
 
             const res = await API.post(payload);
-            if (res.status === 'success') {
+
+            // 🚀 PERBAIKAN PENGECEKAN RESPON
+            if (res && res.status === 'success') {
                 await Swal.fire({
                     icon: 'success',
                     title: 'Work Completed & Saved',
@@ -368,10 +370,17 @@
                 });
                 closePerformJobModal();
             } else {
-                throw new Error(res.message);
+                throw new Error(res?.message || 'Gagal menerima konfirmasi dari server');
             }
         } catch(err) {
-            Swal.fire({ title: 'Gagal Menyimpan', text: err.message, icon: 'error', background: '#151921', color: '#fff' });
+            console.error("Save error:", err);
+            Swal.fire({ 
+                title: 'Gagal Menyimpan', 
+                text: err.message || 'Terjadi kesalahan sistem', 
+                icon: 'error', 
+                background: '#151921', 
+                color: '#fff' 
+            });
             document.getElementById('btn-timer-start').disabled = false;
         }
     };
