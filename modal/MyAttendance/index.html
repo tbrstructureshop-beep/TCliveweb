@@ -475,12 +475,16 @@
             const shifts = masterData.shifts || [];
 
             // 1. Cari shift yang cocok dengan Unit & Crew user serta berada dalam rentang tanggal efektif
-            const matchedShift = shifts.find(s => 
-                String(s.UnitCode || '').trim().toLowerCase() === String(user.UnitCode || '').trim().toLowerCase() &&
-                String(s.Crew || '').trim().toLowerCase() === String(user.Crew || '').trim().toLowerCase() &&
-                s.EffectiveFrom && s.EffectiveUntil &&
-                dateStr >= s.EffectiveFrom.trim() && dateStr <= s.EffectiveUntil.trim()
-            );
+            const matchedShift = shifts.find(s => {
+                const matchUnit = String(s.UnitCode || '').trim().toLowerCase() === String(user.UnitCode || '').trim().toLowerCase();
+                const matchCrew = String(s.Crew || '').trim().toLowerCase() === String(user.Crew || '').trim().toLowerCase();
+                
+                const fromDate = String(s.EffectiveFrom || '').trim().substring(0, 10);
+                const untilDate = String(s.EffectiveUntil || '').trim().substring(0, 10);
+                const inRange = fromDate && untilDate && dateStr >= fromDate && dateStr <= untilDate;
+
+                return matchUnit && matchCrew && inRange;
+            });
 
             // 2. Jika di luar rentang EffectiveFrom - EffectiveUntil (Jadwal OFF / Lembur) -> Kosongkan ""
             if (!matchedShift || !matchedShift.TimeStart) {
@@ -497,7 +501,7 @@
             const punchMinutes = toMinutes(f1Time);
             const shiftStartMinutes = toMinutes(matchedShift.TimeStart);
 
-            // 4. On Time jika tidak melebihi TimeStart, Late jika terlambat
+            // 4. On Time jika F1 <= TimeStart, Late jika F1 > TimeStart
             return punchMinutes <= shiftStartMinutes ? "On Time" : "Late";
         }
         
@@ -562,16 +566,25 @@
                 };
             } else if (type === 'F4') {
                 const targetDate = unclosedSession ? unclosedSession.Date : dateStr;
+                const f1Time = unclosedSession?.F1 || '';
+
+                // 🚀 PERBAIKAN: Pertahankan status On Time / Late dari F1, JANGAN timpa jadi Pending!
+                const existingStatus = unclosedSession?.StatusApproval || unclosedSession?.['Status Approval'];
+                const finalStatus = (existingStatus && existingStatus !== 'Pending') 
+                    ? existingStatus 
+                    : calculatePunchStatus(f1Time, targetDate, currentUser);
+
                 payload = {
                     tab: 'ATTENDANCE_RECORD',
                     action: 'update',
                     primaryId: `${currentUser.EmployeeId}|${targetDate}`,
                     EmployeeId: currentUser.EmployeeId,
                     Date: targetDate,
-                    F1: unclosedSession?.F1 || timeStr,
+                    F1: f1Time,
                     F4: timeStr,
                     Leave: unclosedSession?.Leave || '',
-                    StatusApproval: 'Pending'
+                    StatusApproval: finalStatus,
+                    "Status Approval": finalStatus
                 };
             }
 
@@ -598,6 +611,8 @@
                     } else if (type === 'F4') {
                         if (unclosedSession) {
                             unclosedSession.F4 = timeStr;
+                            // 🚀 Pastikan memori lokal juga menyimpan status On Time / Late
+                            unclosedSession.StatusApproval = payload.StatusApproval;
                         }
                     }
 
