@@ -235,8 +235,12 @@
                 await API._dbOp("delete", "ATTENDANCE_RECORD");
 
                 // Ambil data paling segar langsung dari Google Sheet
-                const freshAtt = await API.get('ATTENDANCE_RECORD');
+                const [freshAtt, shiftRes] = await Promise.all([
+                    API.get('ATTENDANCE_RECORD'),
+                    API.get('SHIFTS')
+                ]);
                 masterData.attendance = freshAtt.data || [];
+                masterData.shifts = shiftRes.data || []; //
                 showMainInterface();
             } catch (e) { 
                 console.error(e); 
@@ -439,12 +443,62 @@
                         <span class="text-[9px] px-2.5 py-0.5 rounded border font-bold uppercase ${statusColor}">${statusText}</span>
                     </div>
                     <div class="grid grid-cols-3 gap-2">
-                        <div class="bg-black/30 p-2 rounded-lg text-center"><span class="text-[8px] uppercase tracking-wider text-white/70 font-bold block mb-1">In</span><span class="text-xs font-mono text-white font-bold">${r.F1 || '--:--'}</span></div>
-                        <div class="bg-black/30 p-2 rounded-lg text-center"><span class="text-[8px] uppercase tracking-wider text-white/70 font-bold block mb-1">Out</span><span class="text-xs font-mono text-white font-bold">${outDisplay}</span></div>
-                        <div class="bg-black/30 p-2 rounded-lg text-center overflow-hidden"><span class="text-[8px] uppercase tracking-wider text-white/70 font-bold block mb-1">Approval</span><span class="text-[9px] font-extrabold text-amber-400 uppercase truncate block">${r.StatusApproval || 'Pending'}</span></div>
+                        <div class="bg-black/30 p-2 rounded-lg text-center">
+                            <span class="text-[8px] uppercase tracking-wider text-white/70 font-bold block mb-1">In</span>
+                            <span class="text-xs font-mono text-white font-bold">${r.F1 || '--:--'}</span>
+                        </div>
+                        <div class="bg-black/30 p-2 rounded-lg text-center">
+                            <span class="text-[8px] uppercase tracking-wider text-white/70 font-bold block mb-1">Out</span>
+                            <span class="text-xs font-mono text-white font-bold">${outDisplay}</span>
+                        </div>
+                        <div class="bg-black/30 p-2 rounded-lg text-center overflow-hidden">
+                            <span class="text-[8px] uppercase tracking-wider text-white/70 font-bold block mb-1">Status</span>
+                            <!-- 🚀 STATUS ON TIME / LATE / PENDING (KHUSUS LEAVE) / OFF -->
+                            <span class="text-[9px] font-extrabold uppercase truncate block ${
+                                r.StatusApproval === 'On Time' ? 'text-emerald-400' :
+                                r.StatusApproval === 'Late' ? 'text-rose-400' :
+                                r.StatusApproval === 'Approved' ? 'text-green-400' :
+                                (r.StatusApproval === 'Pending' || (!r.StatusApproval && r.Leave)) ? 'text-amber-400' :
+                                'text-slate-400 opacity-40'
+                            }">
+                                ${r.StatusApproval || (r.Leave ? 'Pending' : '-')}
+                            </span>
+                        </div>
                     </div>
                 </div>`;
             }).join('');
+        }
+
+        // 🚀 KALKULASI STATUS: ON TIME / LATE / "" (OFF/LEMBUR)
+        function calculatePunchStatus(f1Time, dateStr, user) {
+            if (!f1Time || !dateStr || !user) return "";
+            const shifts = masterData.shifts || [];
+
+            // 1. Cari shift yang cocok dengan Unit & Crew user serta berada dalam rentang tanggal efektif
+            const matchedShift = shifts.find(s => 
+                String(s.UnitCode || '').trim().toLowerCase() === String(user.UnitCode || '').trim().toLowerCase() &&
+                String(s.Crew || '').trim().toLowerCase() === String(user.Crew || '').trim().toLowerCase() &&
+                s.EffectiveFrom && s.EffectiveUntil &&
+                dateStr >= s.EffectiveFrom.trim() && dateStr <= s.EffectiveUntil.trim()
+            );
+
+            // 2. Jika di luar rentang EffectiveFrom - EffectiveUntil (Jadwal OFF / Lembur) -> Kosongkan ""
+            if (!matchedShift || !matchedShift.TimeStart) {
+                return ""; 
+            }
+
+            // 3. Konversi jam ke menit untuk perbandingan akurat
+            const toMinutes = (t) => {
+                if (!t) return 0;
+                const parts = t.toString().trim().split(':');
+                return (parseInt(parts[0], 10) * 60) + (parseInt(parts[1], 10) || 0);
+            };
+
+            const punchMinutes = toMinutes(f1Time);
+            const shiftStartMinutes = toMinutes(matchedShift.TimeStart);
+
+            // 4. On Time jika tidak melebihi TimeStart, Late jika terlambat
+            return punchMinutes <= shiftStartMinutes ? "On Time" : "Late";
         }
         
         async function recordAttendance(type) {
@@ -491,6 +545,9 @@
 
             let payload;
             if (type === 'F1') {
+                // 🚀 Hitung otomatis On Time / Late / ""
+                const dynamicStatus = calculatePunchStatus(timeStr, dateStr, currentUser);
+
                 payload = {
                     tab: 'ATTENDANCE_RECORD',
                     action: 'add',
@@ -500,7 +557,8 @@
                     F1: timeStr,
                     F4: '',
                     Leave: '',
-                    StatusApproval: 'Pending'
+                    StatusApproval: dynamicStatus,
+                    "Status Approval": dynamicStatus
                 };
             } else if (type === 'F4') {
                 const targetDate = unclosedSession ? unclosedSession.Date : dateStr;
