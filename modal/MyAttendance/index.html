@@ -315,6 +315,10 @@
             }
         }
 
+        function isLeaveRecordCheck(r) {
+            return r.Leave && String(r.Leave).trim() !== '' && String(r.Leave).trim() !== 'Present';
+        }
+
         function showMainInterface() {
             document.getElementById('user-name').innerText = currentUser.Name;
             document.getElementById('user-job').innerText = currentUser.JobTitle;
@@ -323,14 +327,15 @@
             const dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
             const attendanceList = masterData.attendance || [];
 
-            // 1. Ambil semua record presensi karyawan ini
             const myRecords = attendanceList.filter(r => 
                 String(r.EmployeeId).trim() === String(currentUser.EmployeeId).trim()
             );
 
-            // 2. Cari apakah ada F1 yang belum di-F4 (baik hari ini atau kemarin)
+            // 🚀 PERBAIKAN: Pastikan Leave "Pending" tidak dibaca sebagai sesi masuk yang gantung
             const unclosedSession = myRecords.find(r => 
-                r.F1 && r.F1 !== '-' && (!r.F4 || r.F4 === '' || r.F4 === '-')
+                !isLeaveRecordCheck(r) &&
+                r.F1 && String(r.F1).trim() !== '-' && String(r.F1).trim() !== '' && 
+                (!r.F4 || String(r.F4).trim() === '' || String(r.F4).trim() === '-')
             );
 
             const btnF1 = document.getElementById('btn-f1');
@@ -402,43 +407,33 @@
                 .filter(r => String(r.EmployeeId).trim() === String(currentUser.EmployeeId).trim())
                 .sort((a, b) => new Date(b.Date) - new Date(a.Date));
 
-            // 1. ATURAN FILTER WAKTU BERDASARKAN TAB YANG AKTIF
             const curr = new Date();
             let filteredRecords = [];
 
             if (activeHistoryTab === 'leave') {
-                // ATURAN LEAVE: 1 Bulan Berjalan (Dari tanggal 1 s.d akhir bulan ini)
                 const firstDayOfMonth = new Date(curr.getFullYear(), curr.getMonth(), 1);
                 firstDayOfMonth.setHours(0,0,0,0);
-                
-                const lastDayOfMonth = new Date(curr.getFullYear(), curr.getMonth() + 1, 0);
-                lastDayOfMonth.setHours(23,59,59,999);
+                const lastDayOfMonth = new Date(curr.getFullYear(), curr.getMonth() + 1, 0, 23, 59, 59);
 
-                filteredRecords = userRecords
-                    .filter(r => {
-                        const hasLeave = r.Leave && r.Leave.trim() !== '' && r.Leave !== 'Present';
-                        const recordDate = new Date(r.Date);
-                        return hasLeave && recordDate >= firstDayOfMonth && recordDate <= lastDayOfMonth;
-                    });
+                filteredRecords = userRecords.filter(r => {
+                    const recordDate = new Date(r.Date);
+                    return isLeaveRecordCheck(r) && recordDate >= firstDayOfMonth && recordDate <= lastDayOfMonth;
+                });
             } else {
-                // ATURAN ATTENDANCE: 1 Minggu Berjalan (Senin s.d Minggu minggu ini)
                 const firstDayOfWeek = new Date(curr.setDate(curr.getDate() - curr.getDay() + (curr.getDay() === 0 ? -6 : 1)));
                 firstDayOfWeek.setHours(0,0,0,0);
 
-                filteredRecords = userRecords
-                    .filter(r => {
-                        const hasLeave = r.Leave && r.Leave.trim() !== '' && r.Leave !== 'Present';
-                        const recordDate = new Date(r.Date);
-                        return !hasLeave && recordDate >= firstDayOfWeek;
-                    });
+                filteredRecords = userRecords.filter(r => {
+                    const recordDate = new Date(r.Date);
+                    return !isLeaveRecordCheck(r) && recordDate >= firstDayOfWeek;
+                });
             }
 
             if (filteredRecords.length === 0) {
-                container.innerHTML = `<div class="py-4 text-center text-[10px] opacity-20 uppercase">No ${activeHistoryTab} records found for this period</div>`;
+                container.innerHTML = `<div class="py-4 text-center text-[10px] opacity-20 uppercase">No ${activeHistoryTab} records found</div>`;
                 return;
             }
 
-            // Jika tab aktif adalah Leave, kelompokkan tanggal yang beruntun
             if (activeHistoryTab === 'leave') {
                 let groupedLeaves = [];
                 let tempGroup = [];
@@ -447,47 +442,33 @@
                     if (tempGroup.length === 0) {
                         tempGroup.push(r);
                     } else {
-                        const lastDate = new Date(tempGroup[tempGroup.length - 1].Date);
-                        const currDate = new Date(r.Date);
-                        const diffTime = Math.abs(currDate - lastDate);
-                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-                        if (diffDays === 1 && tempGroup[0].Leave === r.Leave) {
-                            tempGroup.push(r);
-                        } else {
-                            groupedLeaves.push(tempGroup);
-                            tempGroup = [r];
-                        }
+                        const diffDays = Math.ceil(Math.abs(new Date(r.Date) - new Date(tempGroup[tempGroup.length - 1].Date)) / (1000 * 60 * 60 * 24));
+                        if (diffDays === 1 && tempGroup[0].Leave === r.Leave) tempGroup.push(r);
+                        else { groupedLeaves.push(tempGroup); tempGroup = [r]; }
                     }
                     if (idx === filteredRecords.length - 1) groupedLeaves.push(tempGroup);
                 });
 
-                // Urutkan kembali dari yang terbaru setelah dikelompokkan
                 groupedLeaves.sort((a, b) => new Date(b[0].Date) - new Date(a[0].Date));
 
                 container.innerHTML = groupedLeaves.map(group => {
                     const firstDate = group[0].Date;
                     const endDate = group[group.length - 1].Date;
-                    const leaveType = group[0].Leave;
-                    const status = group[0].StatusApproval || 'Pending';
+                    const status = group[0].StatusApproval || 'Pending'; // Di Leave, Pending itu SAH.
                     
-                    const dateDisplay = firstDate === endDate ? firstDate : `${firstDate} Thru ${endDate}`;
-
                     return `
                     <div class="history-card p-3 rounded-xl border border-amber-500/20 bg-amber-500/5 space-y-1">
                         <div class="flex justify-between items-center">
-                            <span class="text-[11px] font-mono text-amber-400 font-bold">${dateDisplay}</span>
+                            <span class="text-[11px] font-mono text-amber-400 font-bold">${firstDate === endDate ? firstDate : `${firstDate} Thru ${endDate}`}</span>
                             <span class="text-[9px] px-2 py-0.5 rounded bg-white/5 border border-white/10 font-bold uppercase ${status === 'Approved' ? 'text-green-400' : 'text-amber-400'}">${status}</span>
                         </div>
-                        <div class="text-xs font-bold text-white uppercase tracking-wider">
-                            🎯 ${leaveType}
-                        </div>
+                        <div class="text-xs font-bold text-white uppercase tracking-wider">🎯 ${group[0].Leave}</div>
                     </div>`;
                 }).join('');
                 return;
             }
 
-            // Tampilan untuk Tab Attendance (In/Out)
+            // Tampilan Khusus Tab Attendance
             container.innerHTML = filteredRecords.map(r => {
                 let statusText = 'Attend';
                 let statusColor = 'text-sky-400 border-sky-500/30 bg-sky-500/10';
@@ -500,7 +481,17 @@
                     statusColor = 'text-yellow-400 border-yellow-500/30 bg-yellow-500/10';
                 }
 
-                const outDisplay = r.F4 || (r.Date < todayStr ? '-' : '--:--');
+                // 🚀 PERBAIKAN: Hapus total jejak Pending dari UI Attendance Normal
+                let attendanceStatus = '';
+                let attStatusColor = 'text-slate-400 opacity-40';
+                
+                if (r.StatusApproval === 'On Time') {
+                    attendanceStatus = 'On Time';
+                    attStatusColor = 'text-emerald-400';
+                } else if (r.StatusApproval === 'Late') {
+                    attendanceStatus = 'Late';
+                    attStatusColor = 'text-rose-400';
+                }
 
                 return `
                 <div class="history-card p-3 rounded-xl border border-white/10">
@@ -515,27 +506,18 @@
                         </div>
                         <div class="bg-black/30 p-2 rounded-lg text-center">
                             <span class="text-[8px] uppercase tracking-wider text-white/70 font-bold block mb-1">Out</span>
-                            <span class="text-xs font-mono text-white font-bold">${outDisplay}</span>
+                            <span class="text-xs font-mono text-white font-bold">${r.F4 || (r.Date < todayStr ? '-' : '--:--')}</span>
                         </div>
                         <div class="bg-black/30 p-2 rounded-lg text-center overflow-hidden">
                             <span class="text-[8px] uppercase tracking-wider text-white/70 font-bold block mb-1">Status</span>
-                            <!-- 🚀 STATUS ON TIME / LATE / PENDING (KHUSUS LEAVE) / OFF -->
-                            <span class="text-[9px] font-extrabold uppercase truncate block ${
-                                r.StatusApproval === 'On Time' ? 'text-emerald-400' :
-                                r.StatusApproval === 'Late' ? 'text-rose-400' :
-                                r.StatusApproval === 'Approved' ? 'text-green-400' :
-                                (r.StatusApproval === 'Pending' || (!r.StatusApproval && r.Leave)) ? 'text-amber-400' :
-                                'text-slate-400 opacity-40'
-                            }">
-                                ${r.StatusApproval || (r.Leave ? 'Pending' : '-')}
-                            </span>
+                            <span class="text-[9px] font-extrabold uppercase truncate block ${attStatusColor}">${attendanceStatus || '-'}</span>
                         </div>
                     </div>
                 </div>`;
             }).join('');
         }
 
-        // 🚀 KALKULASI STATUS: ON TIME / LATE / "" (ANTI-PENDING & CERDAS CADANGAN JADWAL)
+        // 🚀 PERBAIKAN: Kalkulasi MURNI berdasar waktu yang valid saja (HAPUS FALLBACK EXPIRED)
         function calculatePunchStatus(f1Time, dateStr, user) {
             if (!f1Time || !user) return "";
             const shifts = masterData.shifts || [];
@@ -559,30 +541,16 @@
 
             const targetTime = parseDateToTime(dateStr);
 
-            // 1. Prioritas 1: Cari shift yang cocok dengan Unit, Crew, dan Tanggal Efektif
-            let matchedShift = shifts.find(s => {
+            const matchedShift = shifts.find(s => {
                 const matchUnit = String(s.UnitCode || '').trim().toLowerCase() === userUnit;
                 const matchCrew = String(s.Crew || '').trim().toLowerCase() === userCrew;
                 const fromTime = parseDateToTime(s.EffectiveFrom);
                 const untilTime = parseDateToTime(s.EffectiveUntil);
-                return matchUnit && matchCrew && targetTime >= fromTime && targetTime <= untilTime;
+                return matchUnit && matchCrew && targetTime >= fromTime && targetTime <= untilTime && s.TimeStart;
             });
 
-            // 2. Prioritas 2 (Fallback Cerdas): Jika tanggal EffectiveUntil sudah lewat di spreadsheet, 
-            // tetap gunakan jadwal shift Unit & Crew user agar jam masuknya bisa dinilai!
-            if (!matchedShift) {
-                matchedShift = shifts.find(s => 
-                    String(s.UnitCode || '').trim().toLowerCase() === userUnit &&
-                    String(s.Crew || '').trim().toLowerCase() === userCrew &&
-                    s.TimeStart
-                );
-            }
+            if (!matchedShift) return ""; 
 
-            if (!matchedShift || !matchedShift.TimeStart) {
-                return ""; // Tidak ada jadwal sama sekali -> kosongkan (Bukan Pending!)
-            }
-
-            // 3. Konversi jam ke menit untuk perbandingan akurat
             const toMinutes = (t) => {
                 if (!t) return 0;
                 const parts = t.toString().trim().split(':');
@@ -592,7 +560,6 @@
             const punchMinutes = toMinutes(f1Time);
             const shiftStartMinutes = toMinutes(matchedShift.TimeStart);
 
-            // On Time jika F1 <= TimeStart, Late jika F1 > TimeStart
             return punchMinutes <= shiftStartMinutes ? "On Time" : "Late";
         }
         
@@ -605,36 +572,26 @@
             const dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
             const attendanceList = masterData.attendance || [];
 
-            // Cari sesi presensi aktif milik user
             const myRecords = attendanceList.filter(r => 
                 String(r.EmployeeId).trim() === String(currentUser.EmployeeId).trim()
             );
+            
+            // 🚀 PERBAIKAN: Abaikan record Leave sepenuhnya saat Clock In/Out normal
             const unclosedSession = myRecords.find(r => 
-                r.F1 && r.F1 !== '-' && (!r.F4 || r.F4 === '' || r.F4 === '-')
+                !isLeaveRecordCheck(r) &&
+                r.F1 && String(r.F1).trim() !== '-' && String(r.F1).trim() !== '' && 
+                (!r.F4 || String(r.F4).trim() === '' || String(r.F4).trim() === '-')
             );
 
-            // Validasi Front-End
             if (type === 'F1' && unclosedSession) {
                 loader.style.display = 'none';
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Clock In Ditolak',
-                    text: `Anda masih memiliki sesi Clock In pada tanggal ${unclosedSession.Date} (${unclosedSession.F1}) yang belum Clock Out (F4). Harap Clock Out terlebih dahulu!`,
-                    background: '#151921',
-                    color: '#fff'
-                });
+                Swal.fire({ icon: 'warning', title: 'Clock In Ditolak', text: `Anda masih memiliki sesi Clock In pada tanggal ${unclosedSession.Date} (${unclosedSession.F1}) yang belum Clock Out (F4).`, background: '#151921', color: '#fff' });
                 return;
             }
 
             if (type === 'F4' && !unclosedSession) {
                 loader.style.display = 'none';
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Belum Clock In',
-                    text: 'Anda belum melakukan Clock In (F1). Silakan Clock In terlebih dahulu.',
-                    background: '#151921',
-                    color: '#fff'
-                });
+                Swal.fire({ icon: 'warning', title: 'Belum Clock In', text: 'Anda belum melakukan Clock In (F1).', background: '#151921', color: '#fff' });
                 return;
             }
 
@@ -642,8 +599,7 @@
             let currentStatus = "";
 
             if (type === 'F1') {
-                // 🚀 HITUNG ON TIME / LATE (TIDAK PERNAH PENDING!)
-                currentStatus = calculatePunchStatus(timeStr, dateStr, currentUser);
+                currentStatus = calculatePunchStatus(timeStr, dateStr, currentUser); // Hanya "On Time", "Late", atau ""
 
                 payload = {
                     tab: 'ATTENDANCE_RECORD',
@@ -661,10 +617,16 @@
                 const targetDate = unclosedSession ? unclosedSession.Date : dateStr;
                 const f1Time = unclosedSession?.F1 || timeStr;
 
-                // 🚀 F4 MEMPERTAHANKAN STATUS ON TIME / LATE DARI F1 (TIDAK PERNAH PENDING!)
-                currentStatus = (unclosedSession && unclosedSession.StatusApproval && unclosedSession.StatusApproval !== 'Pending')
-                    ? unclosedSession.StatusApproval
-                    : calculatePunchStatus(f1Time, targetDate, currentUser);
+                // 🚀 PERBAIKAN: F4 WAJIB mempertahankan / mewarisi status dari F1 secara buta.
+                if (unclosedSession) {
+                    if (unclosedSession.StatusApproval === 'On Time') {
+                        currentStatus = 'On Time';
+                    } else if (unclosedSession.StatusApproval === 'Late') {
+                        currentStatus = 'Late';
+                    } else {
+                        currentStatus = '';
+                    }
+                }
 
                 payload = {
                     tab: 'ATTENDANCE_RECORD',
@@ -674,7 +636,7 @@
                     Date: targetDate,
                     F1: f1Time,
                     F4: timeStr,
-                    Leave: unclosedSession?.Leave || '',
+                    Leave: '', // F4 tidak mencampur urusan leave
                     StatusApproval: currentStatus,
                     "Status Approval": currentStatus
                 };
@@ -683,23 +645,14 @@
             try {
                 let res = await API.post(payload);
 
-                // Pengaman jika baris di sheet sempat dihapus manual
                 if (res && res.status === 'error' && res.message && res.message.includes('Record not found')) {
                     payload.action = 'add';
                     res = await API.post(payload);
                 }
 
                 if (res && res.status === 'success') {
-                    // Update memori lokal langsung dengan status On Time / Late
                     if (type === 'F1') {
-                        masterData.attendance.push({
-                            EmployeeId: currentUser.EmployeeId,
-                            Date: dateStr,
-                            F1: timeStr,
-                            F4: '',
-                            Leave: '',
-                            StatusApproval: currentStatus
-                        });
+                        masterData.attendance.push(payload);
                     } else if (type === 'F4') {
                         if (unclosedSession) {
                             unclosedSession.F4 = timeStr;
@@ -710,16 +663,7 @@
                     showMainInterface();
                     loader.style.display = 'none';
 
-                    Swal.fire({ 
-                        icon: 'success', 
-                        title: 'Committed', 
-                        text: `${type} berhasil dicatat pada jam ${timeStr} (${currentStatus || 'Off-Schedule'})`, 
-                        background: '#151921', 
-                        color: '#fff',
-                        timer: 1500,
-                        showConfirmButton: false 
-                    });
-
+                    Swal.fire({ icon: 'success', title: 'Committed', text: `${type} berhasil dicatat pada jam ${timeStr}`, background: '#151921', color: '#fff', timer: 1500, showConfirmButton: false });
                     if (API.clearLocalCache) API.clearLocalCache('ATTENDANCE_RECORD');
                 } else {
                     throw new Error(res?.message || 'Gagal menyimpan presensi');
