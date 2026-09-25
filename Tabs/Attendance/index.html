@@ -265,12 +265,13 @@
             const currentShift = unitShifts.find(s => s.ShiftCategory === activeShiftCat) || unitShifts[0] || { ShiftCategory: 'Regular', Crew: '' };
             const currentCrew = currentShift.Crew ? String(currentShift.Crew).trim() : '';
 
-            // 3. Filter Semua User Milik Unit Aktif (Untuk Summary Class & Job Title)
-            const unitTotalUsers = allUsers.filter(u => 
-                String(u.UnitCode || '').trim().toLowerCase() === activeUnit.toLowerCase()
+            // 🚀 1. FILTER CREW USERS DULUAN SEBELUM DIHITUNG
+            const crewUsers = allUsers.filter(u => 
+                String(u.UnitCode || '').trim().toLowerCase() === activeUnit.toLowerCase() &&
+                (!currentCrew || String(u.Crew || '').trim().toLowerCase() === currentCrew.toLowerCase())
             );
 
-            // Perhitungan Summary Class & Job Title
+            // 🚀 2. BARU HITUNG SUMMARY CLASS & JOB TITLE KHUSUS CREW INI
             const classCounts = {};
             const jobCounts = {};
             crewUsers.forEach(u => {
@@ -280,12 +281,6 @@
                 const j = (u.JobTitle || u['Job Title'] || 'General Technical').trim();
                 jobCounts[j] = (jobCounts[j] || 0) + 1;
             });
-
-            // 4. Filter Anggota User Sesuai Shift & Crew Terpilih
-            const crewUsers = allUsers.filter(u => 
-                String(u.UnitCode || '').trim().toLowerCase() === activeUnit.toLowerCase() &&
-                (!currentCrew || String(u.Crew || '').trim().toLowerCase() === currentCrew.toLowerCase())
-            );
 
             // 5. Hitung Statistik Real Presensi Hari Ini
             let attendCount = 0;
