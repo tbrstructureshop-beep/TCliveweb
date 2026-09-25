@@ -186,26 +186,22 @@
             currentUser = JSON.parse(saved);
 
             await verifyNetwork();
-            
+
             try {
-                const cachedAtt = await API.get('ATTENDANCE_RECORD');
-                if (cachedAtt && cachedAtt.data) {
-                    masterData.attendance = cachedAtt.data;
-                    showMainInterface();
-                }
+                // 🚀 HANCURKAN CACHE LOKAL: Agar sinkron jika kamu baru hapus data manual di sheet
+                if (API.clearLocalCache) await API.clearLocalCache('ATTENDANCE_RECORD');
+                try { if (window.parent && window.parent.clearCache) window.parent.clearCache('ATTENDANCE_RECORD'); } catch(e) {}
+                await API._dbOp("delete", "ATTENDANCE_RECORD");
+
+                // Ambil data paling segar langsung dari Google Sheet
+                const freshAtt = await API.get('ATTENDANCE_RECORD');
+                masterData.attendance = freshAtt.data || [];
+                showMainInterface();
             } catch (e) { 
                 console.error(e); 
             } finally { 
                 loader.style.display = 'none'; 
             }
-
-            try {
-                const freshAtt = await API.get('ATTENDANCE_RECORD');
-                if (freshAtt && freshAtt.data) {
-                    masterData.attendance = freshAtt.data;
-                    showMainInterface();
-                }
-            } catch (e) {}
         }
 
         function showMainInterface() {
@@ -444,10 +440,16 @@
             }
 
             try {
-                const res = await API.post(payload);
+                let res = await API.post(payload);
+
+                // 🚀 PENGAMAN: Jika di database sheet barisnya sudah kamu hapus manual, buatkan baris baru otomatis
+                if (res && res.status === 'error' && res.message && res.message.includes('Record not found')) {
+                    payload.action = 'add';
+                    res = await API.post(payload);
+                }
 
                 if (res && res.status === 'success') {
-                    // 🚀 OPTIMISTIC UPDATE: Update memori lokal langsung (HAPUS KEBUTUHAN FETCH 39 DETIK)
+                    // Update memori lokal langsung
                     if (type === 'F1') {
                         masterData.attendance.push({
                             EmployeeId: currentUser.EmployeeId,
@@ -463,11 +465,9 @@
                         }
                     }
 
-                    // Tampilkan perubahan tombol secara instan
                     showMainInterface();
                     loader.style.display = 'none';
 
-                    // SweetAlert langsung muncul seketika!
                     Swal.fire({ 
                         icon: 'success', 
                         title: 'Committed', 
@@ -478,7 +478,6 @@
                         showConfirmButton: false 
                     });
 
-                    // Hapus cache lokal di latar belakang
                     if (API.clearLocalCache) API.clearLocalCache('ATTENDANCE_RECORD');
                 } else {
                     throw new Error(res?.message || 'Gagal menyimpan presensi');
