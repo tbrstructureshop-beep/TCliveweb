@@ -535,13 +535,14 @@
             }).join('');
         }
 
-        // 🚀 KALKULASI STATUS: ON TIME / LATE / "" (OFF/LEMBUR)
-        // 🚀 KALKULASI STATUS: ON TIME / LATE / "" (KEBAL FORMAT TANGGAL SPREADSHEET)
+        // 🚀 KALKULASI STATUS: ON TIME / LATE / "" (ANTI-PENDING & CERDAS CADANGAN JADWAL)
         function calculatePunchStatus(f1Time, dateStr, user) {
-            if (!f1Time || !dateStr || !user) return "";
+            if (!f1Time || !user) return "";
             const shifts = masterData.shifts || [];
 
-            // Helper konversi format tanggal apapun (YYYY-MM-DD, DD/MM/YYYY, dll) ke timestamp angka
+            const userUnit = String(user.UnitCode || '').trim().toLowerCase();
+            const userCrew = String(user.Crew || '').trim().toLowerCase();
+
             const parseDateToTime = (d) => {
                 if (!d) return 0;
                 const s = d.toString().trim();
@@ -558,21 +559,27 @@
 
             const targetTime = parseDateToTime(dateStr);
 
-            // 1. Cari shift yang cocok dengan Unit & Crew user serta berada dalam rentang tanggal efektif
-            const matchedShift = shifts.find(s => {
-                const matchUnit = String(s.UnitCode || '').trim().toLowerCase() === String(user.UnitCode || '').trim().toLowerCase();
-                const matchCrew = String(s.Crew || '').trim().toLowerCase() === String(user.Crew || '').trim().toLowerCase();
-                
+            // 1. Prioritas 1: Cari shift yang cocok dengan Unit, Crew, dan Tanggal Efektif
+            let matchedShift = shifts.find(s => {
+                const matchUnit = String(s.UnitCode || '').trim().toLowerCase() === userUnit;
+                const matchCrew = String(s.Crew || '').trim().toLowerCase() === userCrew;
                 const fromTime = parseDateToTime(s.EffectiveFrom);
                 const untilTime = parseDateToTime(s.EffectiveUntil);
-                const inRange = fromTime && untilTime && targetTime >= fromTime && targetTime <= untilTime;
-
-                return matchUnit && matchCrew && inRange;
+                return matchUnit && matchCrew && targetTime >= fromTime && targetTime <= untilTime;
             });
 
-            // 2. Jika di luar rentang EffectiveFrom - EffectiveUntil (Jadwal OFF / Lembur) -> Kosongkan ""
+            // 2. Prioritas 2 (Fallback Cerdas): Jika tanggal EffectiveUntil sudah lewat di spreadsheet, 
+            // tetap gunakan jadwal shift Unit & Crew user agar jam masuknya bisa dinilai!
+            if (!matchedShift) {
+                matchedShift = shifts.find(s => 
+                    String(s.UnitCode || '').trim().toLowerCase() === userUnit &&
+                    String(s.Crew || '').trim().toLowerCase() === userCrew &&
+                    s.TimeStart
+                );
+            }
+
             if (!matchedShift || !matchedShift.TimeStart) {
-                return ""; 
+                return ""; // Tidak ada jadwal sama sekali -> kosongkan (Bukan Pending!)
             }
 
             // 3. Konversi jam ke menit untuk perbandingan akurat
@@ -585,12 +592,12 @@
             const punchMinutes = toMinutes(f1Time);
             const shiftStartMinutes = toMinutes(matchedShift.TimeStart);
 
-            // 4. On Time jika F1 <= TimeStart, Late jika F1 > TimeStart
+            // On Time jika F1 <= TimeStart, Late jika F1 > TimeStart
             return punchMinutes <= shiftStartMinutes ? "On Time" : "Late";
         }
         
         async function recordAttendance(type) {
-            if (!await isDeviceValid()) return; // 👈 Tambahkan await
+            if (!await isDeviceValid()) return;
             loader.style.display = 'flex';
             
             const now = new Date();
@@ -606,7 +613,7 @@
                 r.F1 && r.F1 !== '-' && (!r.F4 || r.F4 === '' || r.F4 === '-')
             );
 
-            // 🚀 VALIDASI KETAT FRONT-END
+            // Validasi Front-End
             if (type === 'F1' && unclosedSession) {
                 loader.style.display = 'none';
                 Swal.fire({
@@ -632,9 +639,11 @@
             }
 
             let payload;
+            let currentStatus = "";
+
             if (type === 'F1') {
-                // 🚀 Hitung otomatis On Time / Late / ""
-                const dynamicStatus = calculatePunchStatus(timeStr, dateStr, currentUser);
+                // 🚀 HITUNG ON TIME / LATE (TIDAK PERNAH PENDING!)
+                currentStatus = calculatePunchStatus(timeStr, dateStr, currentUser);
 
                 payload = {
                     tab: 'ATTENDANCE_RECORD',
@@ -645,18 +654,17 @@
                     F1: timeStr,
                     F4: '',
                     Leave: '',
-                    StatusApproval: dynamicStatus,
-                    "Status Approval": dynamicStatus
+                    StatusApproval: currentStatus,
+                    "Status Approval": currentStatus
                 };
             } else if (type === 'F4') {
                 const targetDate = unclosedSession ? unclosedSession.Date : dateStr;
                 const f1Time = unclosedSession?.F1 || timeStr;
 
-                // 🚀 HITUNG ULANG ATAU AMBIL STATUS DARI F1 (JANGAN DI-HARDCODE 'Pending'!)
-                let finalStatus = unclosedSession?.StatusApproval;
-                if (!finalStatus || finalStatus === 'Pending') {
-                    finalStatus = calculatePunchStatus(f1Time, targetDate, currentUser);
-                }
+                // 🚀 F4 MEMPERTAHANKAN STATUS ON TIME / LATE DARI F1 (TIDAK PERNAH PENDING!)
+                currentStatus = (unclosedSession && unclosedSession.StatusApproval && unclosedSession.StatusApproval !== 'Pending')
+                    ? unclosedSession.StatusApproval
+                    : calculatePunchStatus(f1Time, targetDate, currentUser);
 
                 payload = {
                     tab: 'ATTENDANCE_RECORD',
@@ -667,22 +675,22 @@
                     F1: f1Time,
                     F4: timeStr,
                     Leave: unclosedSession?.Leave || '',
-                    StatusApproval: finalStatus,
-                    "Status Approval": finalStatus
+                    StatusApproval: currentStatus,
+                    "Status Approval": currentStatus
                 };
             }
 
             try {
                 let res = await API.post(payload);
 
-                // 🚀 PENGAMAN: Jika di database sheet barisnya sudah kamu hapus manual, buatkan baris baru otomatis
+                // Pengaman jika baris di sheet sempat dihapus manual
                 if (res && res.status === 'error' && res.message && res.message.includes('Record not found')) {
                     payload.action = 'add';
                     res = await API.post(payload);
                 }
 
                 if (res && res.status === 'success') {
-                    // Update memori lokal langsung
+                    // Update memori lokal langsung dengan status On Time / Late
                     if (type === 'F1') {
                         masterData.attendance.push({
                             EmployeeId: currentUser.EmployeeId,
@@ -690,12 +698,12 @@
                             F1: timeStr,
                             F4: '',
                             Leave: '',
-                            StatusApproval: payload.StatusApproval
+                            StatusApproval: currentStatus
                         });
                     } else if (type === 'F4') {
                         if (unclosedSession) {
                             unclosedSession.F4 = timeStr;
-                            unclosedSession.StatusApproval = payload.StatusApproval; // 👈 Simpan status baru di memori
+                            unclosedSession.StatusApproval = currentStatus;
                         }
                     }
 
@@ -705,7 +713,7 @@
                     Swal.fire({ 
                         icon: 'success', 
                         title: 'Committed', 
-                        text: `${type} berhasil dicatat pada jam ${timeStr}`, 
+                        text: `${type} berhasil dicatat pada jam ${timeStr} (${currentStatus || 'Off-Schedule'})`, 
                         background: '#151921', 
                         color: '#fff',
                         timer: 1500,
