@@ -188,15 +188,81 @@
 
         function getFingerprint() { return `${navigator.userAgent}-${screen.width}x${screen.height}`; }
 
-        function isDeviceValid() {
+        // 🚀 SMART DEVICE VALIDATION: BISA RE-LINK OTOMATIS TANPA TERKUNCI MATI
+        async function isDeviceValid() {
             const devKey = "DeviceId(phone)";
-            if (currentUser && currentUser[devKey] && currentUser[devKey] !== getFingerprint()) {
-                Swal.fire({ icon: 'error', title: 'Locked', text: 'This account belongs to another phone.', background: '#151921', color: '#fff' });
+            const currentFp = getFingerprint();
+            const registeredFp = (currentUser && currentUser[devKey]) ? currentUser[devKey].trim() : "";
+
+            // Jika belum pernah ditautkan sama sekali, tautkan otomatis
+            if (!registeredFp) {
+                currentUser[devKey] = currentFp;
+                localStorage.setItem('tc_user', JSON.stringify(currentUser));
+                API.post({
+                    tab: 'USER',
+                    action: 'update',
+                    primaryId: currentUser.EmployeeId,
+                    [devKey]: currentFp
+                }).catch(console.error);
+                return true;
+            }
+
+            // Jika terdeteksi perbedaan sidik jari perangkat
+            if (registeredFp !== currentFp) {
+                const { isConfirmed } = await Swal.fire({
+                    icon: 'warning',
+                    title: 'Perangkat Berbeda Terdeteksi',
+                    html: `
+                        <div style="font-size:11px; color:#94a3b8; text-align:left; line-height:1.6;">
+                            <p>Akun ini terdaftar dengan profil layar sebelumnya. Perubahan resolusi monitor, zoom, atau ganti browser dapat memicu proteksi ini.</p>
+                            <p style="color:#fff; font-weight:bold; margin-top:8px;">Tautkan perangkat yang sedang Anda pakai ini sekarang?</p>
+                        </div>
+                    `,
+                    showCancelButton: true,
+                    confirmButtonText: 'Ya, Tautkan Perangkat Ini',
+                    confirmButtonColor: '#0ea5e9',
+                    cancelButtonText: 'Batal',
+                    cancelButtonColor: '#334155',
+                    background: '#151921',
+                    color: '#fff'
+                });
+
+                if (isConfirmed) {
+                    loader.style.display = 'flex';
+                    try {
+                        currentUser[devKey] = currentFp;
+                        localStorage.setItem('tc_user', JSON.stringify(currentUser));
+                        
+                        // Perbarui Device ID di sheet USER
+                        await API.post({
+                            tab: 'USER',
+                            action: 'update',
+                            primaryId: currentUser.EmployeeId,
+                            [devKey]: currentFp
+                        });
+
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Device Linked',
+                            text: 'Perangkat ini berhasil ditautkan ke akun Anda.',
+                            background: '#151921',
+                            color: '#fff',
+                            timer: 1500,
+                            showConfirmButton: false
+                        });
+                        return true;
+                    } catch(err) {
+                        Swal.fire({ icon: 'error', title: 'Gagal', text: err.message, background: '#151921', color: '#fff' });
+                        return false;
+                    } finally {
+                        loader.style.display = 'none';
+                    }
+                }
                 return false;
             }
             return true;
         }
-
+        
         // 🚀 PENGAMAN: Cegah error JSON jika jaringan membalas HTML <!DOCTYPE
         async function verifyNetwork() {
             try {
@@ -524,7 +590,7 @@
         }
         
         async function recordAttendance(type) {
-            if (!isDeviceValid()) return;
+            if (!await isDeviceValid()) return; // 👈 Tambahkan await
             loader.style.display = 'flex';
             
             const now = new Date();
@@ -657,7 +723,7 @@
         }
         
         async function recordLeave() {
-            if (!isDeviceValid()) return;
+            if (!await isDeviceValid()) return; // 👈 Tambahkan await
             
             const leave = document.getElementById('leaveType').value;
             const startStr = document.getElementById('startDate').value;
