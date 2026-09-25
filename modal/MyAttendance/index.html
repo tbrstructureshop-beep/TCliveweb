@@ -215,10 +215,26 @@
             const now = new Date();
             const dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
             const attendanceList = masterData.attendance || [];
-            const todayRecord = attendanceList.find(r => r.Date === dateStr && String(r.EmployeeId).trim() === String(currentUser.EmployeeId).trim());
 
-            document.getElementById('btn-f1').disabled = !!todayRecord?.F1;
-            document.getElementById('btn-f4').disabled = !todayRecord?.F1 || !!todayRecord?.F4;
+            // 🚀 PERIKSA SEMUA RECORD MILIK USER INI
+            const myRecords = attendanceList.filter(r => 
+                String(r.EmployeeId).trim() === String(currentUser.EmployeeId).trim()
+            );
+
+            // 🚀 ATURAN: Cari apakah ada F1 yang belum di-F4 (baik hari ini atau hari sebelumnya)
+            const unclosedSession = myRecords.find(r => 
+                r.F1 && r.F1 !== '-' && (!r.F4 || r.F4 === '' || r.F4 === '-')
+            );
+
+            if (unclosedSession) {
+                // Masih ada F1 yang belum Clock Out: KUNCI F1, BUKA F4!
+                document.getElementById('btn-f1').disabled = true;
+                document.getElementById('btn-f4').disabled = false;
+            } else {
+                // Tidak ada tanggungan F1: BUKA F1, KUNCI F4!
+                document.getElementById('btn-f1').disabled = false;
+                document.getElementById('btn-f4').disabled = true;
+            }
 
             renderHistory(dateStr);
             startClock();
@@ -360,32 +376,113 @@
         async function recordAttendance(type) {
             if (!isDeviceValid()) return;
             loader.style.display = 'flex';
+            
             const now = new Date();
             const timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
             const dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
             const attendanceList = masterData.attendance || [];
 
-            if (type === 'F1') {
-                const pastUnclosed = attendanceList.find(r => r.EmployeeId === currentUser.EmployeeId && r.Date < dateStr && (!r.F4 || r.F4 === ''));
-                if (pastUnclosed) {
-                    await API.post({ tab: 'ATTENDANCE_RECORD', action: 'update', primaryId: `${currentUser.EmployeeId}|${pastUnclosed.Date}`, F4: '-' });
-                }
+            // Cari sesi presensi aktif milik user
+            const myRecords = attendanceList.filter(r => 
+                String(r.EmployeeId).trim() === String(currentUser.EmployeeId).trim()
+            );
+            const unclosedSession = myRecords.find(r => 
+                r.F1 && r.F1 !== '-' && (!r.F4 || r.F4 === '' || r.F4 === '-')
+            );
+
+            // 🚀 VALIDASI KETAT FRONT-END
+            if (type === 'F1' && unclosedSession) {
+                loader.style.display = 'none';
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Clock In Ditolak',
+                    text: `Anda masih memiliki sesi Clock In pada tanggal ${unclosedSession.Date} (${unclosedSession.F1}) yang belum Clock Out (F4). Harap Clock Out terlebih dahulu!`,
+                    background: '#151921',
+                    color: '#fff'
+                });
+                return;
             }
 
-            const payload = { tab: 'ATTENDANCE_RECORD', action: 'add', EmployeeId: currentUser.EmployeeId, Date: dateStr, [type]: timeStr, StatusApproval: 'Pending' };
-            const todayRec = attendanceList.find(r => r.Date === dateStr && r.EmployeeId === currentUser.EmployeeId);
-            if (todayRec) { payload.action = 'update'; payload.primaryId = `${currentUser.EmployeeId}|${dateStr}`; }
+            if (type === 'F4' && !unclosedSession) {
+                loader.style.display = 'none';
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Belum Clock In',
+                    text: 'Anda belum melakukan Clock In (F1). Silakan Clock In terlebih dahulu.',
+                    background: '#151921',
+                    color: '#fff'
+                });
+                return;
+            }
+
+            let payload;
+            if (type === 'F1') {
+                payload = {
+                    tab: 'ATTENDANCE_RECORD',
+                    action: 'add',
+                    primaryId: `${currentUser.EmployeeId}|${dateStr}`,
+                    EmployeeId: currentUser.EmployeeId,
+                    Date: dateStr,
+                    F1: timeStr,
+                    F4: '',
+                    Leave: '',
+                    StatusApproval: 'Pending'
+                };
+            } else if (type === 'F4') {
+                const targetDate = unclosedSession ? unclosedSession.Date : dateStr;
+                payload = {
+                    tab: 'ATTENDANCE_RECORD',
+                    action: 'update',
+                    primaryId: `${currentUser.EmployeeId}|${targetDate}`,
+                    EmployeeId: currentUser.EmployeeId,
+                    Date: targetDate,
+                    F1: unclosedSession?.F1 || timeStr,
+                    F4: timeStr,
+                    Leave: unclosedSession?.Leave || '',
+                    StatusApproval: 'Pending'
+                };
+            }
 
             try {
                 const res = await API.post(payload);
-                if (res.status === 'success') {
-                    const att = await API.get('ATTENDANCE_RECORD');
-                    masterData.attendance = att.data || [];
+
+                if (res && res.status === 'success') {
+                    // 🚀 OPTIMISTIC UPDATE: Update memori lokal langsung (HAPUS KEBUTUHAN FETCH 39 DETIK)
+                    if (type === 'F1') {
+                        masterData.attendance.push({
+                            EmployeeId: currentUser.EmployeeId,
+                            Date: dateStr,
+                            F1: timeStr,
+                            F4: '',
+                            Leave: '',
+                            StatusApproval: 'Pending'
+                        });
+                    } else if (type === 'F4') {
+                        if (unclosedSession) {
+                            unclosedSession.F4 = timeStr;
+                        }
+                    }
+
+                    // Tampilkan perubahan tombol secara instan
                     showMainInterface();
                     loader.style.display = 'none';
-                    Swal.fire({ icon: 'success', title: 'Committed', text: `${type} at ${timeStr}`, background: '#151921', color: '#fff' });
-                    return;
-                } else throw new Error(res.message);
+
+                    // SweetAlert langsung muncul seketika!
+                    Swal.fire({ 
+                        icon: 'success', 
+                        title: 'Committed', 
+                        text: `${type} berhasil dicatat pada jam ${timeStr}`, 
+                        background: '#151921', 
+                        color: '#fff',
+                        timer: 1500,
+                        showConfirmButton: false 
+                    });
+
+                    // Hapus cache lokal di latar belakang
+                    if (API.clearLocalCache) API.clearLocalCache('ATTENDANCE_RECORD');
+                } else {
+                    throw new Error(res?.message || 'Gagal menyimpan presensi');
+                }
             } catch (e) { 
                 loader.style.display = 'none';
                 Swal.fire({ icon: 'error', title: 'Error', text: e.message, background: '#151921', color: '#fff' }); 
@@ -421,7 +518,7 @@
 
             try {
                 let currDate = new Date(startDate);
-                let promises = []; // Array untuk menampung promise agar jalan paralel
+                let promises = [];
 
                 while (currDate <= untilDate) {
                     const year = currDate.getFullYear();
@@ -443,16 +540,20 @@
                         primaryId: `${currentUser.EmployeeId}|${dateStr}`
                     };
 
-                    // Masukkan ke array promises agar terkirim sekaligus secara bersamaan (Cepat)
+                    // Optimistic update lokal
+                    if (existingRec) {
+                        existingRec.Leave = leave;
+                    } else {
+                        masterData.attendance.push(payload);
+                    }
+
                     promises.push(API.post(payload));
                     currDate.setDate(currDate.getDate() + 1);
                 }
 
-                // Kirim semua data tanggal sekaligus secara paralel
+                // Kirim paralel
                 await Promise.all(promises);
 
-                const att = await API.get('ATTENDANCE_RECORD');
-                masterData.attendance = att.data || [];
                 showMainInterface();
                 loader.style.display = 'none';
 
@@ -464,6 +565,7 @@
                     color: '#fff' 
                 });
 
+                if (API.clearLocalCache) API.clearLocalCache('ATTENDANCE_RECORD');
             } catch (e) { 
                 loader.style.display = 'none';
                 Swal.fire({ icon: 'error', title: 'Error', text: e.message, background: '#151921', color: '#fff' }); 
