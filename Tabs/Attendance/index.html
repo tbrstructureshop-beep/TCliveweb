@@ -265,13 +265,16 @@
             const currentShift = unitShifts.find(s => s.ShiftCategory === activeShiftCat) || unitShifts[0] || { ShiftCategory: 'Regular', Crew: '' };
             const currentCrew = currentShift.Crew ? String(currentShift.Crew).trim() : '';
 
-            // 🚀 1. FILTER CREW USERS DULUAN SEBELUM DIHITUNG
+            // 🚀 1. FILTER ANGGOTA CREW DULUAN
             const crewUsers = allUsers.filter(u => 
                 String(u.UnitCode || '').trim().toLowerCase() === activeUnit.toLowerCase() &&
                 (!currentCrew || String(u.Crew || '').trim().toLowerCase() === currentCrew.toLowerCase())
             );
 
-            // 🚀 2. BARU HITUNG SUMMARY CLASS & JOB TITLE KHUSUS CREW INI
+            // 🚀 2. PENGAMAN: Beri alias agar HTML lama yang memanggil unitTotalUsers tidak crash
+            const unitTotalUsers = crewUsers;
+
+            // 🚀 3. HITUNG SUMMARY CLASS & JOB TITLE KHUSUS CREW INI
             const classCounts = {};
             const jobCounts = {};
             crewUsers.forEach(u => {
