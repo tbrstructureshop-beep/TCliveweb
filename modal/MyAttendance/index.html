@@ -470,18 +470,36 @@
         }
 
         // 🚀 KALKULASI STATUS: ON TIME / LATE / "" (OFF/LEMBUR)
+        // 🚀 KALKULASI STATUS: ON TIME / LATE / "" (KEBAL FORMAT TANGGAL SPREADSHEET)
         function calculatePunchStatus(f1Time, dateStr, user) {
             if (!f1Time || !dateStr || !user) return "";
             const shifts = masterData.shifts || [];
+
+            // Helper konversi format tanggal apapun (YYYY-MM-DD, DD/MM/YYYY, dll) ke timestamp angka
+            const parseDateToTime = (d) => {
+                if (!d) return 0;
+                const s = d.toString().trim();
+                if (/^\d{4}[-/]\d{1,2}[-/]\d{1,2}/.test(s)) {
+                    const p = s.split(/[-/]/);
+                    return new Date(p[0], p[1] - 1, p[2].substring(0, 2)).getTime();
+                }
+                if (/^\d{1,2}[-/]\d{1,2}[-/]\d{4}/.test(s)) {
+                    const p = s.split(/[-/]/);
+                    return new Date(p[2], p[1] - 1, p[0]).getTime();
+                }
+                return new Date(s).getTime() || 0;
+            };
+
+            const targetTime = parseDateToTime(dateStr);
 
             // 1. Cari shift yang cocok dengan Unit & Crew user serta berada dalam rentang tanggal efektif
             const matchedShift = shifts.find(s => {
                 const matchUnit = String(s.UnitCode || '').trim().toLowerCase() === String(user.UnitCode || '').trim().toLowerCase();
                 const matchCrew = String(s.Crew || '').trim().toLowerCase() === String(user.Crew || '').trim().toLowerCase();
                 
-                const fromDate = String(s.EffectiveFrom || '').trim().substring(0, 10);
-                const untilDate = String(s.EffectiveUntil || '').trim().substring(0, 10);
-                const inRange = fromDate && untilDate && dateStr >= fromDate && dateStr <= untilDate;
+                const fromTime = parseDateToTime(s.EffectiveFrom);
+                const untilTime = parseDateToTime(s.EffectiveUntil);
+                const inRange = fromTime && untilTime && targetTime >= fromTime && targetTime <= untilTime;
 
                 return matchUnit && matchCrew && inRange;
             });
@@ -566,13 +584,13 @@
                 };
             } else if (type === 'F4') {
                 const targetDate = unclosedSession ? unclosedSession.Date : dateStr;
-                const f1Time = unclosedSession?.F1 || '';
+                const f1Time = unclosedSession?.F1 || timeStr;
 
-                // 🚀 PERBAIKAN: Pertahankan status On Time / Late dari F1, JANGAN timpa jadi Pending!
-                const existingStatus = unclosedSession?.StatusApproval || unclosedSession?.['Status Approval'];
-                const finalStatus = (existingStatus && existingStatus !== 'Pending') 
-                    ? existingStatus 
-                    : calculatePunchStatus(f1Time, targetDate, currentUser);
+                // 🚀 HITUNG ULANG ATAU AMBIL STATUS DARI F1 (JANGAN DI-HARDCODE 'Pending'!)
+                let finalStatus = unclosedSession?.StatusApproval;
+                if (!finalStatus || finalStatus === 'Pending') {
+                    finalStatus = calculatePunchStatus(f1Time, targetDate, currentUser);
+                }
 
                 payload = {
                     tab: 'ATTENDANCE_RECORD',
@@ -606,13 +624,12 @@
                             F1: timeStr,
                             F4: '',
                             Leave: '',
-                            StatusApproval: 'Pending'
+                            StatusApproval: payload.StatusApproval
                         });
                     } else if (type === 'F4') {
                         if (unclosedSession) {
                             unclosedSession.F4 = timeStr;
-                            // 🚀 Pastikan memori lokal juga menyimpan status On Time / Late
-                            unclosedSession.StatusApproval = payload.StatusApproval;
+                            unclosedSession.StatusApproval = payload.StatusApproval; // 👈 Simpan status baru di memori
                         }
                     }
 
