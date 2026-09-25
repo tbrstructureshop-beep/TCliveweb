@@ -273,7 +273,7 @@
             // Perhitungan Summary Class & Job Title
             const classCounts = {};
             const jobCounts = {};
-            unitTotalUsers.forEach(u => {
+            crewUsers.forEach(u => {
                 const c = (u.Class || 'Employee').trim();
                 classCounts[c] = (classCounts[c] || 0) + 1;
 
@@ -479,9 +479,9 @@
                                                 <td class="font-mono text-white/60">${todayIso}</td>
                                                 <td class="font-mono ${f1 !== '-' ? 'text-emerald-400 font-bold' : 'text-white/30'}">${f1}</td>
                                                 <td class="font-mono ${f4 !== '-' ? 'text-blue-400 font-bold' : 'text-white/30'}">${f4}</td>
-                                                <td>
+                                                <td class="text-center">
                                                     ${leave !== '-' 
-                                                        ? `<span class="px-2 py-0.5 rounded text-[9px] font-bold bg-amber-500/10 text-amber-300 border border-amber-500/20 uppercase">${leave}</span>`
+                                                        ? `<span class="inline-block px-2 py-1 rounded text-[9px] font-bold bg-amber-500/10 text-amber-300 border border-amber-500/20 uppercase whitespace-normal break-words leading-tight max-w-[110px] text-center">${leave}</span>`
                                                         : `<span class="opacity-20">-</span>`}
                                                 </td>
                                                 <td>
@@ -492,7 +492,7 @@
                                                 <td class="text-right">
                                                     <!-- 🚀 ACTION TITIK TIGA HANYA MUNCUL JIKA RECORD LEAVE -->
                                                     ${m.leaveType ? `
-                                                        <button onclick="openApprovalMenu('${m.user.EmployeeId}', '${m.user.Name}', '${approvalStatus}')" 
+                                                        <button onclick="openApprovalMenu('${m.user.EmployeeId}', '${m.user.Name}', '${approvalStatus}', '${m.leaveType || ''}')" 
                                                             class="p-1.5 hover:bg-white/10 text-amber-400 hover:text-white rounded-lg transition" title="Approve Leave Presensi">
                                                             <i data-lucide="more-vertical" size="14"></i>
                                                         </button>
@@ -585,14 +585,57 @@
         // ========================================================
         // APPROVAL MENU DENGAN OPTIMISTIC UPDATE (INSTAN & SMOOTH)
         // ========================================================
-        async function openApprovalMenu(empId, empName, currentStatus) {
+        async function openApprovalMenu(empId, empName, currentStatus, leaveType) {
+            // 1. Cari seluruh tanggal cuti berurutan untuk personil ini yang menyambung dengan hari ini
+            const userLeaves = allAttendanceRecords
+                .filter(r => String(r.EmployeeId).trim() === String(empId).trim() && r.Leave && r.Leave.trim() === leaveType && r.Leave !== 'Present')
+                .sort((a, b) => new Date(a.Date) - new Date(b.Date));
+
+            // Kelompokkan tanggal-tanggal yang bersambung
+            let groups = [], temp = [];
+            userLeaves.forEach((r, idx) => {
+                if (temp.length === 0) {
+                    temp.push(r);
+                } else {
+                    const prevD = new Date(temp[temp.length - 1].Date);
+                    const currD = new Date(r.Date);
+                    const diff = Math.round((currD - prevD) / (1000 * 60 * 60 * 24));
+                    if (diff === 1) temp.push(r);
+                    else { groups.push(temp); temp = [r]; }
+                }
+                if (idx === userLeaves.length - 1) groups.push(temp);
+            });
+
+            // Ambil rentang yang memuat tanggal hari ini
+            const activeRange = groups.find(g => g.some(r => r.Date === todayIso)) || [
+                allAttendanceRecords.find(r => String(r.EmployeeId).trim() === String(empId).trim() && r.Date === todayIso)
+            ].filter(Boolean);
+
+            const startDate = activeRange[0]?.Date || todayIso;
+            const endDate = activeRange[activeRange.length - 1]?.Date || todayIso;
+            const totalDays = activeRange.length;
+            const isMultiDay = totalDays > 1;
+
             const { value: action } = await Swal.fire({
-                title: `<span style="font-size:15px; color:#fff;">Approval Presensi</span>`,
+                title: `<span style="font-size:15px; color:#fff;">Approval Presensi Cuti</span>`,
                 html: `
-                    <div style="text-align: left; font-size: 11px; color: #94a3b8; display:flex; flex-direction:column; gap:6px;">
-                        <p>Karyawan: <b style="color:#fff;">${empName}</b> (${empId})</p>
-                        <p>Tanggal: <b style="color:#38bdf8;">${todayFormatted}</b></p>
-                        <p>Status Saat Ini: <b style="color:${currentStatus === 'Approved' ? '#4ade80' : '#fb923c'};">${currentStatus}</b></p>
+                    <div style="text-align: left; font-size: 11px; color: #94a3b8; display:flex; flex-direction:column; gap:8px;">
+                        <div style="background:rgba(255,255,255,0.03); padding:10px; border-radius:10px; border:1px solid rgba(255,255,255,0.08);">
+                            <p>Karyawan: <b style="color:#fff;">${empName}</b> (${empId})</p>
+                            <p>Jenis Cuti: <b style="color:#f59e0b;">${leaveType || 'Leave'}</b></p>
+                            <p>Status Saat Ini: <b style="color:${currentStatus === 'Approved' ? '#4ade80' : '#fb923c'};">${currentStatus}</b></p>
+                        </div>
+                        
+                        ${isMultiDay ? `
+                            <div style="background:rgba(14,165,233,0.05); padding:10px; border-radius:10px; border:1px solid rgba(14,165,233,0.2);">
+                                <span style="font-weight:700; color:#38bdf8; text-transform:uppercase; font-size:10px; display:block; margin-bottom:4px;">Terdeteksi Rentang Cuti:</span>
+                                <p style="color:#fff; font-weight:bold; font-size:12px;">📅 ${startDate} &nbsp;s.d&nbsp; ${endDate} (${totalDays} Hari)</p>
+                                <label style="display:flex; align-items:center; gap:6px; margin-top:6px; cursor:pointer; color:#cbd5e1; font-size:10px;">
+                                    <input type="checkbox" id="swal-apply-all-range" checked style="accent-color:#0ea5e9;">
+                                    <b>Setujui sekaligus untuk semua ${totalDays} hari cuti</b>
+                                </label>
+                            </div>
+                        ` : `<p>Tanggal: <b style="color:#38bdf8;">${todayFormatted}</b> (1 Hari)</p>`}
                     </div>
                 `,
                 background: '#151921',
@@ -610,63 +653,62 @@
             else if (action === false) newStatus = 'Pending';
 
             if (newStatus) {
-                // 🚀 1. OPTIMISTIC UPDATE LANGSUNG DI MEMORI (0 DETIK - REFRESH SMOOTH INSTAN)
-                let existingRec = allAttendanceRecords.find(r => 
-                    String(r.EmployeeId).trim() === String(empId).trim() && 
-                    String(r.Date).trim() === todayIso
-                );
+                const applyAll = isMultiDay ? document.getElementById('swal-apply-all-range')?.checked : false;
+                const targetRecords = applyAll ? activeRange : [activeRange.find(r => r.Date === todayIso) || { Date: todayIso }];
 
-                if (existingRec) {
-                    existingRec.StatusApproval = newStatus;
-                    existingRec['Status Approval'] = newStatus;
-                } else {
-                    existingRec = {
-                        EmployeeId: empId,
-                        Date: todayIso,
-                        F1: '-',
-                        F4: '-',
-                        Leave: '',
-                        StatusApproval: newStatus,
-                        "Status Approval": newStatus
-                    };
-                    allAttendanceRecords.push(existingRec);
-                }
+                // 🚀 1. OPTIMISTIC UPDATE LANGSUNG DI MEMORI (INSTAN)
+                targetRecords.forEach(tRec => {
+                    let localRec = allAttendanceRecords.find(r => String(r.EmployeeId).trim() === String(empId).trim() && r.Date === tRec.Date);
+                    if (localRec) {
+                        localRec.StatusApproval = newStatus;
+                        localRec['Status Approval'] = newStatus;
+                    } else {
+                        allAttendanceRecords.push({
+                            EmployeeId: empId,
+                            Date: tRec.Date,
+                            F1: '-', F4: '-', Leave: leaveType,
+                            StatusApproval: newStatus, "Status Approval": newStatus
+                        });
+                    }
+                });
 
-                // Tampilkan perubahan status baru langsung ke layar
                 renderMainDashboard();
 
-                // Munculkan notifikasi toast halus di pojok kanan atas
                 Swal.fire({
                     icon: 'success',
-                    title: `Status Diperbarui: ${newStatus}`,
-                    text: `${empName} telah diubah menjadi ${newStatus}`,
+                    title: `Status: ${newStatus}`,
+                    text: applyAll 
+                        ? `${totalDays} hari cuti (${startDate} s.d ${endDate}) berhasil diubah ke ${newStatus}`
+                        : `Presensi tanggal ${todayFormatted} diubah ke ${newStatus}`,
                     toast: true,
                     position: 'top-end',
-                    timer: 1500,
+                    timer: 1800,
                     showConfirmButton: false,
                     background: '#151921',
                     color: '#fff'
                 });
 
-                // 🚀 2. SINKRONISASI SERVER DI BACKGROUND (TANPA MENGUNCI LAYAR USER)
-                const payload = {
-                    tab: 'ATTENDANCE_RECORD',
-                    action: existingRec.Timestamp ? 'update' : 'add',
-                    primaryId: `${empId}|${todayIso}`,
-                    EmployeeId: empId,
-                    Date: todayIso,
-                    F1: existingRec.F1 || '-',
-                    F4: existingRec.F4 || '-',
-                    Leave: existingRec.Leave || '',
-                    StatusApproval: newStatus,
-                    "Status Approval": newStatus
-                };
+                // 🚀 2. SINKRONISASI BATCH KE SPREADSHEET DI BACKGROUND
+                const promises = targetRecords.map(tRec => {
+                    return API.post({
+                        tab: 'ATTENDANCE_RECORD',
+                        action: tRec.Timestamp ? 'update' : 'add',
+                        primaryId: `${empId}|${tRec.Date}`,
+                        EmployeeId: empId,
+                        Date: tRec.Date,
+                        F1: tRec.F1 || '-',
+                        F4: tRec.F4 || '-',
+                        Leave: leaveType || tRec.Leave || '',
+                        StatusApproval: newStatus,
+                        "Status Approval": newStatus
+                    });
+                });
 
                 try {
-                    await API.post(payload);
+                    await Promise.all(promises);
                     await API.clearLocalCache('ATTENDANCE_RECORD');
                 } catch(err) {
-                    console.error("Background sync failed:", err);
+                    console.error("Batch approval sync failed:", err);
                 }
             }
         }
