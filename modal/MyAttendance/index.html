@@ -25,6 +25,19 @@
         .tab-btn { flex: 1; padding: 0.5rem; text-align: center; font-size: 10px; font-weight: bold; text-transform: uppercase; cursor: pointer; border-radius: 0.75rem; transition: all 0.2s; color: var(--text-main); }
         .tab-btn.active { background: var(--accent); color: white; }
 
+        /* 🚀 INDIKATOR NONAKTIF: GRAYED-OUT & OPACITY REDUP OTOMATIS */
+        #office-actions button:disabled {
+            opacity: 0.25 !important;
+            cursor: not-allowed !important;
+            filter: grayscale(1) !important;
+            pointer-events: none !important;
+            border-color: transparent !important;
+            box-shadow: none !important;
+        }
+        #office-actions button:not(:disabled):hover {
+            transform: translateY(-2px);
+        }
+
         /* Accordion CSS */
         details > summary { list-style: none; }
         details > summary::-webkit-details-marker { display: none; }
@@ -61,6 +74,23 @@
         <div class="glass-panel p-6 flex flex-col items-center text-center">
             <p id="display-date" class="text-[10px] font-mono text-sky-500 uppercase mb-1"></p>
             <h1 id="display-clock" class="text-4xl font-bold text-white font-mono tracking-widest mb-4">00:00:00</h1>
+            <!-- 🚀 1 SET RIWAYAT HARI INI (PENANDA SISTEM SEHAT) -->
+            <div id="today-punch-ribbon" class="w-full py-2.5 px-4 rounded-xl bg-black/40 border border-white/5 flex items-center justify-between text-[10px] font-mono mb-2">
+                <div class="flex items-center gap-1.5">
+                    <span class="text-white/40 uppercase">F1 (In):</span>
+                    <b id="ribbon-f1" class="text-white/30">--:--</b>
+                </div>
+                <div class="w-px h-3 bg-white/10"></div>
+                <div class="flex items-center gap-1.5">
+                    <span class="text-white/40 uppercase">F4 (Out):</span>
+                    <b id="ribbon-f4" class="text-white/30">--:--</b>
+                </div>
+                <div class="w-px h-3 bg-white/10"></div>
+                <div class="flex items-center gap-1.5">
+                    <div id="ribbon-dot" class="w-1.5 h-1.5 rounded-full bg-slate-500"></div>
+                    <span id="ribbon-status" class="text-[9px] uppercase font-bold text-white/40">Ready</span>
+                </div>
+            </div>
             <div class="w-full pt-4 border-t border-white/5 flex items-center justify-between">
                 <div class="text-left">
                     <p id="user-name" class="text-white font-bold text-sm"></p>
@@ -167,14 +197,25 @@
             return true;
         }
 
+        // 🚀 PENGAMAN: Cegah error JSON jika jaringan membalas HTML <!DOCTYPE
         async function verifyNetwork() {
             try {
                 const resp = await fetch('https://api.ipify.org?format=json');
-                const data = await resp.json();
+                const rawText = await resp.text();
+                
+                // Jika balasan berawalan '<' (HTML / Captive portal), abaikan dan jangan di-JSON.parse
+                if (rawText.trim().startsWith('<')) throw new Error("Blocked by network portal");
+                
+                const data = JSON.parse(rawText);
                 isInsideOffice = ALLOWED_IPS.includes(data.ip);
                 document.getElementById('ip-status-dot').className = `w-2 h-2 rounded-full ${isInsideOffice ? 'bg-green-500' : 'bg-amber-500 animate-pulse'}`;
                 document.getElementById('ip-label').innerText = isInsideOffice ? 'OFFICE_NETWORK' : 'REMOTE_NETWORK';
-            } catch (e) {}
+            } catch (e) {
+                // Fallback aman tanpa crash
+                isInsideOffice = false;
+                document.getElementById('ip-status-dot').className = 'w-2 h-2 rounded-full bg-slate-500';
+                document.getElementById('ip-label').innerText = 'OFFLINE / REMOTE';
+            }
         }
 
         async function init() {
@@ -212,24 +253,61 @@
             const dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
             const attendanceList = masterData.attendance || [];
 
-            // 🚀 PERIKSA SEMUA RECORD MILIK USER INI
+            // 1. Ambil semua record presensi karyawan ini
             const myRecords = attendanceList.filter(r => 
                 String(r.EmployeeId).trim() === String(currentUser.EmployeeId).trim()
             );
 
-            // 🚀 ATURAN: Cari apakah ada F1 yang belum di-F4 (baik hari ini atau hari sebelumnya)
+            // 2. Cari apakah ada F1 yang belum di-F4 (baik hari ini atau kemarin)
             const unclosedSession = myRecords.find(r => 
                 r.F1 && r.F1 !== '-' && (!r.F4 || r.F4 === '' || r.F4 === '-')
             );
 
+            const btnF1 = document.getElementById('btn-f1');
+            const btnF4 = document.getElementById('btn-f4');
+
             if (unclosedSession) {
-                // Masih ada F1 yang belum Clock Out: KUNCI F1, BUKA F4!
-                document.getElementById('btn-f1').disabled = true;
-                document.getElementById('btn-f4').disabled = false;
+                // Ada F1 yang belum di-F4: KUNCI F1 (Grayed-out), BUKA F4!
+                btnF1.disabled = true;
+                btnF4.disabled = false;
             } else {
-                // Tidak ada tanggungan F1: BUKA F1, KUNCI F4!
-                document.getElementById('btn-f1').disabled = false;
-                document.getElementById('btn-f4').disabled = true;
+                // Tidak ada sesi gantung: BUKA F1, KUNCI F4!
+                btnF1.disabled = false;
+                btnF4.disabled = true;
+            }
+
+            // 3. 🚀 UPDATE 1 SET RIWAYAT HARI INI DI BAWAH JAM
+            const todayRecord = myRecords.find(r => r.Date === dateStr);
+            const ribbonF1 = document.getElementById('ribbon-f1');
+            const ribbonF4 = document.getElementById('ribbon-f4');
+            const ribbonStatus = document.getElementById('ribbon-status');
+            const ribbonDot = document.getElementById('ribbon-dot');
+
+            if (todayRecord && todayRecord.F1 && todayRecord.F1 !== '-') {
+                ribbonF1.innerText = todayRecord.F1;
+                ribbonF1.className = "text-emerald-400 font-bold";
+
+                if (todayRecord.F4 && todayRecord.F4 !== '-') {
+                    ribbonF4.innerText = todayRecord.F4;
+                    ribbonF4.className = "text-blue-400 font-bold";
+                    ribbonStatus.innerText = "Completed";
+                    ribbonStatus.className = "text-[9px] uppercase font-bold text-sky-400";
+                    ribbonDot.className = "w-1.5 h-1.5 rounded-full bg-sky-500";
+                } else {
+                    ribbonF4.innerText = "--:--";
+                    ribbonF4.className = "text-white/30";
+                    ribbonStatus.innerText = "Active (In)";
+                    ribbonStatus.className = "text-[9px] uppercase font-bold text-emerald-400";
+                    ribbonDot.className = "w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse";
+                }
+            } else {
+                ribbonF1.innerText = "--:--";
+                ribbonF1.className = "text-white/30";
+                ribbonF4.innerText = "--:--";
+                ribbonF4.className = "text-white/30";
+                ribbonStatus.innerText = "Ready";
+                ribbonStatus.className = "text-[9px] uppercase font-bold text-white/40";
+                ribbonDot.className = "w-1.5 h-1.5 rounded-full bg-slate-500";
             }
 
             renderHistory(dateStr);
