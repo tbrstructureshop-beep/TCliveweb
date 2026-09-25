@@ -1,6 +1,6 @@
 /**
  * TC WEB LIVE - ENTERPRISE API ENGINE (HYBRID PERSISTENT CACHING)
- * Production Safe V2.2: Memory Leak Fix + Deduping + Safe Timeout
+ * Production Safe V2.3: Session Sync + Offline Fallback + Deduping
  */
 const CONFIG = {
     API_URL: "https://script.google.com/macros/s/AKfycbw40HJB0edUo3T_uEXLF4fG-cW1Bl4vHuhng1VBlC2p6uby1BDOjvyBn3bZ-vGLHqk3gg/exec",
@@ -8,13 +8,12 @@ const CONFIG = {
     DB_NAME: "TCWebLiveDB",
     DB_STORE: "api_cache",
     DB_VERSION: 1,
-    FETCH_TIMEOUT_MS: 90000 // 🚀 90 Detik: Cukup waktu untuk upload foto/Base64 jika sinyal lambat
+    FETCH_TIMEOUT_MS: 90000 // 90 Detik batas waktu Google Apps Script
 };
 
 const API = {
-    _pendingRequests: {}, // 🚀 Menyimpan request yang sedang berjalan agar tidak double-fetch
+    _pendingRequests: {}, 
 
-    // 🚀 SAFE DB OPERATION: Membuka & Menutup koneksi secara eksplisit agar RAM tidak bocor
     async _dbOp(action, tab, payload = null) {
         return new Promise((resolve) => {
             const req = indexedDB.open(CONFIG.DB_NAME, CONFIG.DB_VERSION);
@@ -37,19 +36,12 @@ const API = {
                     else if (action === "set") dbReq = store.put(payload, tab);
                     else if (action === "delete") dbReq = store.delete(tab);
 
-                    // PENTING: Tutup DB segera setelah transaksi selesai agar aman untuk tab lain
                     tx.oncomplete = () => {
                         db.close(); 
                         resolve(action === "get" ? dbReq.result : true);
                     };
-                    tx.onerror = () => {
-                        db.close();
-                        resolve(null);
-                    };
-                } catch (err) {
-                    db.close();
-                    resolve(null);
-                }
+                    tx.onerror = () => { db.close(); resolve(null); };
+                } catch (err) { db.close(); resolve(null); }
             };
             req.onerror = () => resolve(null);
         });
@@ -61,36 +53,44 @@ const API = {
             if (window.GLOBAL_CACHE) delete window.GLOBAL_CACHE[tab];
             if (window.parent && typeof window.parent.clearCache === 'function') window.parent.clearCache(tab);
             
-            // Gunakan API. bukan this. agar tidak error jika fungsi di-destructure oleh komponen lain
             await API._dbOp("delete", tab);
+            
+            // 🚀 Hapus juga tanda sesi agar next get() wajib nembak server lagi
+            sessionStorage.removeItem(`sync_${tab}`);
         } catch(e) {}
     },
 
     /**
-     * SMART GET: RAM -> Disk (IndexedDB) -> Server + Request Deduping
+     * SMART GET: Fresh on Refresh -> RAM -> Disk (with Offline Fallback)
      */
     async get(tab) {
-        // 🚀 DEDUPING: Jika sedang fetch tab ini, suruh request lain menunggu hasilnya (1x Hit Server)
         if (API._pendingRequests[tab]) return API._pendingRequests[tab];
 
         const fetchPromise = (async () => {
             let cacheStore = null;
             try { cacheStore = (window.parent && window.parent.GLOBAL_CACHE) ? window.parent.GLOBAL_CACHE : (window.GLOBAL_CACHE || {}); } catch (e) {}
 
-            // 1. HIT LEVEL 1: RAM
-            if (cacheStore && cacheStore[tab]) {
-                return { status: 'success', data: cacheStore[tab] };
+            // 🚀 PENYELAMAT REFRESH: Cek apakah browser baru saja di-refresh / ditutup
+            const sessionKey = `sync_${tab}`;
+            const isFreshSession = !sessionStorage.getItem(sessionKey);
+
+            // Jika BUKAN sesi baru (sudah ditarik di sesi ini), gunakan metode Super Cepat (Cache)
+            if (!isFreshSession) {
+                // 1. RAM Hit
+                if (cacheStore && cacheStore[tab]) {
+                    return { status: 'success', data: cacheStore[tab] };
+                }
+                // 2. DISK Hit
+                const localData = await API._dbOp("get", tab);
+                if (localData) {
+                    if (cacheStore) cacheStore[tab] = localData; 
+                    return { status: 'success', data: localData };
+                }
             }
 
-            // 2. HIT LEVEL 2: IndexedDB
-            const localData = await API._dbOp("get", tab);
-            if (localData) {
-                if (cacheStore) cacheStore[tab] = localData; 
-                return { status: 'success', data: localData };
-            }
-
-            // 3. MISS: Fetch Server
+            // 3. JIKA SESI BARU (atau Cache Kosong): Nembak Langsung ke Server!
             try {
+                console.log(`[SYNC] Menarik data TERBARU dari server untuk: ${tab}`);
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), CONFIG.FETCH_TIMEOUT_MS);
 
@@ -101,14 +101,26 @@ const API = {
 
                 if (result && result.status === 'success') {
                     if (cacheStore) cacheStore[tab] = result.data;
-                    await API._dbOp("set", tab, result.data);
+                    await API._dbOp("set", tab, result.data); // Simpan ke Hardisk
+                    
+                    // Tandai bahwa tab ini sudah ditarik paling baru di sesi ini
+                    sessionStorage.setItem(sessionKey, 'true');
                 }
                 return result;
+
             } catch (e) { 
+                // 🚀 PENGAMAN OFFLINE: Jika sedang refresh ternyata tidak ada sinyal internet, 
+                // selamatkan aplikasi dengan mengambil data lama dari IndexedDB!
+                const fallbackData = await API._dbOp("get", tab);
+                if (fallbackData) {
+                    console.warn(`[OFFLINE FALLBACK] Koneksi gagal. Menggunakan data offline untuk ${tab}`);
+                    if (cacheStore) cacheStore[tab] = fallbackData;
+                    return { status: 'success', data: fallbackData, isOffline: true };
+                }
+
                 if (e.name === 'AbortError') return { status: 'error', message: 'Server Timeout / Sinyal Terputus' };
                 return { status: 'error', message: e.message || 'Gagal terhubung ke server' }; 
             } finally {
-                // Hapus penanda antrian setelah selesai
                 delete API._pendingRequests[tab];
             }
         })();
@@ -117,9 +129,6 @@ const API = {
         return fetchPromise;
     },
 
-    /**
-     * SMART POST: Kirim data & Invalidate Hybrid Cache
-     */
     async post(payload) {
         try {
             const controller = new AbortController();
@@ -139,12 +148,13 @@ const API = {
                     await API.clearLocalCache(payload.tab);
                 } else {
                     await API._dbOp("delete", payload.tab);
+                    sessionStorage.removeItem(`sync_${payload.tab}`);
                 }
             }
 
             return result;
         } catch (e) {
-            const msg = e.name === 'AbortError' ? 'Koneksi terputus (Timeout). Periksa sinyal internet Anda.' : (e.message || 'System Error');
+            const msg = e.name === 'AbortError' ? 'Koneksi terputus (Timeout). Periksa sinyal internet.' : (e.message || 'System Error');
             return { status: 'error', message: msg };
         }
     },
