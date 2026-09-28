@@ -201,13 +201,25 @@
         async function init() {
             loader.style.display = 'flex';
             try {
+                // 🚀 HANCURKAN CACHE LOKAL SEBELUM PULL DATA (Agar perubahan manual di Sheet langsung masuk)
+                if (window.parent && window.parent.clearCache) {
+                    window.parent.clearCache('ATTENDANCE_RECORD');
+                    window.parent.clearCache('JOB_RECORD');
+                    window.parent.clearCache('ATTENDANCE');
+                }
+                if (API.clearLocalCache) {
+                    await API.clearLocalCache('ATTENDANCE_RECORD');
+                    await API.clearLocalCache('JOB_RECORD');
+                    await API.clearLocalCache('ATTENDANCE');
+                }
+
                 const [unitRes, shiftRes, userRes, attRecordRes, opsRes, jobRes] = await Promise.all([
                     API.get('UNIT'),
                     API.get('SHIFTS'),
                     API.get('USER'),
                     API.get('ATTENDANCE_RECORD'),
                     API.get('ATTENDANCE'),
-                    API.get('JOB_RECORD') // Tarik data Job Record
+                    API.get('JOB_RECORD')
                 ]);
                 
                 unitList = unitRes.data || [];
@@ -228,7 +240,7 @@
                 loader.style.display = 'none';
             }
         }
-
+        
         function renderTabs(units) {
             const container = document.getElementById('unit-tabs');
             container.innerHTML = units.map(u => `
