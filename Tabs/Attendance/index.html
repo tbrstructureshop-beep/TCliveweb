@@ -107,9 +107,13 @@
                     <div>
                         <div class="flex justify-between items-center mb-1">
                             <label class="label-style">Manpower Utilization</label>
-                            <span id="util-val-disp" class="text-xs font-mono font-bold text-sky-400">85%</span>
+                            <span id="util-val-disp" class="text-xs font-mono font-bold text-sky-400">AUTO</span>
                         </div>
-                        <input type="range" id="Utilization" min="0" max="100" value="85" class="w-full accent-sky-500 cursor-pointer" oninput="document.getElementById('util-val-disp').innerText = this.value + '%'">
+                        <div class="text-[10px] bg-black/30 text-white/50 p-2 rounded-lg text-center font-mono uppercase mt-2">
+                            Calculated By System Engine
+                        </div>
+                        <!-- Sembunyikan input asli agar payload POST ke backend tidak error saat mencari ID Utilization -->
+                        <input type="hidden" id="Utilization" value="0">
                     </div>
                     <div>
                         <label class="label-style">Shift Highlight Notes</label>
@@ -162,7 +166,7 @@
         lucide.createIcons();
         const loader = document.getElementById('local-loader');
         
-        let unitList = [], allShifts = [], allUsers = [], allAttendanceRecords = [], opsDataList = [];
+        let unitList = [], allShifts = [], allUsers = [], allAttendanceRecords = [], opsDataList = [], allJobRecords = [];
         let activeUnit = null, activeShiftCat = null;
         let tempInspList = [], tempOtList = [];
 
@@ -197,19 +201,21 @@
         async function init() {
             loader.style.display = 'flex';
             try {
-                const [unitRes, shiftRes, userRes, attRecordRes, opsRes] = await Promise.all([
+                const [unitRes, shiftRes, userRes, attRecordRes, opsRes, jobRes] = await Promise.all([
                     API.get('UNIT'),
                     API.get('SHIFTS'),
                     API.get('USER'),
                     API.get('ATTENDANCE_RECORD'),
-                    API.get('ATTENDANCE')
+                    API.get('ATTENDANCE'),
+                    API.get('JOB_RECORD') // Tarik data Job Record
                 ]);
-
+                
                 unitList = unitRes.data || [];
                 allShifts = shiftRes.data || [];
                 allUsers = userRes.data || [];
                 allAttendanceRecords = attRecordRes.data || [];
                 opsDataList = opsRes.data || [];
+                allJobRecords = jobRes.data || []; 
 
                 if (!activeUnit && unitList.length > 0) activeUnit = unitList[0].UnitCode;
 
@@ -328,6 +334,51 @@
             let inspData = [], otData = [];
             try { inspData = JSON.parse(opsLog.DetailInspectorName || '[]'); } catch(e){}
             try { otData = JSON.parse(opsLog.PermintaanOvertime || '[]'); } catch(e){}
+
+            // ==========================================
+            // 🚀 AUTO-CALCULATE MANPOWER UTILIZATION
+            // ==========================================
+            let shiftDurationHours = 0;
+            if (currentShift && currentShift.TimeStart && currentShift.TimeEnd) {
+                const startParts = currentShift.TimeStart.split(':');
+                const endParts = currentShift.TimeEnd.split(':');
+                const startH = parseInt(startParts[0]) + (parseInt(startParts[1]) / 60);
+                const endH = parseInt(endParts[0]) + (parseInt(endParts[1]) / 60);
+                // Handle shift yang melewati tengah malam
+                shiftDurationHours = endH >= startH ? (endH - startH) : ((endH + 24) - startH);
+            }
+            
+            // Set Break Time 1 Jam
+            const effectiveWorkHours = Math.max(0, shiftDurationHours - 1); 
+            
+            // Total Manhour Available (Jam Efektif x Jumlah Orang Hadir di hari ini)
+            const totalManhourAvailable = effectiveWorkHours * attendCount;
+            
+            // Hitung total durasi kerja tiap member yang hadir (F1)
+            let totalJobDurationHoursAll = 0;
+            const memberWorkDetails = enrichedMembers.filter(m => m.hasF1).map(m => {
+                // Ambil record job khusus karyawan ini & hari ini
+                const myJobs = allJobRecords.filter(j => 
+                    String(j.EmployeeId).trim() === String(m.user.EmployeeId).trim() &&
+                    String(j.DateStart).trim() === todayIso
+                );
+                
+                // Total detik dari kolom 'Duration'
+                const totalSeconds = myJobs.reduce((sum, job) => sum + (parseInt(job.Duration) || 0), 0);
+                const totalHours = totalSeconds / 3600;
+                totalJobDurationHoursAll += totalHours;
+            
+                return {
+                    ...m,
+                    totalSeconds: totalSeconds
+                };
+            });
+            
+            // Hitung persentase akhir (Max 100% untuk menghindari anomali)
+            const utilizationPct = totalManhourAvailable > 0 
+                ? Math.min(100, Math.round((totalJobDurationHoursAll / totalManhourAvailable) * 100)) 
+                : 0;
+            // ==========================================
 
             container.innerHTML = `
                 <div class="attendance-card animate-in fade-in duration-500">
@@ -520,12 +571,17 @@
                         </summary>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-xs pt-1">
-                            <!-- Utilization Card -->
-                            <div class="bg-white/[0.02] border border-white/5 p-4 rounded-2xl">
+                            <!-- Utilization Card (Auto-Calculated) -->
+                            <div class="bg-white/[0.02] border border-white/5 p-4 rounded-2xl relative overflow-hidden">
+                                <div class="absolute top-0 right-0 bg-sky-500/20 text-sky-400 text-[8px] font-bold px-2 py-0.5 rounded-bl-lg">AUTO</div>
                                 <span class="label-style">Manpower Utilization</span>
-                                <div class="text-2xl font-black text-sky-400 font-mono mb-2">${opsLog.Utilization || 85}%</div>
-                                <div class="w-full bg-white/5 rounded-full h-1.5 overflow-hidden">
-                                    <div class="bg-sky-500 h-full rounded-full" style="width: ${opsLog.Utilization || 85}%"></div>
+                                <div class="text-2xl font-black text-sky-400 font-mono mb-2">${utilizationPct}%</div>
+                                <div class="w-full bg-white/5 rounded-full h-1.5 overflow-hidden mb-1">
+                                    <div class="bg-sky-500 h-full rounded-full transition-all duration-1000" style="width: ${utilizationPct}%"></div>
+                                </div>
+                                <div class="flex justify-between text-[8px] font-mono opacity-50">
+                                    <span>Logged: ${totalJobDurationHoursAll.toFixed(1)}H</span>
+                                    <span>Target: ${totalManhourAvailable.toFixed(1)}H</span>
                                 </div>
                             </div>
 
@@ -571,6 +627,49 @@
                                         </div>
                                     `).join('')}
                                     ${otData.length === 0 ? `<span class="opacity-20 text-[10px] italic">No Overtime</span>` : ''}
+                                </div>
+                            </div>
+
+                            <!-- TABEL DETAIL DURASI KERJA PER CREW -->
+                            <div class="col-span-1 md:col-span-2 lg:col-span-4 bg-white/[0.01] border border-white/5 p-4 rounded-2xl mt-4">
+                                <div class="flex justify-between items-center mb-3">
+                                    <span class="label-style text-sky-400 mb-0"><i data-lucide="timer" class="inline-block w-3 h-3 mr-1"></i> Crew Work Duration Details</span>
+                                    <span class="text-[9px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 border border-emerald-500/20 rounded font-bold uppercase tracking-widest">
+                                        1 Pax = ${effectiveWorkHours.toFixed(1)} Hrs Work Plan
+                                    </span>
+                                </div>
+                                <div class="overflow-x-auto">
+                                    <table class="w-full text-left text-xs border-collapse">
+                                        <thead class="bg-[#151921] text-[9px] uppercase font-bold text-white/40 border-b border-white/5">
+                                            <tr>
+                                                <th class="p-3 whitespace-nowrap rounded-tl-xl">Employee ID</th>
+                                                <th class="p-3 whitespace-nowrap">Personnel Name</th>
+                                                <th class="p-3 whitespace-nowrap text-center">Date</th>
+                                                <th class="p-3 whitespace-nowrap text-right rounded-tr-xl">Total Work Duration</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-white/5 font-mono text-[11px]">
+                                            ${memberWorkDetails.map(m => {
+                                                const hrs = Math.floor(m.totalSeconds / 3600);
+                                                const mins = Math.floor((m.totalSeconds % 3600) / 60);
+                                                const secs = m.totalSeconds % 60;
+                                                
+                                                // Highlight hijau jika durasi di atas 0
+                                                const timeColor = m.totalSeconds > 0 ? 'text-emerald-400 font-bold' : 'text-white/30';
+                                                const timeStr = m.totalSeconds > 0 ? `${hrs}h ${mins}m ${secs}s` : '-- : -- : --';
+
+                                                return `
+                                                <tr class="hover:bg-white/[0.02] transition">
+                                                    <td class="p-3 text-sky-400 font-bold">${m.user.EmployeeId}</td>
+                                                    <td class="p-3 text-white font-sans font-bold">${m.user.Name}</td>
+                                                    <td class="p-3 text-white/50 text-center">${todayIso}</td>
+                                                    <td class="p-3 text-right ${timeColor}">${timeStr}</td>
+                                                </tr>
+                                                `;
+                                            }).join('')}
+                                            ${memberWorkDetails.length === 0 ? `<tr><td colspan="4" class="p-5 text-center text-[10px] text-white/30 italic">No attendance data to calculate</td></tr>` : ''}
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
                         </div>
